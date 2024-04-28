@@ -1,4 +1,4 @@
-#include "render/shader.h"
+#include "shader.h"
 
 Render::Shader::Shader(const ShaderCreateInfo& createInfo, D3DContext& ctx) noexcept :
 	stage(createInfo.stage), context(ctx)

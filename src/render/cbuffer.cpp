@@ -1,4 +1,4 @@
-#include "render/cbuffer.h"
+#include "cbuffer.h"
 
 Render::CBuffer::CBuffer(CBufferCreateInfo& info, D3DContext& ctx)
 {

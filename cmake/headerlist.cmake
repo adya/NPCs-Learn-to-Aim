@@ -12,4 +12,6 @@ set(headers ${headers}
 	src/render/shader.h
 	src/render/timer.h
 	src/render/vertex_buffer.h
+	src/Utils.h
+	src/utilities/ITimer.h
 )

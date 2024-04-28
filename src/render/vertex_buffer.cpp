@@ -1,4 +1,4 @@
-#include "render/vertex_buffer.h"
+#include "vertex_buffer.h"
 
 Render::VertexBuffer::VertexBuffer(const VertexBufferCreateInfo& createInfo, D3DContext& ctx) noexcept
 	:

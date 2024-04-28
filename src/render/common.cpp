@@ -1,5 +1,5 @@
-#include "render/common.h"
-#include "render/d3d_context.h"
+#include "common.h"
+#include "d3d_context.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

@@ -1,10 +1,12 @@
 #include "Hooks.h"
+#include "render/DrawHandler.h"
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 	switch (a_message->type) {
 	case SKSE::MessagingInterface::kPostLoad:
 		NLA::Install();
+		
 		break;
 	case SKSE::MessagingInterface::kPostPostLoad:
 		break;
@@ -12,8 +14,10 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 
 		break;
 	case SKSE::MessagingInterface::kPreLoadGame:
+		DrawHandler::GetSingleton()->OnPreLoadGame();
 		break;
 	case SKSE::MessagingInterface::kPostLoadGame:
+		DrawHandler::GetSingleton()->OnPostLoad();
 		break;
 	default:
 		break;

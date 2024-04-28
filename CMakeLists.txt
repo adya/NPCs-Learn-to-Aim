@@ -130,6 +130,7 @@ set(CLIB_UTIL_INCLUDE_DIRS "extern/CLibUtil/include")
 include(cmake/headerlist.cmake)
 include(cmake/sourcelist.cmake)
 include_directories(${PROJECT_SOURCE_DIR}/${CLIB_UTIL_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/extern/glm)
 
 source_group(
 	TREE

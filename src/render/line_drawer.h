@@ -1,10 +1,11 @@
 #pragma once
-#include "Offsets.h"
-#include "render/shader.h"
-#include "render/timer.h"
-#include "render/vertex_buffer.h"
+#include "shader.h"
+#include "timer.h"
+#include "vertex_buffer.h"
+#include "RE/N/NiAVObject.h"
+#include "RE/N/NiSmartPointer.h"
 
-namespace Render
+namespace Render	
 {
 	typedef struct Point
 	{

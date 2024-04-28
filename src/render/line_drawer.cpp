@@ -1,5 +1,5 @@
-#include "render/line_drawer.h"
-#include "render/shaders/shader_vertex_color.h"
+#include "line_drawer.h"
+#include "shaders/shader_vertex_color.h"
 
 Render::LineDrawer::LineDrawer(D3DContext& ctx)
 {

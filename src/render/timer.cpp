@@ -1,5 +1,5 @@
 #include "timer.h"
-#include "utilities/ITimer.h"
+#include "../utilities/ITimer.h"
 
 static ITimer timer;
 static double curFrame = 0.0;

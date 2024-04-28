@@ -1,6 +1,6 @@
 #pragma once
-#include "render/d3d_context.h"
-#include "render/shader.h"
+#include "d3d_context.h"
+#include "shader.h"
 
 namespace Render
 {

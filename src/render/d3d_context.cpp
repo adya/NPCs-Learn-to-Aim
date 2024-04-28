@@ -1,6 +1,6 @@
-#include "render/d3d_context.h"
-#include "render/shader.h"
-#include "render/vertex_buffer.h"
+#include "d3d_context.h"
+#include "shader.h"
+#include "vertex_buffer.h"
 
 static Render::D3DContext gameContext;
 static std::vector<Render::DrawFunc> presentCallbacks;

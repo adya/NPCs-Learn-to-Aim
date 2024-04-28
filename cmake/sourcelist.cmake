@@ -10,4 +10,6 @@ set(sources ${sources}
 	src/render/shader.cpp
 	src/render/timer.cpp
 	src/render/vertex_buffer.cpp
+	src/Utils.cpp
+	src/utilities/ITimer.cpp
 )

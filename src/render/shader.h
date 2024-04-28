@@ -1,5 +1,5 @@
 #pragma once
-#include "render/d3d_context.h"
+#include "d3d_context.h"
 #include <d3dcompiler.h>
 
 namespace Render

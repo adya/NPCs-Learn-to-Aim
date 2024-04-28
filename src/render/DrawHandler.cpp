@@ -1,9 +1,7 @@
 #include "DrawHandler.h"
-#include "PrecisionHandler.h"
-#include "Settings.h"
-#include "Utils.h"
-#include "render/common.h"
-#include "render/timer.h"
+#include "common.h"
+#include "timer.h"
+#include "../Utils.h"
 
 void DrawHandler::Update(float a_delta)
 {
@@ -343,18 +341,16 @@ void DrawHandler::OnPreLoadGame()
 	renderables.ClearLists();
 }
 
-void DrawHandler::OnSettingsUpdated()
+void DrawHandler::OnPostLoad()
 {
 	// Hook only if debug display is enabled
-	if (Settings::bDebug && (Settings::bDisplayWeaponCapsule || Settings::bDisplayHitNodeCollisions || Settings::bDisplayHitLocations || Settings::bDisplayIframeHits || Settings::bDisplayRecoilCollisions || Settings::bDisplaySkeletonColliders)) {
-		if (!_bDXHooked) {
-			Render::InstallHooks();
-			if (Render::HasContext()) {
-				_bDXHooked = true;
-				Initialize();
-			} else {
-				logger::critical("Precision: Failed to hook DirectX, Rendering features will be disabled. Try running with overlay software disabled if this warning keeps occurring.");
-			}
+	if (!_bDXHooked) {
+		Render::InstallHooks();
+		if (Render::HasContext()) {
+			_bDXHooked = true;
+			Initialize();
+		} else {
+			logger::critical("Precision: Failed to hook DirectX, Rendering features will be disabled. Try running with overlay software disabled if this warning keeps occurring.");
 		}
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "render/cbuffer.h"
-#include "render/line_drawer.h"
+#include "cbuffer.h"
+#include "line_drawer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -36,7 +36,7 @@ public:
 	static double GetTime();
 
 	void OnPreLoadGame();
-	void OnSettingsUpdated();
+	void OnPostLoad();
 
 private:
 	using Lock = std::recursive_mutex;
