@@ -73,15 +73,23 @@ namespace NLA
 		};
 
 		static void Mark(const RE::NiPoint3& point, const Color::color& color) {
-			DrawHandler::DrawDebugSphere(point, 5, 0.3f, color);
+			DrawHandler::DrawDebugSphere(point, 5, 0.2, color);
+		}
+
+		static void Mark(const RE::NiBound& bound, const Color::color& color) {
+			DrawHandler::DrawDebugSphere(bound.center, bound.radius, 0.2, color);
 		}
 
 		static void Mark(const RE::NiPoint3& from, const RE::NiPoint3& to, const Color::color& color) {
-			DrawHandler::DrawDebugLine(from, to, 0.3f, color);
+			DrawHandler::DrawDebugLine(from, to, 0.2, color);
 		}
 
 		static void Mark(const RE::NiPoint3& point, const RE::TESObjectREFR* owner, bool pale = false) {
 			Mark(point, Color::GetRandomColor(owner, pale));
+		}
+
+		static void Mark(const RE::NiBound& bound, const RE::TESObjectREFR* owner, bool pale = false) {
+			Mark(bound, Color::GetRandomColor(owner, pale));
 		}
 
 		static void Mark(const RE::NiPoint3& from, const RE::NiPoint3& to, const RE::TESObjectREFR* owner, bool pale = false) {
@@ -91,11 +99,44 @@ namespace NLA
 		struct CalculateAim
 		{
 			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) 
-			{
-				func(controller, target);
-
+			{		
 				logger::info("{:*^50}", "Calculating Projectile Aim");
+				float aimOffset = 0;
+				float aimVariance = 0;
 
+				if (auto aimOffsetSetting = RE::GameSettingCollection::GetSingleton()->GetSetting("fCombatAimProjectileRandomOffset")) {
+					aimOffset = aimOffsetSetting->GetFloat();
+				}
+				if (auto aimVarianceSetting = RE::GameSettingCollection::GetSingleton()->GetSetting("fCombatRangedAimVariance")) {
+					aimVariance = aimVarianceSetting->GetFloat();
+					controller->aimVariance = aimVariance;
+				}
+
+				float           width = 0;
+				RE::NiAVObject* bounds;
+
+				if (target->IsPlayerRef() && !RE::PlayerCharacter::GetSingleton()->playerFlags.isInThirdPersonMode) {
+					width = target->IsSneaking() ? 89.3 : 93.5;
+				} else if (auto bounds = target->Get3D()) {
+					width = bounds->worldBound.radius;
+					Mark(bounds->worldBound, Color::GetRandomColor(target));
+				}
+
+				auto distance = controller->attackerLocation.GetDistance(controller->aimPoint);
+
+				logger::info("fCombatAimProjectileRandomOffset: {:.4f}", aimOffset);
+				logger::info("fCombatRangedAimVariance: {:.4f}", aimVariance);
+				logger::info("{} width: {:.4f}", target->GetName(), width);
+				logger::info("\taimVariance: {:.4f}", controller->aimVariance);
+				logger::info("width/offset: {:.4f}", width / aimOffset);
+				logger::info("distance to target: {:.4f}", distance);
+
+				// TODO: Figure out the shot complexity formula and adjustable offset.
+				controller->aimVariance = width / aimOffset;
+
+				func(controller, target);
+				DrawHandler::GetSingleton()->Update(*g_deltaTime);
+				
 				RE::Actor* attacker = nullptr;
 				if (attacker = controller->combatController->attackerHandle.get().get()) {
 					logger::info("{} is shooting at {}", attacker->GetName(), target->GetName());
@@ -103,72 +144,18 @@ namespace NLA
 					return;
 				}
 
-				if (auto aimVarianceSetting = RE::GameSettingCollection::GetSingleton()->GetSetting("fCombatRangedAimVariance")) {
-					auto aimVariance = aimVarianceSetting->GetFloat();
-					logger::info("Aim variance Setting: {:.4f}", aimVariance);
-				}
-
-				Mark(target->data.location, target);
-				auto point = target->data.location + controller->targetBodyPartOffset;
-				Mark(target->data.location, point, target, true);
-				Mark(point, target, true);
 				
-				Mark(controller->aimPoint, attacker, true);
-				Mark(controller->aimPoint, controller->projectileLaunchPoint, attacker, true);
-				Mark(controller->attackerLocation, attacker);
-				Mark(controller->projectileLaunchPoint, attacker);
 
-				logger::info("\taimVariance: {:.4f}", controller->aimVariance);
+				
+
+			
+				Mark(controller->actualAimPoint + controller->aimOffset, attacker);
+				Mark(controller->actualAimPoint + controller->aimOffset, controller->projectileLaunchPoint, attacker, true);
+				Mark(controller->projectileLaunchPoint, attacker, true);
+
+				
 				logger::info("\taimOffset: {}", controller->aimOffset);
-			}
 
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct GetBodyPartLocation
-		{
-			static void thunk(RE::NiPoint3& point, RE::Actor* target, std::uint32_t bodyPart) {
-				func(point, target, bodyPart);
-
-				logger::info("\tGetBodyPartLocation: {}: {}", bodyPart, point);
-				Mark(point, Color::red);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-		struct GetBodyPartLocationVariance
-		{
-			static void thunk(RE::NiPoint3& point, RE::Actor* target, std::uint32_t bodyPart) {
-				func(point, target, bodyPart);
-
-				logger::info("\tGetBodyPartLocationVariance {}: {}", bodyPart, point);
-				Mark(point, Color::teal);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct GetAnticipatedLocation
-		{
-			static void thunk(RE::Actor* target, float timePassed, RE::NiPoint3& point) {
-				func(target, timePassed, point);
-
-				logger::info("\tGetAnticipatedLocation: {}", point);
-				Mark(point, Color::lime);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct GetProjectileLaunchPoint
-		{
-			static bool thunk(RE::CombatProjectileAimController* controller, RE::NiPoint3& point) {
-				bool res = func(controller, point);
-
-				logger::info("\tGetProjectileLaunchPoint: {}", point);
-				auto projectilePoint = controller->attackerLocation + point;
-				Mark(controller->attackerLocation, projectilePoint, Color::red);
-				return res;
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
@@ -177,23 +164,6 @@ namespace NLA
 		struct WeapFireAmmo
 		{
 			static RE::ProjectileHandle* thunk(RE::ProjectileHandle* projectile, RE::Projectile::LaunchData& data) {
-				
-				logger::info("{:*^50}", "Firing Projectile");
-
-				logger::info("\tOrigin: {}", data.origin);
-				logger::info("\tangleX: {}", data.angleX);
-				logger::info("\tangleZ: {}", data.angleZ);
-				logger::info("\tcontactNormal: {}", data.contactNormal);
-				if (auto desiredTarget = data.desiredTarget) {
-					logger::info("\tdesiredTarget: {}", desiredTarget->GetName());
-				} else {
-					logger::info("\tdesiredTarget: NONE");
-				}
-				logger::info("\tunk60: {}", data.unk60);
-				logger::info("\tunk64: {}", data.unk64);
-				Mark(data.origin, Color::magenta);
-
-				
 				const auto pitch = data.angleX;
 				const auto yaw = -data.angleZ + std::numbers::pi_v<float> / 2;
 
@@ -211,15 +181,17 @@ namespace NLA
 					data.origin.z + D * zt
 				};
 
-				Mark(data.origin, target, Color::magenta);
-
+				DrawHandler::GetSingleton()->Update(*g_deltaTime);
+				Mark(data.origin, data.shooter);
+				Mark(data.origin, target, data.shooter);
+			
 				return func(projectile, data);
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
-		struct WeapFireAmmoRANDOMSHIT
+		struct WeapFireAmmoRangomizeArrowDirection
 		{
 			static float thunk(float min, float max) {
 				return 0;
@@ -231,36 +203,29 @@ namespace NLA
 		inline void Install() {
 			const REL::Relocation<std::uintptr_t> aim{ RELOCATION_ID(0, 44396) };
 			const REL::Relocation<std::uintptr_t> update{ RELOCATION_ID(0, 44384) };
-			const REL::Relocation<std::uintptr_t> something{ RELOCATION_ID(0, 44397) };
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(0, 18102) };
-
-			stl::write_thunk_call<GetBodyPartLocation>(aim.address() + OFFSET(0, 0x211));
-			stl::write_thunk_call<GetBodyPartLocationVariance>(aim.address() + OFFSET(0, 0x5C2));
-			stl::write_thunk_call<GetAnticipatedLocation>(aim.address() + OFFSET(0, 0x381));
-
+		
 			stl::write_thunk_call<CalculateAim>(update.address() + OFFSET(0, 0x97));
 
-			stl::write_thunk_call<GetProjectileLaunchPoint>(something.address() + OFFSET(0, 0x2C));
-			
 			stl::write_thunk_call<WeapFireAmmo>(weaponFire.address() + OFFSET(0, 0xE60));
 
-			stl::write_thunk_call<WeapFireAmmoRANDOMSHIT>(weaponFire.address() + OFFSET(0, 0xCD5));
+			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0, 0xCD5));
 
 
 			logger::info("Installed PerfectAim hooks");
 
-			auto settings = RE::GameSettingCollection::GetSingleton();
+			/*auto settings = RE::GameSettingCollection::GetSingleton();
 			if (auto aimVariance = settings->GetSetting("fCombatRangedAimVariance")) {
-				aimVariance->data.f = 0;
+				aimVariance->data.f = 0.9;
 				settings->WriteSetting(aimVariance);
-				logger::info("Set fCombatRangedAimVariance to 0");
+				logger::info("Set fCombatRangedAimVariance to 0.9");
 			}
 
 			if (auto aimOffset = settings->GetSetting("fCombatAimProjectileRandomOffset")) {
 				aimOffset->data.f = 0;
 				settings->WriteSetting(aimOffset);
-				logger::info("Set fCombatAimProjectileRandomOffset to 0");
-			}
+				logger::info("Set fCombatAimProjectileRandomOffset to 16");
+			}*/
 
 			 
 		}

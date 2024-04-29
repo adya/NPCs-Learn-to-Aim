@@ -64,7 +64,7 @@ namespace RE
 
 		// members
 		MagicCaster*      mcaster;           // 10 -- or weap?
-		NiPoint3          aimPoint;          // 18 : This one takes into account gravity of the projectile.
+		NiPoint3          actualAimPoint;    // 18 : This one takes into account gravity of the projectile.
 		uint32_t          unk24;             // 24
 		CombatController* combatController;  // 28
 		ActorHandle       target;            // 30
