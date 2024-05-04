@@ -1,18 +1,18 @@
 #include "Hooks.h"
 #include "CombatProjectileAimController.h"
-#include "render/DrawHandler.h"
 #include "Utils.h"
+#include "render/DrawHandler.h"
 #include <numbers>
 
 namespace NLA
 {
 	static std::default_random_engine rnd;
-	
+
 	namespace Calculations
 	{
 
-		static const float maxDistance = 3072; // I didn't find the actual setting that controls at which max range NPCs can shoot. But this is roughly twice the distance that I observed in-game :)
-		static const float maxTargetSize = 500; // For reference: dragon ~ 700-1000 (depending ); giant ~ 180; human ~ 90; rabbit - 30
+		static const float maxDistance = 3072;   // I didn't find the actual setting that controls at which max range NPCs can shoot. But this is roughly twice the distance that I observed in-game :)
+		static const float maxTargetSize = 500;  // For reference: dragon ~ 700-1000 (depending ); giant ~ 180; human ~ 90; rabbit - 30
 
 		// C = sqrt(w/d^2)/2
 		float ShotComplexity(float distance, float targetSize) {
@@ -29,7 +29,7 @@ namespace NLA
 		float SkillConsistency(float skillFactor) {
 			return 0.5f * std::exp(2 * std::sqrt(skillFactor)) - 1 + skillFactor;
 		}
-		 
+
 		// normalize distance in range [10;100]
 		// min + (distance - Dmin) * (max - min) / (Dmax - Dmin)
 		float NormalizedDistance(float distance, float maxDistance = Calculations::maxDistance) {
@@ -149,14 +149,13 @@ namespace NLA
 			static constexpr color pale_lime = { 0.85, 1, 0.5, 1 };
 			static constexpr color pale_teal = { 0.5, 0.75, 0.75, 1 };
 
-
 			// Green reserved for player
 			static constexpr std::array<color, 9> colors = { red, blue, /*green,*/ yellow, purple, cyan, orange, magenta, lime };
 
 			static constexpr std::array<color, 9> pale_colors = { pale_red, pale_blue, /*pale_green,*/ pale_yellow, pale_purple, pale_cyan, pale_orange, pale_magenta, pale_lime };
 
 			static color GetRandomColor(bool pale = false) {
-				return pale ? pale_colors[std::uniform_int_distribution<std::uint32_t>{0, pale_colors.size() - 1}(rnd)] : colors[std::uniform_int_distribution<std::uint32_t>{0, colors.size() - 1}(rnd)];
+				return pale ? pale_colors[std::uniform_int_distribution<std::uint32_t>{ 0, pale_colors.size() - 1 }(rnd)] : colors[std::uniform_int_distribution<std::uint32_t>{ 0, colors.size() - 1 }(rnd)];
 			}
 			static color GetRandomColor(const RE::TESObjectREFR* obj, bool pale = false) {
 				if (obj) {
@@ -166,7 +165,7 @@ namespace NLA
 
 					return pale ? pale_colors[obj->formID % colors.size()] : colors[obj->formID % colors.size()];
 				}
-				
+
 				return pale ? pale_red : red;
 			}
 		};
@@ -211,12 +210,11 @@ namespace NLA
 		struct CalculateAim
 		{
 			static void PickAnotherBodyPart(RE::CombatProjectileAimController* controller, RE::Actor* target) {
-				std::uniform_int_distribution<std::uint32_t>       dist(0, 4);
-				std::uniform_real_distribution<float> offsetRND(0, 1);
+				std::uniform_int_distribution<std::uint32_t> dist(0, 4);
+				std::uniform_real_distribution<float>        offsetRND(0, 1);
 
-				// Prevent randomizing when the shot is locked to aim for the ground.
-				if (Options::fCombatAimProjectileGroundMinRadius() < controller->groundRadius && controller->unkB0 == std::numeric_limits<float>::min())
-				{
+				// Prevent randomizing when the shot is locked to aim for the ground (this is logic from original func that we're hooking)
+				if (Options::fCombatAimProjectileGroundMinRadius() < controller->groundRadius && controller->unkB0 == -std::numeric_limits<float>::max()) {
 					return;
 				}
 				std::uint32_t bodyPart = dist(rnd);
@@ -231,12 +229,13 @@ namespace NLA
 					controller->aimOffset.x += offset.x * factor;
 					controller->aimOffset.y += offset.y * factor;
 					controller->aimOffset.z += offset.z * factor;
+
+					//Mark2(point, Color::red);
 				}
 			}
 
-			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) 
-			{		
-				DrawHandler::GetSingleton()->OnPostLoad(); // workaround to see debug rendering when coc-ing from main menu
+			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
+				DrawHandler::GetSingleton()->OnPostLoad();  // workaround to see debug rendering when coc-ing from main menu
 				logger::info("{:*^50}", "Calculating Projectile Aim");
 
 				RE::Actor* attacker = nullptr;
@@ -261,8 +260,10 @@ namespace NLA
 				}
 
 				// Reset aimVariance to disable original randomization logic.
-				controller->aimVariance = 0;	
+				controller->aimVariance = 0;
 				func(controller, target);
+
+				//Mark2(controller->targetBodyPartOffset + target->data.location, Color::orange);
 
 				// This emulates the original randomization of changing body parts.
 				PickAnotherBodyPart(controller, target);
@@ -284,25 +285,25 @@ namespace NLA
 
 				auto offsetFractions = Calculations::RandomOffset(skill, distance, width, aimVariance);
 
-				controller->aimOffset.x = aimOffset * offsetFractions.x;
-				controller->aimOffset.y = aimOffset * offsetFractions.y;
-				controller->aimOffset.z = aimOffset * offsetFractions.z;
+				controller->aimOffset.x += aimOffset * offsetFractions.x;
+				controller->aimOffset.y += aimOffset * offsetFractions.y;
+				controller->aimOffset.z += aimOffset * offsetFractions.z;
 
 				// This is for debug sampling.
-				for (int i = 0; i < 100; i++) {
-					auto offsetFractions = Calculations::RandomOffset(skill, distance, width, aimVariance);
+				/*for (int i = 0; i < 100; i++) {
+					auto         offsetFractions = Calculations::RandomOffset(skill, distance, width, aimVariance);
 					RE::NiPoint3 offset = {
 						aimOffset * offsetFractions.x,
 						aimOffset * offsetFractions.y,
 						aimOffset * offsetFractions.z
 					};
 					Mark(controller->actualAimPoint + offset, attacker, true);
-				}
+				}*/
 
 				DrawHandler::GetSingleton()->Update(*g_deltaTime);
 
-			//   Mark(controller->actualAimPoint + controller->aimOffset, attacker);
-			//	Mark(controller->actualAimPoint + controller->aimOffset, controller->projectileLaunchPoint, attacker, true);
+				Mark2(controller->aimPoint + controller->aimOffset, attacker);
+				Mark(controller->actualAimPoint + controller->aimOffset, controller->projectileLaunchPoint, attacker, true);
 				Mark2(controller->projectileLaunchPoint, attacker, true);
 
 				logger::info("\tfCombatAimProjectileRandomOffset: {:.4f}", aimOffset);
@@ -311,7 +312,6 @@ namespace NLA
 				logger::info("\tDistance to {}: {:.4f} (normalized: {:.4f})", target->GetName(), distance, Calculations::NormalizedDistance(distance));
 				logger::info("\tSkill of {}: {:.4f}", attacker->GetName(), attacker->GetActorValue(RE::ActorValue::kArchery));
 				logger::info("\taimOffset: {}", controller->aimOffset);
-
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
@@ -363,13 +363,12 @@ namespace NLA
 			const REL::Relocation<std::uintptr_t> aim{ RELOCATION_ID(0, 44396) };
 			const REL::Relocation<std::uintptr_t> update{ RELOCATION_ID(0, 44384) };
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(0, 18102) };
-		
+
 			stl::write_thunk_call<CalculateAim>(update.address() + OFFSET(0, 0x97));
 
 			stl::write_thunk_call<WeapFireAmmo>(weaponFire.address() + OFFSET(0, 0xE60));
 
 			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0, 0xCD5));
-
 
 			logger::info("Installed PerfectAim hooks");
 		}
