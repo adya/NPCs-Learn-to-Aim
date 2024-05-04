@@ -252,9 +252,23 @@ namespace NLA
 					return;
 				}
 
-				// At the moment we only support bows and crossbows. (no magic)
-				if (!controller->projectile->IsArrow()) {
-					logger::info("{} is not supported", controller->projectile->GetName());
+				RE::ActorValue skillToUse = RE::ActorValue::kNone;
+
+				if (controller->projectile->IsArrow()) {
+					skillToUse = RE::ActorValue::kArchery;
+				} else {
+					if (auto caster = controller->mcaster) {
+						if (auto spell = caster->currentSpell) {
+							if (auto effect = spell->GetCostliestEffectItem()) {
+								if (auto base = effect->baseEffect) {
+									skillToUse = base->GetMagickSkill();
+								}
+							}
+						}
+					}
+				}
+
+				if (skillToUse == RE::ActorValue::kNone) {
 					func(controller, target);
 					return;
 				}
@@ -262,8 +276,6 @@ namespace NLA
 				// Reset aimVariance to disable original randomization logic.
 				controller->aimVariance = 0;
 				func(controller, target);
-
-				//Mark2(controller->targetBodyPartOffset + target->data.location, Color::orange);
 
 				// This emulates the original randomization of changing body parts.
 				PickAnotherBodyPart(controller, target);
@@ -273,7 +285,7 @@ namespace NLA
 
 				// Check real distances and dragon size to set sensible maximums.
 				float distance = controller->attackerLocation.GetDistance(controller->aimPoint);
-				float skill = attacker->GetActorValue(RE::ActorValue::kArchery);
+				float skill = attacker->GetActorValue(skillToUse);
 				float width = 0;
 
 				if (target->IsPlayerRef() && !RE::PlayerCharacter::GetSingleton()->playerFlags.isInThirdPersonMode) {
@@ -290,7 +302,7 @@ namespace NLA
 				controller->aimOffset.z += aimOffset * offsetFractions.z;
 
 				// This is for debug sampling.
-				/*for (int i = 0; i < 100; i++) {
+				for (int i = 0; i < 100; i++) {
 					auto         offsetFractions = Calculations::RandomOffset(skill, distance, width, aimVariance);
 					RE::NiPoint3 offset = {
 						aimOffset * offsetFractions.x,
@@ -298,11 +310,11 @@ namespace NLA
 						aimOffset * offsetFractions.z
 					};
 					Mark(controller->actualAimPoint + offset, attacker, true);
-				}*/
+				}
 
 				DrawHandler::GetSingleton()->Update(*g_deltaTime);
 
-				Mark2(controller->aimPoint + controller->aimOffset, attacker);
+				Mark2(controller->actualAimPoint + controller->aimOffset, attacker);
 				Mark(controller->actualAimPoint + controller->aimOffset, controller->projectileLaunchPoint, attacker, true);
 				Mark2(controller->projectileLaunchPoint, attacker, true);
 
@@ -310,7 +322,7 @@ namespace NLA
 				logger::info("\tfCombatRangedAimVariance: {:.4f}", aimVariance);
 				logger::info("\tWidth of {}: {:.4f} (normalized: {:.4f}", target->GetName(), width, Calculations::NormalizedTargetSize(width));
 				logger::info("\tDistance to {}: {:.4f} (normalized: {:.4f})", target->GetName(), distance, Calculations::NormalizedDistance(distance));
-				logger::info("\tSkill of {}: {:.4f}", attacker->GetName(), attacker->GetActorValue(RE::ActorValue::kArchery));
+				logger::info("\t{} Skill of {}: {:.4f}", skillToUse, attacker->GetName(), attacker->GetActorValue(RE::ActorValue::kArchery));
 				logger::info("\taimOffset: {}", controller->aimOffset);
 			}
 
@@ -338,10 +350,10 @@ namespace NLA
 					data.origin.z + D * zt
 				};
 
-				//DrawHandler::GetSingleton()->Update(*g_deltaTime);
-				//Mark(data.origin, data.shooter);
-				//Mark(data.origin, target, data.shooter);
-			
+				/*DrawHandler::GetSingleton()->Update(*g_deltaTime);
+				Mark(data.origin, data.shooter);
+				Mark(data.origin, target, data.shooter);*/
+
 				logger::info("{} Fired an arrow!", data.shooter->GetName());
 				return func(projectile, data);
 			}
