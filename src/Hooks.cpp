@@ -25,19 +25,19 @@ namespace NLA
 		}
 
 		// TODO: Figure out the formula that also takes into account shot complexity (so that at closer range even bad archers could show some accuracy.
-		// c2 = 0.4 * e^(2*c)
+		// c2 = 0.5 * e^(2 * sqrt(c)) - 1 + c
 		float SkillConsistency(float skillFactor) {
 			return 0.5f * std::exp(2 * std::sqrt(skillFactor)) - 1 + skillFactor;
 		}
 
 		// normalize distance in range [10;100]
-		// min + (distance - Dmin) * (max - min) / (Dmax - Dmin)
+		// d = min + (distance - Dmin) * (max - min) / (Dmax - Dmin)
 		float NormalizedDistance(float distance, float maxDistance = Calculations::maxDistance) {
 			return 10 + 90 * (std::clamp(distance, 0.0f, maxDistance) / maxDistance);
 		}
 
 		// normalize distance in range [10;100]
-		// min + (size - Smin) * (max - min) / (Smax - Smin)
+		// w = min + (size - Smin) * (max - min) / (Smax - Smin)
 		float NormalizedTargetSize(float targetSize, float maxSize = maxTargetSize) {
 			return 10 + 90 * (std::clamp(targetSize, 0.0f, maxSize) / maxSize);
 		}
@@ -52,9 +52,11 @@ namespace NLA
 			return variance * std::pow(skillFactor, 2) * std::log10(shotComplexity);
 		}
 
-		RE::NiPoint3 RandomOffset(float skill, float distance, float targetSize, float variance) {
+		RE::NiPoint3 RandomOffset(float skill, float distance, float targetSize, float varianceOption) {
 			auto skillFactor = SkillFactor(skill);
 			auto skillConsistency = SkillConsistency(skillFactor);
+
+			auto variance = std::max(varianceOption, 0.1f);  // formula requires variance to be > 0
 
 			auto normalizedDistance = NormalizedDistance(distance, maxDistance);
 			auto normalizedTargetSize = NormalizedTargetSize(targetSize, maxTargetSize);
@@ -73,7 +75,6 @@ namespace NLA
 				skillConsistency * (combiner(rnd) > 0.5 ? distrLeft(rnd) : distrRight(rnd))
 			};
 		}
-
 	};
 
 	namespace UpdateHooks
@@ -214,6 +215,7 @@ namespace NLA
 				std::uniform_real_distribution<float>        offsetRND(0, 1);
 
 				// Prevent randomizing when the shot is locked to aim for the ground (this is logic from original func that we're hooking)
+				// This is the case, for example, for fireballs, which NPC aim at ground level due to AoE effect.
 				if (Options::fCombatAimProjectileGroundMinRadius() < controller->groundRadius && controller->unkB0 == -std::numeric_limits<float>::max()) {
 					return;
 				}
@@ -382,7 +384,7 @@ namespace NLA
 
 			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0, 0xCD5));
 
-			logger::info("Installed PerfectAim hooks");
+			logger::info("Installed Aiming hooks");
 		}
 	}
 
