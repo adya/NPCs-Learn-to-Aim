@@ -10,20 +10,20 @@ namespace NLA
 	namespace Calculations
 	{
 
+		// TODO: Add option to customize these values
 		static const float maxDistance = 3072;   // I didn't find the actual setting that controls at which max range NPCs can shoot. But this is roughly twice the distance that I observed in-game :)
-		static const float maxTargetSize = 500;  // For reference: dragon ~ 700-1000 (depending ); giant ~ 180; human ~ 90; rabbit - 30
+		static const float maxTargetSize = 500;  // For reference: dragon ~ 700-1000 (depending on whether they spread their wings); giant ~ 180; human ~ 90; rabbit - 30
 
 		// C = sqrt(w/d^2)/2
 		float ShotComplexity(float distance, float targetSize) {
 			return std::sqrt(targetSize) / (2 * targetSize);
 		}
 
-		// c = 1/log(skill); skill >= 10
+		// c = 0.8/log(skill); skill >= 10
 		float SkillFactor(float skill) {
 			return 0.8f / std::log10((std::max)(skill, 10.0f));
 		}
 
-		// TODO: Figure out the formula that also takes into account shot complexity (so that at closer range even bad archers could show some accuracy.
 		// c2 = 0.5 * e^(2 * sqrt(c)) - 1 + c
 		float SkillConsistency(float skillFactor) {
 			return 0.5f * std::exp(2 * std::sqrt(skillFactor)) - 1 + skillFactor;
@@ -35,7 +35,7 @@ namespace NLA
 			return 10 + 90 * (std::clamp(distance, 0.0f, maxDistance) / maxDistance);
 		}
 
-		// normalize distance in range [10;100]
+		// normalize target size in range [10;100]
 		// w = min + (size - Smin) * (max - min) / (Smax - Smin)
 		float NormalizedTargetSize(float targetSize, float maxSize = maxTargetSize) {
 			return 10 + 90 * (std::clamp(targetSize, 0.0f, maxSize) / maxSize);
@@ -148,6 +148,7 @@ namespace NLA
 					return;
 				}
 
+				// TODO: Add option bForcedAimForAll to bypass this
 				if (!attacker->HasKeywordByEditorID("ActorTypeNPC") && !attacker->GetRace()->HasKeywordString("ActorTypeNPC")) {
 					logger::info("{} is not an NPC that can learn", attacker->GetName());
 					func(controller, target);
@@ -156,9 +157,9 @@ namespace NLA
 
 				RE::ActorValue skillToUse = RE::ActorValue::kNone;
 
-				if (controller->projectile->IsArrow()) {
+				if (controller->projectile->IsArrow()) { // TODO: Add option bEnabledArcheryAim
 					skillToUse = RE::ActorValue::kArchery;
-				} else {
+				} else { // TODO: Add option bEnableMagicAim
 					if (auto caster = controller->mcaster) {
 						if (auto spell = caster->currentSpell) {
 							if (auto effect = spell->GetCostliestEffectItem()) {
@@ -170,6 +171,9 @@ namespace NLA
 					}
 				}
 
+				// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it, 
+				// in such cases we can't determine the skill to use and should fallback to default logic.
+				// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
 				if (skillToUse == RE::ActorValue::kNone) {
 					func(controller, target);
 					return;
