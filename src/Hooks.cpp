@@ -9,7 +9,6 @@ namespace NLA
 
 	namespace Calculations
 	{
-
 		// TODO: Add option to customize these values
 		static const float maxDistance = 3072;   // I didn't find the actual setting that controls at which max range NPCs can shoot. But this is roughly twice the distance that I observed in-game :)
 		static const float maxTargetSize = 500;  // For reference: dragon ~ 700-1000 (depending on whether they spread their wings); giant ~ 180; human ~ 90; rabbit - 30
@@ -76,7 +75,7 @@ namespace NLA
 		}
 	};
 
-	namespace Options
+	namespace Settings
 	{
 		static float fCombatAimProjectileRandomOffset() {
 			auto settings = RE::GameSettingCollection::GetSingleton();
@@ -107,7 +106,7 @@ namespace NLA
 	{
 		RE::NiPoint3* GetTargetPoint(RE::NiPoint3* result, RE::TESObjectREFR* target, std::uint32_t bodyPart) {
 			using func_t = decltype(&GetTargetPoint);
-			REL::Relocation<func_t> func{ RELOCATION_ID(0, 47282) };
+			REL::Relocation<func_t> func{ RELOCATION_ID(46021, 47282) };
 			return func(result, target, bodyPart);
 		}
 
@@ -119,7 +118,7 @@ namespace NLA
 
 				// Prevent randomizing when the shot is locked to aim for the ground (this is logic from original func that we're hooking)
 				// This is the case, for example, for fireballs, which NPC aim at ground level due to AoE effect.
-				if (Options::fCombatAimProjectileGroundMinRadius() < controller->groundRadius && controller->unkB0 == -(std::numeric_limits<float>::max)()) {
+				if (Settings::fCombatAimProjectileGroundMinRadius() < controller->groundRadius && controller->unkB0 == -(std::numeric_limits<float>::max)()) {
 					return;
 				}
 				std::uint32_t bodyPart = dist(rnd);
@@ -130,7 +129,7 @@ namespace NLA
 
 					GetTargetPoint(&point, target, bodyPart);
 					RE::NiPoint3 offset = point - targetPoint;
-					auto         factor = offsetRND(rnd) * Options::fCombatRangedAimVariance();
+					auto         factor = offsetRND(rnd) * Settings::fCombatRangedAimVariance();
 					controller->aimOffset.x += offset.x * factor;
 					controller->aimOffset.y += offset.y * factor;
 					controller->aimOffset.z += offset.z * factor;
@@ -138,26 +137,30 @@ namespace NLA
 			}
 
 			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
+#ifndef NDEBUG
 				logger::info("{:*^50}", "Calculating Projectile Aim");
-
-				RE::Actor* attacker = nullptr;
-				if (attacker = controller->combatController->attackerHandle.get().get()) {
-					logger::info("{} is shooting at {}", attacker->GetName(), target->GetName());
-				} else {
+#endif
+				RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
+				if (!attacker) { // without an attacker we can't know the skill level.
 					func(controller, target);
 					return;
 				}
-
+					
+#ifndef NDEBUG
+				logger::info("{} is shooting at {}", attacker->GetDisplayFullName(), target->GetDisplayFullName());
+#endif
 				// TODO: Add option bForcedAimForAll to bypass this
 				if (!attacker->HasKeywordByEditorID("ActorTypeNPC") && !attacker->GetRace()->HasKeywordString("ActorTypeNPC")) {
-					logger::info("{} is not an NPC that can learn", attacker->GetName());
+#ifndef NDEBUG
+					logger::info("{} is not an NPC that can learn", attacker->GetDisplayFullName());
+#endif
 					func(controller, target);
 					return;
 				}
 
 				RE::ActorValue skillToUse = RE::ActorValue::kNone;
 
-				if (controller->projectile->IsArrow()) { // TODO: Add option bEnabledArcheryAim
+				if (controller->projectile->IsArrow()) { // TODO: Add option bEnableArcheryAim
 					skillToUse = RE::ActorValue::kArchery;
 				} else { // TODO: Add option bEnableMagicAim
 					if (auto caster = controller->mcaster) {
@@ -186,8 +189,8 @@ namespace NLA
 				// This emulates the original randomization of changing body parts.
 				PickAnotherBodyPart(controller, target);
 
-				float aimOffset = Options::fCombatAimProjectileRandomOffset();
-				float aimVariance = Options::fCombatRangedAimVariance();
+				float aimOffset = Settings::fCombatAimProjectileRandomOffset();
+				float aimVariance = Settings::fCombatRangedAimVariance();
 
 				// Check real distances and dragon size to set sensible maximums.
 				float distance = controller->attackerLocation.GetDistance(controller->aimPoint);
@@ -205,18 +208,20 @@ namespace NLA
 				controller->aimOffset.x += aimOffset * offsetFractions.x;
 				controller->aimOffset.y += aimOffset * offsetFractions.y;
 				controller->aimOffset.z += aimOffset * offsetFractions.z;
-
+#ifndef NDEBUG
 				logger::info("\tfCombatAimProjectileRandomOffset: {:.4f}", aimOffset);
 				logger::info("\tfCombatRangedAimVariance: {:.4f}", aimVariance);
-				logger::info("\tWidth of {}: {:.4f} (normalized: {:.4f}", target->GetName(), width, Calculations::NormalizedTargetSize(width));
-				logger::info("\tDistance to {}: {:.4f} (normalized: {:.4f})", target->GetName(), distance, Calculations::NormalizedDistance(distance));
-				logger::info("\t{} Skill of {}: {:.4f}", skillToUse, attacker->GetName(), attacker->GetActorValue(RE::ActorValue::kArchery));
+				logger::info("\tWidth of {}: {:.4f} (normalized: {:.4f}", target->GetDisplayFullName(), width, Calculations::NormalizedTargetSize(width));
+				logger::info("\tDistance to {}: {:.4f} (normalized: {:.4f})", target->GetDisplayFullName(), distance, Calculations::NormalizedDistance(distance));
+				logger::info("\t{} Skill of {}: {:.4f}", skillToUse, attacker->GetDisplayFullName(), attacker->GetActorValue(RE::ActorValue::kArchery));
 				logger::info("\taimOffset: {}", controller->aimOffset);
+#endif
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
+		// TODO: This effectively disables usage of fBowNPCSpreadAngle. Perhaps we could use it later.
 		/// Disable random offset for arrows.
 		struct WeapFireAmmoRangomizeArrowDirection
 		{
@@ -228,12 +233,12 @@ namespace NLA
 		};
 
 		inline void Install() {
-			const REL::Relocation<std::uintptr_t> update{ RELOCATION_ID(0, 44384) };
-			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(0, 18102) };
+			const REL::Relocation<std::uintptr_t> update{ RELOCATION_ID(43162, 44384) };
+			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
 
-			stl::write_thunk_call<CalculateAim>(update.address() + OFFSET(0, 0x97));
+			stl::write_thunk_call<CalculateAim>(update.address() + OFFSET(0x103, 0x97));
 
-			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0, 0xCD5));
+			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
 
 			logger::info("Installed Aiming hooks");
 		}
