@@ -3,4 +3,6 @@ set(headers ${headers}
 	include/PCH.h
 	include/CombatProjectileAimController.h
 	include/CombatAimController.h
+	include/Options.h
+	include/Calculations.h
 )

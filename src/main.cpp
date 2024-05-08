@@ -1,10 +1,12 @@
 #include "Hooks.h"
+#include "Options.h"
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 	switch (a_message->type) {
 	case SKSE::MessagingInterface::kPostLoad:
-		NLA::Install();	
+		NLA::Install();
+		NLA::Options::Load();
 		break;
 	default:
 		break;
