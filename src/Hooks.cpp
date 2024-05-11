@@ -73,12 +73,12 @@ namespace NLA
 				}
 
 				RE::ActorValue skillToUse = RE::ActorValue::kNone;
-
-				if (controller->projectile->IsArrow()) {
+	
+				if (controller->projectile->IsArrow()) { // This also works for bolts.
 					if (Options::General::archeryAiming)
 						skillToUse = RE::ActorValue::kArchery;
 				} else {
-					if (auto caster = controller->mcaster) {
+					if (auto caster = controller->mcaster) { // This also works for staffs.
 						if (auto spell = caster->currentSpell) {
 							if (auto effect = spell->GetCostliestEffectItem()) {
 								if (auto base = effect->baseEffect) {
@@ -128,7 +128,7 @@ namespace NLA
 				logger::info("\tfCombatRangedAimVariance: {:.4f}", aimVariance);
 				logger::info("\tWidth of {}: {:.4f} (normalized: {:.4f})", *target, width, Calculations::NormalizedTargetSize(width));
 				logger::info("\tDistance to {}: {:.4f} (normalized: {:.4f})", *target, distance, Calculations::NormalizedDistance(distance));
-				logger::info("\t{} Skill of {}: {:.4f}", skillToUse, *attacker, attacker->GetActorValue(RE::ActorValue::kArchery));
+				logger::info("\t{} Skill of {}: {:.4f}", skillToUse, *attacker, skill);
 				logger::info("\taimOffset: {}", controller->aimOffset);
 #endif
 			}
@@ -137,7 +137,7 @@ namespace NLA
 		};
 
 		// TODO: This effectively disables usage of fBowNPCSpreadAngle. Perhaps we could use it later.
-		/// Disable random offset for arrows.
+		/// Disable original random offset for arrows.
 		struct WeapFireAmmoRangomizeArrowDirection
 		{
 			static float thunk(float min, float max) {
@@ -145,7 +145,7 @@ namespace NLA
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
-		};
+		}; 
 
 		inline void Install() {
 			const REL::Relocation<std::uintptr_t> update{ RELOCATION_ID(43162, 44384) };

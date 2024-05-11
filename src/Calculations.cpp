@@ -53,8 +53,8 @@ namespace NLA::Calculations
 		auto mean = Mean(skillFactor, shotComplexity, variance);
 
 		std::uniform_real_distribution  combiner;
-		std::normal_distribution<float> distrLeft(-mean, variance);
-		std::normal_distribution<float> distrRight(mean, variance);
+		std::normal_distribution<float> distrLeft(-mean, deviation);
+		std::normal_distribution<float> distrRight(mean, deviation);
 
 		return {
 			skillConsistency * (combiner(rnd) > 0.5 ? distrLeft(rnd) : distrRight(rnd)),
