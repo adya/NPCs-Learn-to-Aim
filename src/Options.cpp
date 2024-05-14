@@ -1,53 +1,47 @@
 #include "Options.h"
+#include "CLIBUtil/string.hpp"
 
 namespace NLA::Options
 {
-	void Options::Load() {
+	void Load() {
 		logger::info("{:*^30}", "OPTIONS");
 		std::filesystem::path options = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
 		CSimpleIniA           ini{};
 		ini.SetUnicode();
 		if (ini.LoadFile(options.string().c_str()) >= 0) {
-			General::archeryAiming = ini.GetBoolValue("General", "bEnableArcheryAim", General::archeryAiming);
-			General::magicAiming = ini.GetBoolValue("General", "bEnableMagicAim", General::magicAiming);
-			General::forceAimForAll = ini.GetBoolValue("General", "bForceAimForAll", General::forceAimForAll);
+			General::bowAiming = ini.GetBoolValue("General", "bEnableBowAim", General::bowAiming);
+			General::crossbowAiming = ini.GetBoolValue("General", "bEnableCrossbowAim", General::crossbowAiming);
+			General::spellAiming = ini.GetBoolValue("General", "bEnableSpellAim", General::spellAiming);
+			General::staffAiming = ini.GetBoolValue("General", "bEnableStaffAim", General::staffAiming);
 
-			Complexity::useComplexity = ini.GetBoolValue("ShotComplexity", "bUseShotComplexity", Complexity::useComplexity);
-			float distance = ini.GetDoubleValue("ShotComplexity", "fMaxDistance", Complexity::maxDistance);
-			if (distance > 0.0f)
-				Complexity::maxDistance = distance;
-			else {
-				logger::warn("fMaxDistance must be greater than 0. Using default value.");
-			}
-
-			float targetSize = ini.GetDoubleValue("ShotComplexity", "fMaxTargetSize", Complexity::maxTargetSize);
-			if (targetSize > 0.0f)
-				Complexity::maxTargetSize = targetSize;
-			else {
-				logger::warn("fMaxTargetSize must be greater than 0. Using default value.");
-			}
+			NPC::excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
+			NPC::includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
+			
 		} else {
 			logger::info(R"(Data\SKSE\Plugins\NPCsLearnToAim.ini not found. Default options will be used.)");
 			logger::info("");
 		}
 
 		logger::info("General:");
-		logger::info("\tArchers {} learn to aim", General::archeryAiming ? "will" : "won't");
-		logger::info("\tMages {} learn to aim", General::magicAiming ? "will" : "won't");
+		logger::info("\tArchers {} learn to aim", General::bowAiming ? "will" : "won't");
+		logger::info("\tCrossbowmen {} learn to aim", General::crossbowAiming ? "will" : "won't");
+		logger::info("\tMages {} learn to aim spells", General::spellAiming ? "will" : "won't");
+		logger::info("\tMages {} learn to aim staffs", General::staffAiming ? "will" : "won't");
 
-		if (General::forceAimForAll) {
-			logger::info("\tAll NPCs will learn to aim (except those marked with NLA_Ignored keyword)");
+		logger::info("");
+		logger::info("NPC:");
+		if (NPC::excludeKeywords.empty() && NPC::includeKeywords.empty()) {
+			logger::info("\tAll NPCs will learn to aim");
 		} else {
-			logger::info("\tOnly ActorTypeNPC will learn to aim (except those marked with NLA_Ignored keyword)");
+			logger::info("\tOnly NPCs that have at least one of these keywords: [{}] and none of these: [{}] will learn to aim", fmt::join(NPC::includeKeywords, ", "), fmt::join(NPC::excludeKeywords, ", "));
+		}
+	}
+
+	bool NPC::ShouldLearn(RE::Actor* a_actor) {
+		if (!a_actor->HasAnyKeywordByEditorID(includeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(includeKeywords))) {
+			return false;
 		}
 
-		logger::info("Shot Complexity:");
-		if (Complexity::useComplexity) {
-			logger::info("\tShots complexity will be based on distance to the target and its size.");
-			logger::info("\tMax Distance: {}", Complexity::maxDistance);
-			logger::info("\tMax Target Size: {}", Complexity::maxTargetSize);
-		} else {
-			logger::info("\tAll shots will be trivial :) only NPC's skill determines their accuracy.");
-		}
+		return !a_actor->HasAnyKeywordByEditorID(excludeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(excludeKeywords));
 	}
 }

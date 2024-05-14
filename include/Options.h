@@ -25,23 +25,41 @@ namespace NLA::Settings
 		}
 		return 128.0f;
 	}
+
+	static float fBowNPCSpreadAngle() {
+		auto settings = RE::GameSettingCollection::GetSingleton();
+		if (auto setting = settings->GetSetting("fBowNPCSpreadAngle")) {
+			return setting->data.f;
+		}
+		return 4.0f;
+	}
 }
 
 namespace NLA::Options
 {
 	namespace General
 	{
-		inline bool magicAiming = true;
-		inline bool archeryAiming = true;
-
-		inline bool forceAimForAll = false;
+		inline bool spellAiming = true;
+		inline bool staffAiming = true;
+		inline bool bowAiming = true;
+		inline bool crossbowAiming = true;
 	}
 
-	namespace Complexity
+	namespace NPC
 	{
-		inline bool useComplexity = true;
-		inline float maxDistance = 3072; // I didn't find the actual setting that controls at which max range NPCs can shoot. But this is roughly twice the distance that I observed in-game :)
-		inline float maxTargetSize = 500; // For reference: dragon ~ 700-1000 (depending on whether they spread their wings); giant ~ 180; human ~ 90; rabbit - 30
+		inline std::vector<std::string> excludeKeywords{};
+		inline std::vector<std::string> includeKeywords{ "ActorTypeNPC" };
+
+		bool ShouldLearn(RE::Actor* a_actor);
+	}
+
+	namespace Skills
+	{
+		inline float crossbowSkillMultiplier = 1.25f;  // make crossbows slightly less demanding.
+
+		inline float staffSkillMultiplier = 1.25f;  // make staffs slightly less demanding.
+
+		inline bool staffsUseEnchantingSkill = false;
 	}
 
 	void Load();

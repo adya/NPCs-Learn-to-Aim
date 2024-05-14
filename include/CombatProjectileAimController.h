@@ -1,16 +1,11 @@
 #pragma once
 
-#include "RE/A/AITimer.h"
 #include "RE/B/BSCoreTypes.h"
-#include "RE/B/BSPointerHandle.h"
 #include "CombatAimController.h"
 #include "RE/N/NiPoint3.h"
 
 namespace RE
 {
-	class CombatController;
-	class MagicCaster;
-
 	class CombatProjectileAimController : public CombatAimController
 	{
 	public:
