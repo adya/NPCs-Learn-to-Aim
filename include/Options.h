@@ -61,6 +61,10 @@ namespace NLA::Options
 
 		inline bool staffsUseEnchantingSkill = false;
 	}
-
+#ifndef NDEBUG
+	void Load(bool silent = false);
+#else
+#define silent false
 	void Load();
-}
+#endif
+	}
