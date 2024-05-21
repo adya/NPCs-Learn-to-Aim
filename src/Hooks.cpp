@@ -259,9 +259,6 @@ namespace NLA
 #endif
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
 				if (auto skillUsage = SkillUsage(launchData.spell, attacker); skillUsage) {
-					if (Options::Player.supressAutoaimIn3rdPerson && attacker && attacker->IsPlayerRef()) {
-						launchData.autoAim = false;
-					}
 					AddRandomSpread(launchData, skillUsage);
 				}
 				func(projectile, launchData);
@@ -278,10 +275,7 @@ namespace NLA
 #endif
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
 				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker); skillUsage) {
-					if (skillUsage.weaponType != kCrossbow || !Options::For(attacker).crossbowsShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
-						if (Options::Player.supressAutoaimIn3rdPerson && attacker && attacker->IsPlayerRef()) {
-							launchData.autoAim = false;
-						}
+					if (skillUsage.weaponType != kCrossbow || !Options::For(attacker).crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
 						AddRandomSpread(launchData, skillUsage);	
 					}
 				}
@@ -315,7 +309,7 @@ namespace NLA
 				}
 
 				if (skillUsage) {
-					if (skillUsage.weaponType != kCrossbow || !Options::Player.crossbowsShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
+					if (skillUsage.weaponType != kCrossbow || !Options::Player.crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
 						*angleZ -= tiltZ;
 						*angleX -= tiltX;
 						AddRandomSpread(angleX, angleZ, player, skillUsage);
@@ -336,6 +330,7 @@ namespace NLA
 			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(0, 44200) };
 
 			stl::write_thunk_call<PlayerAutoAim>(autoAim.address() + OFFSET(0x0, 0x201));
+			logger::info("Installed Player Auto-Aiming logic");
 
 			stl::write_thunk_call<CalculateAim>(combatControllerUpdate.address() + OFFSET(0x103, 0x97));
 			logger::info("Installed Aiming logic");

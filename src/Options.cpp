@@ -3,7 +3,7 @@
 
 namespace NLA::Options
 {
-	void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, float mult) {
+	inline void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, float mult) {
 		if (mult > 1) {
 			auto percent = (mult - 1) * 100;
 			logger::info("\t{} are {:.2f}% easier to use for {}", weaponName, percent, actor);
@@ -15,6 +15,41 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogCrossbowsShootStraight(std::string_view actor, bool crossbowsShootStraight) {
+		if (crossbowsShootStraight) {
+			logger::info("\tCrossbows help {} shoot straight", actor);
+		}
+		else {
+			logger::info("\tCrossbows require {} to know how to use it", actor);
+		}
+	}
+
+	inline void LogStavesUseEnchantingSkill(std::string_view actor, bool stavesUseEnchantingSkill) {
+		if (stavesUseEnchantingSkill) {
+			logger::info("\t{}'s accuracy with staves is based on Enchanting skill", actor);
+		}
+		else {
+			logger::info("\t{}'s accuracy with staves is based on {}'s skill in spell's magic school", actor);
+		}
+	}
+
+	inline void LogSpellsUseHighestMagicSkill(std::string_view actor, bool spellsUseHighestMagicSkill, bool stavesUseEnchantingSkill) {
+		if (spellsUseHighestMagicSkill) {
+			logger::info("\t{}'s accuracy with spells is based on the highest {}'s magic skill regardless of spell", actor);
+		}
+		else {
+			logger::info("\t{}'s accuracy with spells is based on {}'s skill in spell's magic school", actor);
+		}
+	}
+
+	inline void LogConcentrationSpellsRequireContinuousAim(std::string_view actor, bool concetrationSpellsRequireContinuousAim) {
+		if (concetrationSpellsRequireContinuousAim) {
+			logger::info("\t{} must aim continuously to maintain concentration spells", actor);
+		}
+		else {
+			logger::info("\t{} will always hit with concentration spells", actor);
+		}
+	}
 
 	void Load() {
 		logger::info("{:*^40}", "OPTIONS");
@@ -34,6 +69,12 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
+
+		logger::info("");
+		LogCrossbowsShootStraight("NPCs", NPC.crossbowsAlwaysShootStraight);
+		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
+		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
+		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
 
 		logger::info("");
 		LogSkillMultiplier("NPCs", "Bows", NPC.bowSkillMultiplier);
@@ -66,6 +107,11 @@ namespace NLA::Options
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
 		
 		logger::info("");
+		LogCrossbowsShootStraight("Player", Player.crossbowsAlwaysShootStraight);
+		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
+		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
+
+		logger::info("");
 		LogSkillMultiplier("Player", "Bows", Player.bowSkillMultiplier);
 		LogSkillMultiplier("Player", "Crossbows", Player.crossbowSkillMultiplier);
 		LogSkillMultiplier("Player", "Spells", Player.spellSkillMultiplier);
@@ -97,7 +143,7 @@ namespace NLA::Options
 		spellSkillMultiplier = ini.GetDoubleValue(a_section, "fSpellSkillMultiplier", spellSkillMultiplier);
 		staffSkillMultiplier = ini.GetDoubleValue(a_section, "fStaffSkillMultiplier", staffSkillMultiplier);
 
-		crossbowsShootStraight = ini.GetBoolValue(a_section, "bCrossbowsShootStraight", crossbowsShootStraight);
+		crossbowsAlwaysShootStraight = ini.GetBoolValue(a_section, "bCrossbowsAlwaysShootStraight", crossbowsAlwaysShootStraight);
 
 		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", stavesUseEnchantingSkill);
 

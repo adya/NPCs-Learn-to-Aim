@@ -11,10 +11,10 @@ namespace NLA::Options
 
 		float bowSkillMultiplier = 1.0f;       // bows are the standard.
 		float crossbowSkillMultiplier = 0.5f;  // crossbows are harder to aim, but shoot directly at the aim point, so overall easier to use.
-		float spellSkillMultiplier = 1.0f;     // spells are the standard.
+		float spellSkillMultiplier = 1.1f;     // spells are the standard.
 		float staffSkillMultiplier = 0.85f;    // staffs are a bit harder to aim properly.
 
-		bool crossbowsShootStraight = true;  // if true, crossbows launches bolts in a straight line without random spread.
+		bool crossbowsAlwaysShootStraight = true;  // if true, crossbows launches bolts in a straight line without random spread.
 
 		bool stavesUseEnchantingSkill = false;  // if true, staves use the enchanting skill instead of the spell's primary effect's school skill.
 
