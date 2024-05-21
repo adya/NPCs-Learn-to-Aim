@@ -8,98 +8,175 @@ namespace NLA
 {
 	std::default_random_engine rnd{};
 
+	enum WeaponType : std::uint8_t
+	{
+		kNone = 0,
+		kBow = 1,
+		kCrossbow = 2,
+		kSpell = 3,
+		kStaff = 4
+	};
+
 	struct SkillUsage
 	{
 		RE::ActorValue skill;
 		float          multiplier;
+		WeaponType     weaponType;
 
 		SkillUsage() :
-			skill(RE::ActorValue::kNone), multiplier(0) {}
+			skill(RE::ActorValue::kNone), multiplier(0), weaponType(kNone) {}
 
-		SkillUsage(RE::ActorValue a_skill, float a_multiplier) :
-			skill(a_skill), multiplier(a_multiplier) {}
+		SkillUsage(RE::ActorValue a_skill, float a_multiplier, WeaponType weaponType) :
+			skill(a_skill), multiplier(a_multiplier), weaponType(weaponType) {}
 
-		SkillUsage(const RE::TESObjectWEAP* weapon) :
+		SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker) :
 			SkillUsage() {
 			if (!weapon)
 				return;
+			if (!Options::NPC.ShouldLearn(attacker))
+				return;
+
 			if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
-				if (Options::General::crossbowAiming) {
+				weaponType = kCrossbow;
+				if (Options::For(attacker).crossbowAiming) {
 					skill = RE::ActorValue::kArchery;
-					multiplier = Options::Skills::crossbowSkillMultiplier;
+					multiplier = Options::For(attacker).crossbowSkillMultiplier;
 				}
-			} else if (Options::General::bowAiming) {
-				skill = RE::ActorValue::kArchery;
-				multiplier = 1;
+			} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
+				weaponType = kBow;
+				if (Options::For(attacker).bowAiming) {
+					skill = RE::ActorValue::kArchery;
+					multiplier = Options::For(attacker).bowSkillMultiplier;
+				}
 			}
 		}
 
-		SkillUsage(const RE::MagicItem* spell) :
+		SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker) :
 			SkillUsage() {
 			if (!spell)
 				return;
-			RE::ActorValue effectSkill = RE::ActorValue::kNone;
-			if (auto effect = spell->GetCostliestEffectItem()) {
-				if (auto base = effect->baseEffect) {
-					effectSkill = base->GetMagickSkill();
+			if (!Options::NPC.ShouldLearn(attacker))
+				return;
+
+			RE::ActorValue magicSkill = RE::ActorValue::kNone;
+
+			if (attacker && Options::For(attacker).spellsUseHighestMagicSkill) {
+				std::array<RE::ActorValue, 5> properties = { RE::ActorValue::kAlteration, RE::ActorValue::kConjuration, RE::ActorValue::kDestruction, RE::ActorValue::kIllusion, RE::ActorValue::kRestoration };
+
+				auto highestMagicSkill = std::ranges::max_element(properties, [&attacker](RE::ActorValue a, RE::ActorValue b) {
+					return attacker->GetActorValue(a) < attacker->GetActorValue(b);
+				});
+				magicSkill = *highestMagicSkill;
+			}
+
+			if (magicSkill == RE::ActorValue::kNone) {
+				if (auto effect = spell->GetCostliestEffectItem()) {
+					if (auto base = effect->baseEffect) {
+						magicSkill = base->GetMagickSkill();
+					}
 				}
 			}
-			if (spell->GetSpellType() == RE::MagicSystem::SpellType::kStaffEnchantment) {
-				if (Options::General::staffAiming) {
-					skill = Options::Skills::staffsUseEnchantingSkill ? RE::ActorValue::kEnchanting : effectSkill;
-					multiplier = Options::Skills::staffSkillMultiplier;
+
+			if (Options::For(attacker).concetrationSpellsRequireContinuousAim && spell->GetCastingType() != RE::MagicSystem::CastingType::kConcentration) {
+				return;
+			}
+
+			switch (spell->GetSpellType()) {
+			case RE::MagicSystem::SpellType::kSpell:
+			case RE::MagicSystem::SpellType::kLeveledSpell:
+				weaponType = kSpell;
+				if (Options::For(attacker).spellAiming) {
+					skill = magicSkill;
+					multiplier = Options::For(attacker).spellSkillMultiplier;
 				}
-			} else if (Options::General::spellAiming) {
-				skill = effectSkill;
-				multiplier = 1;
+				break;
+			case RE::MagicSystem::SpellType::kStaffEnchantment:
+				weaponType = kStaff;
+				if (Options::For(attacker).staffAiming) {
+					skill = Options::For(attacker).stavesUseEnchantingSkill ? RE::ActorValue::kEnchanting : magicSkill;
+					multiplier = Options::For(attacker).staffSkillMultiplier;
+				}
+				break;
+			default:
+				break;
 			}
 		}
 
+		// When picking a skill failed either due to combination of options or invalid input,
+		// we return false to indicate that there is no SkillUsage involved in the shot :)
 		operator bool() const {
 			return skill != RE::ActorValue::kNone;
 		}
-
+#ifndef NDEBUG
 		float OriginalSkillFactor(RE::Actor* actor) const {
-			if (!actor || !this)
+			if (!actor || this->skill == RE::ActorValue::kNone)
 				return 1.0f;
-			const auto skill = actor->GetActorValue(this->skill) * this->multiplier;
+			const auto skill = EffectiveSkill(actor);
 			return (std::min)((std::max)((100.0f - skill) * 0.01f, 0.0f), 1.0f);
 		}
-
+#endif
 		float SkillFactor(RE::Actor* actor) const {
-			if (!actor)
+			if (!actor || this->skill == RE::ActorValue::kNone)
 				return 1.0f;
-			const auto skill = actor->GetActorValue(this->skill) * this->multiplier;
-			return std::exp(0.01 * (50 - skill));  // 50 here is the median at which aiming uses exact values of related settings.
+			const auto skill = EffectiveSkill(actor);
+			return std::exp(0.025f * (10 - skill));
+		}
+
+		inline float Skill(RE::Actor* actor) const {
+			if (!actor || skill == RE::ActorValue::kNone)
+				return 0.0f;
+			return actor->GetActorValue(skill);
+		}
+
+		inline float EffectiveSkill(RE::Actor* actor) const {
+			return Skill(actor) * multiplier;
 		}
 	};
 
-	void SetAngles(RE::Projectile::LaunchData& launchData, const SkillUsage& skillUsage) {
-		if (!launchData.shooter)
+	void AddRandomSpread(float* angleX, float* angleZ, RE::Actor* attacker, const SkillUsage& skillUsage) {
+		if (!attacker)
 			return;
 
 		constexpr float toRadians = std::numbers::pi / 180.0f;
-		float           skillFactor = skillUsage.SkillFactor(launchData.shooter->As<RE::Actor>());
 
-		// TODO: Consider using normal distribution for a more consistent decrease of spread with increasing skill.
-		std::uniform_real_distribution<float> spreadRND(0, skillFactor * Settings::fBowNPCSpreadAngle() * toRadians);  // to radians
+		
+		float skillFactor = skillUsage.SkillFactor(attacker);
+		float maxSpread = skillFactor * Settings::fBowNPCSpreadAngle() * toRadians;
+#ifndef NDEBUG
+		float originalSkillFactor = skillUsage.OriginalSkillFactor(attacker);
+#endif
+
 		std::uniform_real_distribution<float> angleRND(0, 2 * std::numbers::pi);
 
-		float spread = spreadRND(rnd);
-		float angle = angleRND(rnd);
+		//std::uniform_real_distribution<float> spreadRND(0,maxSpread);
+		std::normal_distribution<float> spreadRND(0, 0.7f * maxSpread);
+
+		float spread = std::abs(spreadRND(rnd));
+		float angle = angleRND(rnd);  // pick a random direction on a circle.
 
 #ifndef NDEBUG
-		auto originalAngleX = launchData.angleX;
-		auto originalAngleZ = launchData.angleZ;
+		auto originalAngleX = *angleX;
+		auto originalAngleZ = *angleZ;
 #endif
-		launchData.angleX += std::sin(angle) * spread;
-		launchData.angleZ += std::cos(angle) * spread;
+		*angleX += std::sin(angle) * spread;  // add random deviation to the launch angles.
+		*angleZ += std::cos(angle) * spread;
 #ifndef NDEBUG
-		logger::info("Skill factor: {:.4f}", skillFactor);
-		logger::info("Spread: {:.4f}", spread);
-		logger::info("AngleX: {:.4f} ({:.4f})", launchData.angleX, originalAngleX);
-		logger::info("AngleZ: {:.4f} ({:.4f})", launchData.angleZ, originalAngleZ);
+		logger::info("");
+		logger::info("Shooting:");
+		logger::info("\tSkill: {} (base: {})", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker));
+		logger::info("\tSkill factor: {:.4f}", skillFactor);
+		logger::info("\tSpread: {:.4f} (max: {:.4f}, vanilla max: {:.4f})", spread, maxSpread, originalSkillFactor * Settings::fBowNPCSpreadAngle() * toRadians);
+		logger::info("\tAngleX: {:.4f} ({:.4f})", *angleX, originalAngleX);
+		logger::info("\tAngleZ: {:.4f} ({:.4f})", *angleZ, originalAngleZ);
 #endif
+	}
+
+	void AddRandomSpread(RE::Projectile::LaunchData& launchData, const SkillUsage& skillUsage) {
+		if (!launchData.shooter)
+			return;
+
+		auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
+		AddRandomSpread(&launchData.angleX, &launchData.angleZ, attacker, skillUsage);
 	}
 
 	namespace Hooks
@@ -112,7 +189,7 @@ namespace NLA
 		{
 			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
 #ifndef NDEBUG
-				logger::info("Calculating NPC's Aim...");
+				//logger::info("Calculating NPC's Aim...");
 #endif
 				RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
 				if (!attacker) {  // without an attacker we can't know the skill level.
@@ -121,11 +198,11 @@ namespace NLA
 				}
 
 #ifndef NDEBUG
-				logger::info("\t{} is shooting at {}", *attacker, *target);
+				//logger::info("\t{} is shooting at {}", *attacker, *target);
 #endif
-				if (!Options::NPC::ShouldLearn(attacker)) {
+				if (!Options::NPC.ShouldLearn(attacker)) {
 #ifndef NDEBUG
-					logger::info("\t{} is not an NPC that can learn", *attacker);
+					//logger::info("\t{} is not an NPC that can learn", *attacker);
 #endif
 					func(controller, target);
 					return;
@@ -135,12 +212,11 @@ namespace NLA
 
 				if (controller->projectile->IsArrow()) {  // This also works for bolts.
 					if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster)) {
-						skillUsage = SkillUsage(weapon);
+						skillUsage = SkillUsage(weapon, attacker);
 					}
-				} else {
-					if (const auto caster = controller->mcaster) {  // This also works for staffs.
-						skillUsage = SkillUsage(caster->currentSpell);
-					}
+				}
+				else if (const auto caster = controller->mcaster) {  // This also works for staffs.
+					skillUsage = SkillUsage(caster->currentSpell, attacker);
 				}
 
 				// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
@@ -148,16 +224,15 @@ namespace NLA
 				// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
 				if (skillUsage) {
 					float aimVariance = Settings::fCombatRangedAimVariance();
-					controller->aimVariance = aimVariance * skillUsage.SkillFactor(attacker);
+					controller->aimVariance = 2.0f * aimVariance * skillUsage.SkillFactor(attacker);
 #ifndef NDEBUG
 					float aimOffset = Settings::fCombatAimProjectileRandomOffset();
-					logger::info("\tfCombatAimProjectileRandomOffset: {:.4f}", aimOffset);
-					logger::info("\tfCombatRangedAimVariance: {:.4f}", aimVariance);
-					logger::info("\t{} Skill of {}: {:.4f}", skillUsage.skill, *attacker, attacker->GetActorValue(skillUsage.skill));
-					logger::info("\taimOffset: {}", controller->aimOffset);
+					logger::info("Aiming:");
+					logger::info("\tSkill: {} (base: {})", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker));
+					logger::info("\tVariance: {:.4f} (base: {:.4f})", controller->aimVariance, aimVariance);
+					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->aimOffset, aimOffset, aimOffset * controller->aimVariance);
 #endif
 				}
-
 				func(controller, target);
 			}
 
@@ -180,10 +255,14 @@ namespace NLA
 		{
 			static void thunk(RE::ProjectileHandle projectile, RE::Projectile::LaunchData& launchData) {
 #ifndef NDEBUG
-				Options::Load(true);
+				Options::Load();
 #endif
-				if (auto skillUsage = SkillUsage(launchData.spell); skillUsage) {
-					SetAngles(launchData, skillUsage);
+				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
+				if (auto skillUsage = SkillUsage(launchData.spell, attacker); skillUsage) {
+					if (Options::Player.supressAutoaimIn3rdPerson && attacker && attacker->IsPlayerRef()) {
+						launchData.autoAim = false;
+					}
+					AddRandomSpread(launchData, skillUsage);
 				}
 				func(projectile, launchData);
 			}
@@ -195,10 +274,16 @@ namespace NLA
 		{
 			static void thunk(RE::ProjectileHandle projectile, RE::Projectile::LaunchData& launchData) {
 #ifndef NDEBUG
-				Options::Load(true);
+				Options::Load();
 #endif
-				if (auto skillUsage = SkillUsage(launchData.weaponSource); skillUsage) {
-					SetAngles(launchData, skillUsage);
+				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
+				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker); skillUsage) {
+					if (skillUsage.weaponType != kCrossbow || !Options::For(attacker).crossbowsShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
+						if (Options::Player.supressAutoaimIn3rdPerson && attacker && attacker->IsPlayerRef()) {
+							launchData.autoAim = false;
+						}
+						AddRandomSpread(launchData, skillUsage);	
+					}
 				}
 				func(projectile, launchData);
 			}
@@ -206,13 +291,54 @@ namespace NLA
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
+		struct PlayerAimProjectile
+		{
+			static void thunk(RE::Projectile* projectile, std::uint64_t a2, double a3) {
+				logger::info("Projectile velocity before: {}", projectile->linearVelocity);
+				func(projectile, a2, a3);
+				logger::info("Projectile velocity after: {}", projectile->linearVelocity);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
+		struct PlayerAutoAim
+		{
+			static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {
+				func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);
+
+				SkillUsage skillUsage{};
+				if (auto spell = projectile->spell) {
+					skillUsage = SkillUsage(spell, player);
+				} else if (auto weapon = projectile->weaponSource) {
+					skillUsage = SkillUsage(weapon, player);
+				}
+
+				if (skillUsage) {
+					if (skillUsage.weaponType != kCrossbow || !Options::Player.crossbowsShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
+						*angleZ -= tiltZ;
+						*angleX -= tiltX;
+						AddRandomSpread(angleX, angleZ, player, skillUsage);
+						*angleZ += tiltZ;
+						*angleX += tiltX;
+					}
+				}
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
 		void Install() {
-			const REL::Relocation<std::uintptr_t> update{ RELOCATION_ID(43162, 44384) };
+			const REL::Relocation<std::uintptr_t> combatControllerUpdate{ RELOCATION_ID(43162, 44384) };
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
 			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(0, 34452) };
 
-			stl::write_thunk_call<CalculateAim>(update.address() + OFFSET(0x103, 0x97));
-			logger::info("Installed Aiming hooks");
+			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(0, 44200) };
+
+			stl::write_thunk_call<PlayerAutoAim>(autoAim.address() + OFFSET(0x0, 0x201));
+
+			stl::write_thunk_call<CalculateAim>(combatControllerUpdate.address() + OFFSET(0x103, 0x97));
+			logger::info("Installed Aiming logic");
 
 			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
 			logger::info("Disabled default arrow deviation logic");

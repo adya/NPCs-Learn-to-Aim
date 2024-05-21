@@ -1,5 +1,62 @@
 #pragma once
 
+namespace NLA::Options
+{
+	struct Config
+	{
+		bool spellAiming = true;
+		bool staffAiming = true;
+		bool bowAiming = true;
+		bool crossbowAiming = true;
+
+		float bowSkillMultiplier = 1.0f;       // bows are the standard.
+		float crossbowSkillMultiplier = 0.5f;  // crossbows are harder to aim, but shoot directly at the aim point, so overall easier to use.
+		float spellSkillMultiplier = 1.0f;     // spells are the standard.
+		float staffSkillMultiplier = 0.85f;    // staffs are a bit harder to aim properly.
+
+		bool crossbowsShootStraight = true;  // if true, crossbows launches bolts in a straight line without random spread.
+
+		bool stavesUseEnchantingSkill = false;  // if true, staves use the enchanting skill instead of the spell's primary effect's school skill.
+
+		bool spellsUseHighestMagicSkill = false;  // if true, the highest NPC's magic skill is used to aim spells, instead of the spell's primary effect's school skill.
+
+		bool concetrationSpellsRequireContinuousAim = true;  // if true, concentration spells require continuous aiming, breaking aim point will interrupt the spell. Only works for NPCs.
+
+		Config() = default;
+		Config(CSimpleIniA& ini, const char* a_section);
+	};
+
+	struct PlayerConfig : Config
+	{
+		PlayerConfig() = default;
+		PlayerConfig(CSimpleIniA& ini);
+	};
+
+	struct NPCConfig : Config
+	{
+		std::vector<std::string> excludeKeywords{};
+		std::vector<std::string> includeKeywords{ "ActorTypeNPC" };
+
+		NPCConfig() = default;
+		NPCConfig(CSimpleIniA& ini);
+
+		bool ShouldLearn(RE::Actor* a_actor);
+	};
+
+	inline NPCConfig    NPC;
+	inline PlayerConfig Player;
+
+	/// Returns configuration for given actor. Note, that only common configuration is returned.
+	inline const Config& For(const RE::Actor* actor) {
+		if (actor && actor->IsPlayerRef()) {
+			return Player;
+		} else {
+			return NPC;
+		}
+	}
+	void Load();
+}
+
 namespace NLA::Settings
 {
 	static float fCombatAimProjectileRandomOffset() {
@@ -34,37 +91,3 @@ namespace NLA::Settings
 		return 4.0f;
 	}
 }
-
-namespace NLA::Options
-{
-	namespace General
-	{
-		inline bool spellAiming = true;
-		inline bool staffAiming = true;
-		inline bool bowAiming = true;
-		inline bool crossbowAiming = true;
-	}
-
-	namespace NPC
-	{
-		inline std::vector<std::string> excludeKeywords{};
-		inline std::vector<std::string> includeKeywords{ "ActorTypeNPC" };
-
-		bool ShouldLearn(RE::Actor* a_actor);
-	}
-
-	namespace Skills
-	{
-		inline float crossbowSkillMultiplier = 1.25f;  // make crossbows slightly less demanding.
-
-		inline float staffSkillMultiplier = 1.25f;  // make staffs slightly less demanding.
-
-		inline bool staffsUseEnchantingSkill = false;
-	}
-#ifndef NDEBUG
-	void Load(bool silent = false);
-#else
-#define silent false
-	void Load();
-#endif
-	}
