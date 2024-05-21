@@ -77,7 +77,7 @@ namespace NLA
 				}
 			}
 
-			if (Options::For(attacker).concetrationSpellsRequireContinuousAim && spell->GetCastingType() != RE::MagicSystem::CastingType::kConcentration) {
+			if (!Options::For(attacker).concetrationSpellsRequireContinuousAim && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration) {
 				return;
 			}
 
