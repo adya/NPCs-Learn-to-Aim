@@ -253,7 +253,7 @@ namespace NLA
 
 		struct LaunchSpellProjectile
 		{
-			static void thunk(RE::ProjectileHandle projectile, RE::Projectile::LaunchData& launchData) {
+			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 #ifndef NDEBUG
 				Options::Load();
 #endif
@@ -269,7 +269,7 @@ namespace NLA
 
 		struct WeaponFireProjectile
 		{
-			static void thunk(RE::ProjectileHandle projectile, RE::Projectile::LaunchData& launchData) {
+			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 #ifndef NDEBUG
 				Options::Load();
 #endif
@@ -280,17 +280,6 @@ namespace NLA
 					}
 				}
 				func(projectile, launchData);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct PlayerAimProjectile
-		{
-			static void thunk(RE::Projectile* projectile, std::uint64_t a2, double a3) {
-				logger::info("Projectile velocity before: {}", projectile->linearVelocity);
-				func(projectile, a2, a3);
-				logger::info("Projectile velocity after: {}", projectile->linearVelocity);
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
@@ -325,23 +314,22 @@ namespace NLA
 		void Install() {
 			const REL::Relocation<std::uintptr_t> combatControllerUpdate{ RELOCATION_ID(43162, 44384) };
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
-			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(0, 34452) };
-
-			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(0, 44200) };
-
-			stl::write_thunk_call<PlayerAutoAim>(autoAim.address() + OFFSET(0x0, 0x201));
-			logger::info("Installed Player Auto-Aiming logic");
+			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(33672, 34452) };
+			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(43009, 44200) };
 
 			stl::write_thunk_call<CalculateAim>(combatControllerUpdate.address() + OFFSET(0x103, 0x97));
 			logger::info("Installed Aiming logic");
 
+			stl::write_thunk_call<PlayerAutoAim>(autoAim.address() + OFFSET(0x201, 0x201));
+			logger::info("Installed Player Auto-Aiming logic");
+
 			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
 			logger::info("Disabled default arrow deviation logic");
 
-			stl::write_thunk_call<WeaponFireProjectile>(weaponFire.address() + OFFSET(0, 0xE60));
+			stl::write_thunk_call<WeaponFireProjectile>(weaponFire.address() + OFFSET(0xE82, 0xE60));
 			logger::info("Installed modded arrow deviation logic");
 
-			stl::write_thunk_call<LaunchSpellProjectile>(launchSpell.address() + OFFSET(0, 0x354));
+			stl::write_thunk_call<LaunchSpellProjectile>(launchSpell.address() + OFFSET(0x377, 0x354));
 			logger::info("Installed spells deviation logic");
 		}
 	}

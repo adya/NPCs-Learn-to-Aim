@@ -4,5 +4,4 @@ set(headers ${headers}
 	include/CombatProjectileAimController.h
 	include/CombatAimController.h
 	include/Options.h
-	include/Calculations.h
 )

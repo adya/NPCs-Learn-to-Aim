@@ -29,16 +29,16 @@ namespace NLA::Options
 			logger::info("\t{}'s accuracy with staves is based on Enchanting skill", actor);
 		}
 		else {
-			logger::info("\t{}'s accuracy with staves is based on {}'s skill in spell's magic school", actor);
+			logger::info("\t{}'s accuracy with staves is based on {}'s skill in spell's magic school", actor, actor);
 		}
 	}
 
 	inline void LogSpellsUseHighestMagicSkill(std::string_view actor, bool spellsUseHighestMagicSkill, bool stavesUseEnchantingSkill) {
 		if (spellsUseHighestMagicSkill) {
-			logger::info("\t{}'s accuracy with spells is based on the highest {}'s magic skill regardless of spell", actor);
+			logger::info("\t{}'s accuracy with spells is based on the highest {}'s magic skill regardless of spell", actor, actor);
 		}
 		else {
-			logger::info("\t{}'s accuracy with spells is based on {}'s skill in spell's magic school", actor);
+			logger::info("\t{}'s accuracy with spells is based on {}'s skill in spell's magic school", actor, actor);
 		}
 	}
 

@@ -3,5 +3,4 @@ set(sources ${sources}
 	src/main.cpp
 	src/Hooks.cpp
 	src/Options.cpp
-	src/Calculations.cpp
 )
