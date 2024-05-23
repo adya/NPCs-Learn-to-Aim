@@ -77,14 +77,6 @@ namespace NLA::Settings
 		return 0.9f;
 	}
 
-	static float fCombatAimProjectileGroundMinRadius() {
-		auto settings = RE::GameSettingCollection::GetSingleton();
-		if (auto setting = settings->GetSetting("fCombatAimProjectileGroundMinRadius")) {
-			return setting->data.f;
-		}
-		return 128.0f;
-	}
-
 	static float fBowNPCSpreadAngle() {
 		auto settings = RE::GameSettingCollection::GetSingleton();
 		if (auto setting = settings->GetSetting("fBowNPCSpreadAngle")) {

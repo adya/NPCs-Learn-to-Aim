@@ -193,7 +193,7 @@ namespace NLA
 			{
 				static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
 #ifndef NDEBUG
-					//logger::info("Calculating NPC's Aim...");
+					logger::info("Calculating NPC's Aim...");
 #endif
 					RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
 					if (!attacker) {  // without an attacker we can't know the skill level.
@@ -202,11 +202,11 @@ namespace NLA
 					}
 
 #ifndef NDEBUG
-					//logger::info("\t{} is shooting at {}", *attacker, *target);
+					logger::info("\t{} is shooting at {}", *attacker, *target);
 #endif
 					if (!Options::NPC.ShouldLearn(attacker)) {
 #ifndef NDEBUG
-						//logger::info("\t{} is not an NPC that can learn", *attacker);
+						logger::info("\t{} is not an NPC that can learn", *attacker);
 #endif
 						func(controller, target);
 						return;
