@@ -74,7 +74,11 @@ namespace NLA
 			}
 
 			if (magicSkill == RE::ActorValue::kNone) {
-				magicSkill = spell->GetAssociatedSkill();
+				if (auto effect = spell->GetCostliestEffectItem()) {
+					if (auto base = effect->baseEffect) {
+						magicSkill = base->GetMagickSkill();
+					}
+				}
 			}
 
 			if (!Options::For(attacker).concetrationSpellsRequireContinuousAim && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration) {
