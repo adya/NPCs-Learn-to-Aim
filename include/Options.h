@@ -13,6 +13,8 @@ namespace NLA::Options
 		float crossbowSkillMultiplier = 0.5f;  // crossbows are harder to aim, but shoot directly at the aim point, so overall easier to use.
 		float spellSkillMultiplier = 1.1f;     // spells are the standard.
 		float staffSkillMultiplier = 0.85f;    // staffs are a bit harder to aim properly.
+	
+		float blindnessMultiplier = 0.2f;	   // if the actor is blind, their aiming skill is reduced by this factor.
 
 		bool crossbowsAlwaysShootStraight = true;  // if true, crossbows launches bolts in a straight line without random spread.
 

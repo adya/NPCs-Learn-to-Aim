@@ -63,7 +63,7 @@ namespace RE
 		[[nodiscard]] static CombatAimController* Create(CombatController* control, PRIORITY priority, const NiPoint3& P);
 
 		// members
-		MagicCaster*      mcaster;           // 10 -- or weap?
+		MagicCaster*      mcaster;           // 10 : or TESObjectWEAP
 		NiPoint3          actualAimPoint;    // 18 : This one takes into account gravity of the projectile.
 		uint32_t          unk24;             // 24
 		CombatController* combatController;  // 28

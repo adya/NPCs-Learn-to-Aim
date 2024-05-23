@@ -143,6 +143,8 @@ namespace NLA::Options
 		spellSkillMultiplier = ini.GetDoubleValue(a_section, "fSpellSkillMultiplier", spellSkillMultiplier);
 		staffSkillMultiplier = ini.GetDoubleValue(a_section, "fStaffSkillMultiplier", staffSkillMultiplier);
 
+		blindnessMultiplier = ini.GetDoubleValue(a_section, "fBlindnessMultiplier", blindnessMultiplier);
+
 		crossbowsAlwaysShootStraight = ini.GetBoolValue(a_section, "bCrossbowsAlwaysShootStraight", crossbowsAlwaysShootStraight);
 
 		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", stavesUseEnchantingSkill);

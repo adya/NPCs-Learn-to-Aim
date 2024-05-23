@@ -49,6 +49,10 @@ namespace NLA
 					multiplier = Options::For(attacker).bowSkillMultiplier;
 				}
 			}
+
+			if (attacker->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+				multiplier *= Options::For(attacker).blindnessMultiplier;
+			}
 		}
 
 		SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker) :
@@ -70,11 +74,7 @@ namespace NLA
 			}
 
 			if (magicSkill == RE::ActorValue::kNone) {
-				if (auto effect = spell->GetCostliestEffectItem()) {
-					if (auto base = effect->baseEffect) {
-						magicSkill = base->GetMagickSkill();
-					}
-				}
+				magicSkill = spell->GetAssociatedSkill();
 			}
 
 			if (!Options::For(attacker).concetrationSpellsRequireContinuousAim && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration) {
@@ -99,6 +99,10 @@ namespace NLA
 				break;
 			default:
 				break;
+			}
+
+			if (attacker->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+				multiplier *= Options::For(attacker).blindnessMultiplier;
 			}
 		}
 
@@ -147,8 +151,6 @@ namespace NLA
 #endif
 
 		std::uniform_real_distribution<float> angleRND(0, 2 * std::numbers::pi);
-
-		//std::uniform_real_distribution<float> spreadRND(0,maxSpread);
 		std::normal_distribution<float> spreadRND(0, 0.7f * maxSpread);
 
 		float spread = std::abs(spreadRND(rnd));
@@ -181,155 +183,193 @@ namespace NLA
 
 	namespace Hooks
 	{
-		// The full mod should be a combination of both hooks: weapon/spell fire and aiming in CombatProjectileAimController.
-		// While the former provides a random deviation of projectile angle, the latter still randomizes the aim point:
-		// * Controller determines general ability of NPC to aim at a specific point accurately.
-		// * Firing function determines NPCs ability to actually make the projectile go in the desired direction.
-		struct CalculateAim
+		namespace Aim
 		{
-			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
+			// The full mod should be a combination of both hooks: weapon/spell fire and aiming in CombatProjectileAimController.
+			// While the former provides a random deviation of projectile angle, the latter still randomizes the aim point:
+			// * Controller determines general ability of NPC to aim at a specific point accurately.
+			// * Firing function determines NPCs ability to actually make the projectile go in the desired direction.
+			struct CalculateAim
+			{
+				static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
 #ifndef NDEBUG
-				//logger::info("Calculating NPC's Aim...");
+					//logger::info("Calculating NPC's Aim...");
 #endif
-				RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
-				if (!attacker) {  // without an attacker we can't know the skill level.
+					RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
+					if (!attacker) {  // without an attacker we can't know the skill level.
+						func(controller, target);
+						return;
+					}
+
+#ifndef NDEBUG
+					//logger::info("\t{} is shooting at {}", *attacker, *target);
+#endif
+					if (!Options::NPC.ShouldLearn(attacker)) {
+#ifndef NDEBUG
+						//logger::info("\t{} is not an NPC that can learn", *attacker);
+#endif
+						func(controller, target);
+						return;
+					}
+
+					SkillUsage skillUsage{};
+
+					if (controller->projectile->IsArrow()) {  // This also works for bolts.
+						if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster)) {
+							skillUsage = SkillUsage(weapon, attacker);
+						}
+					} else if (const auto caster = controller->mcaster) {  // This also works for staffs.
+						skillUsage = SkillUsage(caster->currentSpell, attacker);
+					}
+
+					// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
+					// in such cases we can't determine the skill to use and should fallback to default logic.
+					// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
+					if (skillUsage) {
+						float aimVariance = Settings::fCombatRangedAimVariance();
+						controller->aimVariance = 2.0f * aimVariance * skillUsage.SkillFactor(attacker);
+#ifndef NDEBUG
+						float aimOffset = Settings::fCombatAimProjectileRandomOffset();
+						logger::info("Aiming:");
+						logger::info("\tSkill: {} (base: {})", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker));
+						logger::info("\tVariance: {:.4f} (base: {:.4f})", controller->aimVariance, aimVariance);
+						logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->aimOffset, aimOffset, aimOffset * controller->aimVariance);
+#endif
+					}
 					func(controller, target);
-					return;
 				}
 
-#ifndef NDEBUG
-				//logger::info("\t{} is shooting at {}", *attacker, *target);
-#endif
-				if (!Options::NPC.ShouldLearn(attacker)) {
-#ifndef NDEBUG
-					//logger::info("\t{} is not an NPC that can learn", *attacker);
-#endif
-					func(controller, target);
-					return;
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+		}
+
+		namespace Release
+		{
+			/// Disable original random offset for arrows.
+			/// This allows replacing randomization logic with our own.
+			/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.
+			struct WeapFireAmmoRangomizeArrowDirection
+			{
+				static float thunk(float min, float max) {
+					return 0;
 				}
 
-				SkillUsage skillUsage{};
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
 
-				if (controller->projectile->IsArrow()) {  // This also works for bolts.
-					if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster)) {
-						skillUsage = SkillUsage(weapon, attacker);
+			struct LaunchSpellProjectile
+			{
+				static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
+#ifndef NDEBUG
+					Options::Load();
+#endif
+					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
+					if (auto skillUsage = SkillUsage(launchData.spell, attacker); skillUsage) {
+						AddRandomSpread(launchData, skillUsage);
+					}
+					func(projectile, launchData);
+				}
+
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
+			struct WeaponFireProjectile
+			{
+				static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
+#ifndef NDEBUG
+					Options::Load();
+#endif
+					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
+					if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker); skillUsage) {
+						if (skillUsage.weaponType != kCrossbow || !Options::For(attacker).crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
+							AddRandomSpread(launchData, skillUsage);
+						}
+					}
+					func(projectile, launchData);
+				}
+
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+
+			struct PlayerAutoAim
+			{
+				static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {
+					func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);
+
+					SkillUsage skillUsage{};
+					if (auto spell = projectile->spell) {
+						skillUsage = SkillUsage(spell, player);
+					} else if (auto weapon = projectile->weaponSource) {
+						skillUsage = SkillUsage(weapon, player);
+					}
+
+					if (skillUsage) {
+						if (skillUsage.weaponType != kCrossbow || !Options::Player.crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
+							*angleZ -= tiltZ;
+							*angleX -= tiltX;
+							AddRandomSpread(angleX, angleZ, player, skillUsage);
+							*angleZ += tiltZ;
+							*angleX += tiltX;
+						}
 					}
 				}
-				else if (const auto caster = controller->mcaster) {  // This also works for staffs.
-					skillUsage = SkillUsage(caster->currentSpell, attacker);
-				}
 
-				// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
-				// in such cases we can't determine the skill to use and should fallback to default logic.
-				// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
-				if (skillUsage) {
-					float aimVariance = Settings::fCombatRangedAimVariance();
-					controller->aimVariance = 2.0f * aimVariance * skillUsage.SkillFactor(attacker);
-#ifndef NDEBUG
-					float aimOffset = Settings::fCombatAimProjectileRandomOffset();
-					logger::info("Aiming:");
-					logger::info("\tSkill: {} (base: {})", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker));
-					logger::info("\tVariance: {:.4f} (base: {:.4f})", controller->aimVariance, aimVariance);
-					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->aimOffset, aimOffset, aimOffset * controller->aimVariance);
-#endif
-				}
-				func(controller, target);
-			}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
+		}
 
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		/// Disable original random offset for arrows.
-		/// This allows replacing randomization logic with our own.
-		/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.
-		struct WeapFireAmmoRangomizeArrowDirection
+		/* Speed is out of scope for now.
+		namespace Draw
 		{
-			static float thunk(float min, float max) {
-				return 0;
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct LaunchSpellProjectile
-		{
-			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
-#ifndef NDEBUG
-				Options::Load();
-#endif
-				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-				if (auto skillUsage = SkillUsage(launchData.spell, attacker); skillUsage) {
-					AddRandomSpread(launchData, skillUsage);
-				}
-				func(projectile, launchData);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct WeaponFireProjectile
-		{
-			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
-#ifndef NDEBUG
-				Options::Load();
-#endif
-				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker); skillUsage) {
-					if (skillUsage.weaponType != kCrossbow || !Options::For(attacker).crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
-						AddRandomSpread(launchData, skillUsage);	
-					}
-				}
-				func(projectile, launchData);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
-		struct PlayerAutoAim
-		{
-			static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {
-				func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);
-
-				SkillUsage skillUsage{};
-				if (auto spell = projectile->spell) {
-					skillUsage = SkillUsage(spell, player);
-				} else if (auto weapon = projectile->weaponSource) {
-					skillUsage = SkillUsage(weapon, player);
+			struct DrawWeaponAnimationChannel_GetWeaponSpeed
+			{
+				static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
+					float speed = func(owner, weapon, leftHand);
+					logger::info("ACTOR: Draw speed mult: {:.4f}", speed);
+					return speed;
 				}
 
-				if (skillUsage) {
-					if (skillUsage.weaponType != kCrossbow || !Options::Player.crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
-						*angleZ -= tiltZ;
-						*angleX -= tiltX;
-						AddRandomSpread(angleX, angleZ, player, skillUsage);
-						*angleZ += tiltZ;
-						*angleX += tiltX;
-					}
-				}
-			}
+				static inline REL::Relocation<decltype(thunk)> func;
+			};
 
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
+			struct ActorMagicCaster_Update
+			{
+				static void thunk(RE::ActorMagicCaster* caster, float remainingTime) {
+					func(caster, remainingTime);
+					logger::info("ACTOR: Magic caster update: {:.4f}", remainingTime);
+				}
+
+				static inline REL::Relocation<decltype(thunk)> func;
+
+				static inline constexpr std::size_t index{ 0 };
+				static inline constexpr std::size_t size{ 0x1D };
+			};
+		}*/
 
 		void Install() {
 			const REL::Relocation<std::uintptr_t> combatControllerUpdate{ RELOCATION_ID(43162, 44384) };
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
 			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(33672, 34452) };
 			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(43009, 44200) };
+			
+			/* Speed is out of scope for now.
+			const REL::Relocation<std::uintptr_t> weaponanimchannel{ RELOCATION_ID(0, 42779) };
+			stl::write_vfunc<RE::ActorMagicCaster, Draw::ActorMagicCaster_Update>();
+			stl::write_thunk_call<Draw::DrawWeaponAnimationChannel_GetWeaponSpeed>(weaponanimchannel.address() + OFFSET(0, 0x29));*/
 
-			stl::write_thunk_call<CalculateAim>(combatControllerUpdate.address() + OFFSET(0x103, 0x97));
+			stl::write_thunk_call<Aim::CalculateAim>(combatControllerUpdate.address() + OFFSET(0x103, 0x97));
 			logger::info("Installed Aiming logic");
 
-			stl::write_thunk_call<PlayerAutoAim>(autoAim.address() + OFFSET(0x201, 0x201));
+			stl::write_thunk_call<Release::PlayerAutoAim>(autoAim.address() + OFFSET(0x201, 0x201));
 			logger::info("Installed Player Auto-Aiming logic");
 
-			stl::write_thunk_call<WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
+			stl::write_thunk_call<Release::WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
 			logger::info("Disabled default arrow deviation logic");
 
-			stl::write_thunk_call<WeaponFireProjectile>(weaponFire.address() + OFFSET(0xE82, 0xE60));
+			stl::write_thunk_call<Release::WeaponFireProjectile>(weaponFire.address() + OFFSET(0xE82, 0xE60));
 			logger::info("Installed modded arrow deviation logic");
 
-			stl::write_thunk_call<LaunchSpellProjectile>(launchSpell.address() + OFFSET(0x377, 0x354));
+			stl::write_thunk_call<Release::LaunchSpellProjectile>(launchSpell.address() + OFFSET(0x377, 0x354));
 			logger::info("Installed spells deviation logic");
 		}
 	}
