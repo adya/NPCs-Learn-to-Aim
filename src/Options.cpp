@@ -15,6 +15,18 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogBlindnessSkillMultiplier(std::string_view actor, float mult) {
+		if (mult > 1) {
+			auto percent = (mult - 1) * 100;
+			logger::info("\tBlind {} have {:.2f}% easier aiming", actor, percent);
+		} else if (mult < 1) {
+			auto percent = (1 - mult) * 100;
+			logger::info("\tBlind {} have {:.2f}% harder aiming", actor, percent);
+		} else {
+			logger::info("\tBlind {} have standard aiming", actor);
+		}
+	}
+
 	inline void LogCrossbowsShootStraight(std::string_view actor, bool crossbowsShootStraight) {
 		if (crossbowsShootStraight) {
 			logger::info("\tCrossbows help {} shoot straight", actor);
@@ -69,18 +81,20 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
-
-		logger::info("");
-		LogCrossbowsShootStraight("NPCs", NPC.crossbowsAlwaysShootStraight);
-		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
-		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
-		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
+		logger::info("\tBlindness multiplier: {:.2f}", NPC.blindnessMultiplier);
 
 		logger::info("");
 		LogSkillMultiplier("NPCs", "Bows", NPC.bowSkillMultiplier);
 		LogSkillMultiplier("NPCs", "Crossbows", NPC.crossbowSkillMultiplier);
 		LogSkillMultiplier("NPCs", "Spells", NPC.spellSkillMultiplier);
 		LogSkillMultiplier("NPCs", "Staves", NPC.staffSkillMultiplier);
+
+		logger::info("");
+		LogCrossbowsShootStraight("NPCs", NPC.crossbowsAlwaysShootStraight);
+		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
+		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
+		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
+		LogBlindnessSkillMultiplier("NPCs", NPC.blindnessMultiplier);
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -107,16 +121,15 @@ namespace NLA::Options
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
 		
 		logger::info("");
-		LogCrossbowsShootStraight("Player", Player.crossbowsAlwaysShootStraight);
-		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
-		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
-
-		logger::info("");
 		LogSkillMultiplier("Player", "Bows", Player.bowSkillMultiplier);
 		LogSkillMultiplier("Player", "Crossbows", Player.crossbowSkillMultiplier);
 		LogSkillMultiplier("Player", "Spells", Player.spellSkillMultiplier);
 		LogSkillMultiplier("Player", "Staves", Player.staffSkillMultiplier);
 		
+		logger::info("");
+		LogCrossbowsShootStraight("Player", Player.crossbowsAlwaysShootStraight);
+		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
+		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
 
 		logger::info("{:*^40}", "");
 	}
@@ -133,10 +146,10 @@ namespace NLA::Options
 	}
 
 	Config::Config(CSimpleIniA& ini, const char* a_section) {
-		spellAiming = ini.GetBoolValue(a_section, "bEnableSpellAiming", spellAiming);
-		staffAiming = ini.GetBoolValue(a_section, "bEnableStaffAiming", staffAiming);
-		bowAiming = ini.GetBoolValue(a_section, "bEnableBowAiming", bowAiming);
-		crossbowAiming = ini.GetBoolValue(a_section, "bEnableCrossbowAiming", crossbowAiming);
+		spellAiming = ini.GetBoolValue(a_section, "bEnableSpellAim", spellAiming);
+		staffAiming = ini.GetBoolValue(a_section, "bEnableStaffAim", staffAiming);
+		bowAiming = ini.GetBoolValue(a_section, "bEnableBowAim", bowAiming);
+		crossbowAiming = ini.GetBoolValue(a_section, "bEnableCrossbowAim", crossbowAiming);
 
 		bowSkillMultiplier = ini.GetDoubleValue(a_section, "fBowSkillMultiplier", bowSkillMultiplier);
 		crossbowSkillMultiplier = ini.GetDoubleValue(a_section, "fCrossbowSkillMultiplier", crossbowSkillMultiplier);
