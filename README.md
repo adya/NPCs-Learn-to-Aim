@@ -1,10 +1,10 @@
 <h1 align="center">
-NPCs Names Distributor
+NPCs Learn to Aim
 
 </h1>
 
-![Splash](https://github.com/adya/NPCs-Names-Distributor/blob/main/images/Splash.png)
+![Splash](https://github.com/adya/NPCs-Learn-to-Aim/blob/main/images/splash.png)
 
-A framework that allows to generate and distribute names to any NPCs using SPID. Highly customizable through configuration files. Supports any NPCs from any mods.
+A mod that makes NPC's and Player's aim depend on their skill.
 
-See [NPCs Names Distributor](https://www.nexusmods.com/skyrimspecialedition/mods/73081) on Nexus for detailed description.
+See [NPCs Learn to Aim](https://www.nexusmods.com/skyrimspecialedition/mods/117908) on Nexus for detailed description.
