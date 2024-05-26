@@ -129,8 +129,8 @@ namespace NLA::Options
 		bool ShouldLearn(RE::Actor* actor);
 	};
 
-	inline NPCConfig    NPC{ true, true, true, true, { 1.0f, 0.7f, 1.2f, 0.85f, 0.2f }, { 1.2f, 7.0f, 0.85f, 0.85f, 1.5f }, false, false, true, {}, { "ActorTypeNPC" } };
-	inline PlayerConfig Player{ true, true, true, true, {}, { 1.4f, 1.4f, 1.4f, 1.4f, 0.0f }, false, false };
+	inline NPCConfig    NPC{ true, true, true, true, { 1.0f, 0.85f, 1.15f, 0.85f, 0.2f }, { 1.0f, 7.0f, 0.85f, 1.15f, 1.5f }, false, false, true, {}, { "ActorTypeNPC" } };
+	inline PlayerConfig Player{ true, true, true, true, {}, { 1.4f, 7.0f, 1.25f, 1.55f, 0.0f }, false, false };
 
 	/// Returns configuration for given actor. Note, that only common configuration is returned.
 	inline const Config& For(const RE::Actor* actor) {

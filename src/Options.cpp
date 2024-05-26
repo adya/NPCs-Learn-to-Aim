@@ -72,7 +72,6 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tBlindness multiplier: {:.2f}", NPC.aimMultipliers.blindness);
 
 		logger::info("");
 		LogSkillMultiplier("NPCs", "Bows", "Aiming", NPC.aimMultipliers.bow);
@@ -123,14 +122,12 @@ namespace NLA::Options
 		LogSkillMultiplier("Player", "Crossbows", "Aiming", Player.aimMultipliers.crossbow);
 		LogSkillMultiplier("Player", "Spells", "Aiming", Player.aimMultipliers.spell);
 		LogSkillMultiplier("Player", "Staves", "Aiming", Player.aimMultipliers.staff);
-		LogBlindnessSkillMultiplier("NPCs", "aiming", Player.aimMultipliers.blindness);
 
 		logger::info("");
 		LogSkillMultiplier("Player", "Bows", "Release", Player.releaseMultipliers.bow);
 		LogSkillMultiplier("Player", "Crossbows", "Release", Player.releaseMultipliers.crossbow);
 		LogSkillMultiplier("Player", "Spells", "Release", Player.releaseMultipliers.spell);
 		LogSkillMultiplier("Player", "Staves", "Release", Player.releaseMultipliers.staff);
-		LogBlindnessSkillMultiplier("NPCs", "release", Player.releaseMultipliers.blindness);
 		
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
