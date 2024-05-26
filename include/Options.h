@@ -1,22 +1,40 @@
 #pragma once
 
+namespace NLA
+{
+	enum SkillUsageContext
+	{
+		kAim,
+		kRelease
+	};
+}
+
 namespace NLA::Options
 {
 	struct Config
 	{
+		struct SkillMultiplier
+		{
+			float bow;
+			float crossbow;
+			float spell;
+			float staff;
+
+			float blindness;
+
+			SkillMultiplier() = default;
+			SkillMultiplier(CSimpleIniA& ini, const char* section, std::string_view prefix);
+			SkillMultiplier(float bow, float crossbow, float spell, float staff, float blindness) :
+				bow(bow), crossbow(crossbow), spell(spell), staff(staff), blindness(blindness) {}
+		};
+
 		bool spellAiming = true;
 		bool staffAiming = true;
 		bool bowAiming = true;
 		bool crossbowAiming = true;
 
-		float bowSkillMultiplier = 1.0f;       // bows are the standard.
-		float crossbowSkillMultiplier = 0.5f;  // crossbows are harder to aim, but shoot directly at the aim point, so overall easier to use.
-		float spellSkillMultiplier = 1.1f;     // spells are the standard.
-		float staffSkillMultiplier = 0.85f;    // staffs are a bit harder to aim properly.
-	
-		float blindnessMultiplier = 0.2f;	   // if the actor is blind, their aiming skill is reduced by this factor.
-
-		bool crossbowsAlwaysShootStraight = true;  // if true, crossbows launches bolts in a straight line without random spread.
+		SkillMultiplier aimMultipliers;
+		SkillMultiplier releaseMultipliers;
 
 		bool stavesUseEnchantingSkill = false;  // if true, staves use the enchanting skill instead of the spell's primary effect's school skill.
 
@@ -25,28 +43,94 @@ namespace NLA::Options
 		bool concetrationSpellsRequireContinuousAim = true;  // if true, concentration spells require continuous aiming, breaking aim point will interrupt the spell. Only works for NPCs.
 
 		Config() = default;
-		Config(CSimpleIniA& ini, const char* a_section);
+		Config(CSimpleIniA& ini, const char* section);
+		Config(bool            spellAiming,
+		       bool            staffAiming,
+		       bool            bowAiming,
+		       bool            crossbowAiming,
+		       SkillMultiplier aimMultipliers,
+		       SkillMultiplier releaseMultipliers,
+		       bool            stavesUseEnchantingSkill,
+		       bool            spellsUseHighestMagicSkill,
+		       bool            concetrationSpellsRequireContinuousAim) :
+			spellAiming(spellAiming),
+			staffAiming(staffAiming),
+			bowAiming(bowAiming),
+			crossbowAiming(crossbowAiming),
+			aimMultipliers(aimMultipliers),
+			releaseMultipliers(releaseMultipliers),
+			stavesUseEnchantingSkill(stavesUseEnchantingSkill),
+			spellsUseHighestMagicSkill(spellsUseHighestMagicSkill),
+			concetrationSpellsRequireContinuousAim(concetrationSpellsRequireContinuousAim) {}
+
+		inline const SkillMultiplier& MultiplierFor(SkillUsageContext context) const {
+			switch (context) {
+			case kAim:
+				return aimMultipliers;
+			case kRelease:
+				return releaseMultipliers;
+			}
+		}
 	};
 
 	struct PlayerConfig : Config
 	{
 		PlayerConfig() = default;
 		PlayerConfig(CSimpleIniA& ini);
+		PlayerConfig(bool            spellAiming,
+		             bool            staffAiming,
+		             bool            bowAiming,
+		             bool            crossbowAiming,
+		             SkillMultiplier aimMultipliers,
+		             SkillMultiplier releaseMultipliers,
+		             bool            stavesUseEnchantingSkill,
+		             bool            spellsUseHighestMagicSkill) :
+			Config(spellAiming,
+		           staffAiming,
+		           bowAiming,
+		           crossbowAiming,
+		           aimMultipliers,
+		           releaseMultipliers,
+		           stavesUseEnchantingSkill,
+		           spellsUseHighestMagicSkill,
+		           false) {}
 	};
 
 	struct NPCConfig : Config
 	{
 		std::vector<std::string> excludeKeywords{};
-		std::vector<std::string> includeKeywords{ "ActorTypeNPC" };
+		std::vector<std::string> includeKeywords{};
 
 		NPCConfig() = default;
 		NPCConfig(CSimpleIniA& ini);
+		NPCConfig(bool                     spellAiming,
+		          bool                     staffAiming,
+		          bool                     bowAiming,
+		          bool                     crossbowAiming,
+		          SkillMultiplier          aimMultipliers,
+		          SkillMultiplier          releaseMultipliers,
+		          bool                     stavesUseEnchantingSkill,
+		          bool                     spellsUseHighestMagicSkill,
+		          bool                     concetrationSpellsRequireContinuousAim,
+		          std::vector<std::string> excludeKeywords,
+		          std::vector<std::string> includeKeywords) :
+			Config(spellAiming,
+		           staffAiming,
+		           bowAiming,
+		           crossbowAiming,
+		           aimMultipliers,
+		           releaseMultipliers,
+		           stavesUseEnchantingSkill,
+		           spellsUseHighestMagicSkill,
+		           concetrationSpellsRequireContinuousAim),
+			excludeKeywords(excludeKeywords),
+			includeKeywords(includeKeywords) {}
 
-		bool ShouldLearn(RE::Actor* a_actor);
+		bool ShouldLearn(RE::Actor* actor);
 	};
 
-	inline NPCConfig    NPC;
-	inline PlayerConfig Player;
+	inline NPCConfig    NPC{ true, true, true, true, { 1.0f, 0.7f, 1.2f, 0.85f, 0.2f }, { 1.2f, 7.0f, 0.85f, 0.85f, 1.5f }, false, false, true, {}, { "ActorTypeNPC" } };
+	inline PlayerConfig Player{ true, true, true, true, {}, { 1.4f, 1.4f, 1.4f, 1.4f, 0.0f }, false, false };
 
 	/// Returns configuration for given actor. Note, that only common configuration is returned.
 	inline const Config& For(const RE::Actor* actor) {

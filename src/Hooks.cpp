@@ -29,7 +29,7 @@ namespace NLA
 		SkillUsage(RE::ActorValue a_skill, float a_multiplier, WeaponType weaponType) :
 			skill(a_skill), multiplier(a_multiplier), weaponType(weaponType) {}
 
-		SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker) :
+		SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker, SkillUsageContext context) :
 			SkillUsage() {
 			if (!weapon)
 				return;
@@ -40,22 +40,22 @@ namespace NLA
 				weaponType = kCrossbow;
 				if (Options::For(attacker).crossbowAiming) {
 					skill = RE::ActorValue::kArchery;
-					multiplier = Options::For(attacker).crossbowSkillMultiplier;
+					multiplier = Options::For(attacker).MultiplierFor(context).crossbow;
 				}
 			} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
 				weaponType = kBow;
 				if (Options::For(attacker).bowAiming) {
 					skill = RE::ActorValue::kArchery;
-					multiplier = Options::For(attacker).bowSkillMultiplier;
+					multiplier = Options::For(attacker).MultiplierFor(context).bow;
 				}
 			}
 
 			if (attacker->GetActorValue(RE::ActorValue::kBlindness) > 0) {
-				multiplier *= Options::For(attacker).blindnessMultiplier;
+				multiplier -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
 			}
 		}
 
-		SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker) :
+		SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker, SkillUsageContext context) :
 			SkillUsage() {
 			if (!spell)
 				return;
@@ -91,14 +91,14 @@ namespace NLA
 				weaponType = kSpell;
 				if (Options::For(attacker).spellAiming) {
 					skill = magicSkill;
-					multiplier = Options::For(attacker).spellSkillMultiplier;
+					multiplier = Options::For(attacker).MultiplierFor(context).spell;
 				}
 				break;
 			case RE::MagicSystem::SpellType::kStaffEnchantment:
 				weaponType = kStaff;
 				if (Options::For(attacker).staffAiming) {
 					skill = Options::For(attacker).stavesUseEnchantingSkill ? RE::ActorValue::kEnchanting : magicSkill;
-					multiplier = Options::For(attacker).staffSkillMultiplier;
+					multiplier = Options::For(attacker).MultiplierFor(context).staff;
 				}
 				break;
 			default:
@@ -106,7 +106,7 @@ namespace NLA
 			}
 
 			if (attacker->GetActorValue(RE::ActorValue::kBlindness) > 0) {
-				multiplier *= Options::For(attacker).blindnessMultiplier;
+				multiplier -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
 			}
 		}
 
@@ -220,10 +220,10 @@ namespace NLA
 
 					if (controller->projectile->IsArrow()) {  // This also works for bolts.
 						if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster)) {
-							skillUsage = SkillUsage(weapon, attacker);
+							skillUsage = SkillUsage(weapon, attacker, kAim);
 						}
 					} else if (const auto caster = controller->mcaster) {  // This also works for staffs.
-						skillUsage = SkillUsage(caster->currentSpell, attacker);
+						skillUsage = SkillUsage(caster->currentSpell, attacker, kAim);
 					}
 
 					// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
@@ -268,7 +268,7 @@ namespace NLA
 					Options::Load();
 #endif
 					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-					if (auto skillUsage = SkillUsage(launchData.spell, attacker); skillUsage) {
+					if (auto skillUsage = SkillUsage(launchData.spell, attacker, kRelease); skillUsage) {
 						AddRandomSpread(launchData, skillUsage);
 					}
 					func(projectile, launchData);
@@ -284,10 +284,8 @@ namespace NLA
 					Options::Load();
 #endif
 					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-					if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker); skillUsage) {
-						if (skillUsage.weaponType != kCrossbow || !Options::For(attacker).crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
-							AddRandomSpread(launchData, skillUsage);
-						}
+					if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kRelease); skillUsage) {
+						AddRandomSpread(launchData, skillUsage);
 					}
 					func(projectile, launchData);
 				}
@@ -302,19 +300,18 @@ namespace NLA
 
 					SkillUsage skillUsage{};
 					if (auto spell = projectile->spell) {
-						skillUsage = SkillUsage(spell, player);
+						skillUsage = SkillUsage(spell, player, kRelease);
 					} else if (auto weapon = projectile->weaponSource) {
-						skillUsage = SkillUsage(weapon, player);
+						skillUsage = SkillUsage(weapon, player, kRelease);
 					}
 
 					if (skillUsage) {
-						if (skillUsage.weaponType != kCrossbow || !Options::Player.crossbowsAlwaysShootStraight) {  // do not adjust angle for crossbows if they shoot straight.
-							*angleZ -= tiltZ;
-							*angleX -= tiltX;
-							AddRandomSpread(angleX, angleZ, player, skillUsage);
-							*angleZ += tiltZ;
-							*angleX += tiltX;
-						}
+						// we need to preserve calculated tilt angles and only apply random spread to the launch angles.
+						*angleZ -= tiltZ;
+						*angleX -= tiltX;
+						AddRandomSpread(angleX, angleZ, player, skillUsage);
+						*angleZ += tiltZ;
+						*angleX += tiltX;
 					}
 				}
 

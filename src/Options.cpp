@@ -3,36 +3,27 @@
 
 namespace NLA::Options
 {
-	inline void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, float mult) {
+	inline void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
 		if (mult > 1) {
 			auto percent = (mult - 1) * 100;
-			logger::info("\t{} are {:.2f}% easier to use for {}", weaponName, percent, actor);
+			logger::info("\t{} with {} is {:.2f}% easier to use for {}", stage, weaponName, percent, actor);
 		} else if (mult < 1) {
 			auto percent = (1 - mult) * 100;
-			logger::info("\t{} are {:.2f}% harder to use for {}", weaponName, percent, actor);
+			logger::info("\t{} with {} is {:.2f}% harder to use for {}", stage, weaponName, percent, actor);
 		} else {
-			logger::info("\t{} are at standard difficuly for {}", weaponName, actor);
+			logger::info("\t{} with {} is at standard difficuly for {}", stage, weaponName, actor);
 		}
 	}
 
-	inline void LogBlindnessSkillMultiplier(std::string_view actor, float mult) {
+	inline void LogBlindnessSkillMultiplier(std::string_view actor, std::string_view stage, float mult) {
 		if (mult > 1) {
 			auto percent = (mult - 1) * 100;
-			logger::info("\tBlind {} have {:.2f}% easier aiming", actor, percent);
+			logger::info("\tBlind {} have {:.2f}% easier {}", actor, percent, stage);
 		} else if (mult < 1) {
 			auto percent = (1 - mult) * 100;
-			logger::info("\tBlind {} have {:.2f}% harder aiming", actor, percent);
+			logger::info("\tBlind {} have {:.2f}% harder {}", actor, percent, stage);
 		} else {
-			logger::info("\tBlind {} have standard aiming", actor);
-		}
-	}
-
-	inline void LogCrossbowsShootStraight(std::string_view actor, bool crossbowsShootStraight) {
-		if (crossbowsShootStraight) {
-			logger::info("\tCrossbows help {} shoot straight", actor);
-		}
-		else {
-			logger::info("\tCrossbows require {} to know how to use it", actor);
+			logger::info("\tBlind {} have standard {}", actor, stage);
 		}
 	}
 
@@ -81,20 +72,27 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tBlindness multiplier: {:.2f}", NPC.blindnessMultiplier);
+		logger::info("\tBlindness multiplier: {:.2f}", NPC.aimMultipliers.blindness);
 
 		logger::info("");
-		LogSkillMultiplier("NPCs", "Bows", NPC.bowSkillMultiplier);
-		LogSkillMultiplier("NPCs", "Crossbows", NPC.crossbowSkillMultiplier);
-		LogSkillMultiplier("NPCs", "Spells", NPC.spellSkillMultiplier);
-		LogSkillMultiplier("NPCs", "Staves", NPC.staffSkillMultiplier);
+		LogSkillMultiplier("NPCs", "Bows", "Aiming", NPC.aimMultipliers.bow);
+		LogSkillMultiplier("NPCs", "Crossbows", "Aiming", NPC.aimMultipliers.crossbow);
+		LogSkillMultiplier("NPCs", "Spells", "Aiming", NPC.aimMultipliers.spell);
+		LogSkillMultiplier("NPCs", "Staves", "Aiming", NPC.aimMultipliers.staff);
+		LogBlindnessSkillMultiplier("NPCs", "aiming", NPC.aimMultipliers.blindness);
 
 		logger::info("");
-		LogCrossbowsShootStraight("NPCs", NPC.crossbowsAlwaysShootStraight);
+		LogSkillMultiplier("NPCs", "Bows", "Release", NPC.releaseMultipliers.bow);
+		LogSkillMultiplier("NPCs", "Crossbows", "Release", NPC.releaseMultipliers.crossbow);
+		LogSkillMultiplier("NPCs", "Spells", "Release", NPC.releaseMultipliers.spell);
+		LogSkillMultiplier("NPCs", "Staves", "Release", NPC.releaseMultipliers.staff);
+		LogBlindnessSkillMultiplier("NPCs", "release", NPC.releaseMultipliers.blindness);
+
+		logger::info("");
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
 		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
-		LogBlindnessSkillMultiplier("NPCs", NPC.blindnessMultiplier);
+		
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -121,13 +119,20 @@ namespace NLA::Options
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
 		
 		logger::info("");
-		LogSkillMultiplier("Player", "Bows", Player.bowSkillMultiplier);
-		LogSkillMultiplier("Player", "Crossbows", Player.crossbowSkillMultiplier);
-		LogSkillMultiplier("Player", "Spells", Player.spellSkillMultiplier);
-		LogSkillMultiplier("Player", "Staves", Player.staffSkillMultiplier);
+		LogSkillMultiplier("Player", "Bows", "Aiming", Player.aimMultipliers.bow);
+		LogSkillMultiplier("Player", "Crossbows", "Aiming", Player.aimMultipliers.crossbow);
+		LogSkillMultiplier("Player", "Spells", "Aiming", Player.aimMultipliers.spell);
+		LogSkillMultiplier("Player", "Staves", "Aiming", Player.aimMultipliers.staff);
+		LogBlindnessSkillMultiplier("NPCs", "aiming", Player.aimMultipliers.blindness);
+
+		logger::info("");
+		LogSkillMultiplier("Player", "Bows", "Release", Player.releaseMultipliers.bow);
+		LogSkillMultiplier("Player", "Crossbows", "Release", Player.releaseMultipliers.crossbow);
+		LogSkillMultiplier("Player", "Spells", "Release", Player.releaseMultipliers.spell);
+		LogSkillMultiplier("Player", "Staves", "Release", Player.releaseMultipliers.staff);
+		LogBlindnessSkillMultiplier("NPCs", "release", Player.releaseMultipliers.blindness);
 		
 		logger::info("");
-		LogCrossbowsShootStraight("Player", Player.crossbowsAlwaysShootStraight);
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
 
@@ -151,14 +156,8 @@ namespace NLA::Options
 		bowAiming = ini.GetBoolValue(a_section, "bEnableBowAim", bowAiming);
 		crossbowAiming = ini.GetBoolValue(a_section, "bEnableCrossbowAim", crossbowAiming);
 
-		bowSkillMultiplier = ini.GetDoubleValue(a_section, "fBowSkillMultiplier", bowSkillMultiplier);
-		crossbowSkillMultiplier = ini.GetDoubleValue(a_section, "fCrossbowSkillMultiplier", crossbowSkillMultiplier);
-		spellSkillMultiplier = ini.GetDoubleValue(a_section, "fSpellSkillMultiplier", spellSkillMultiplier);
-		staffSkillMultiplier = ini.GetDoubleValue(a_section, "fStaffSkillMultiplier", staffSkillMultiplier);
-
-		blindnessMultiplier = ini.GetDoubleValue(a_section, "fBlindnessMultiplier", blindnessMultiplier);
-
-		crossbowsAlwaysShootStraight = ini.GetBoolValue(a_section, "bCrossbowsAlwaysShootStraight", crossbowsAlwaysShootStraight);
+		aimMultipliers = SkillMultiplier(ini, a_section, "Aim");
+		releaseMultipliers = SkillMultiplier(ini, a_section, "Release");
 
 		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", stavesUseEnchantingSkill);
 
@@ -177,5 +176,20 @@ namespace NLA::Options
 
 		excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
 		includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
+	}
+
+
+	Config::SkillMultiplier::SkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix) {
+		std::string bowOption = fmt::format("fBow{}SkillMultiplier", prefix);
+		std::string crossbowOption = fmt::format("fCrossbow{}SkillMultiplier", prefix);
+		std::string spellOption = fmt::format("fSpell{}SkillMultiplier", prefix);
+		std::string staffOption = fmt::format("fStaff{}SkillMultiplier", prefix);
+		std::string blindnessOption = fmt::format("fBlindness{}SkillMultiplier", prefix);
+
+		bow = ini.GetDoubleValue(a_section, bowOption.c_str(), bow);
+		crossbow = ini.GetDoubleValue(a_section, crossbowOption.c_str(), crossbow);
+		spell = ini.GetDoubleValue(a_section, spellOption.c_str(), spell);
+		staff = ini.GetDoubleValue(a_section, staffOption.c_str(), staff);
+		blindness = ini.GetDoubleValue(a_section, blindnessOption.c_str(), blindness);
 	}
 }
