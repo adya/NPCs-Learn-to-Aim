@@ -362,7 +362,7 @@ namespace NLA
 			logger::info("Installed Aiming logic");
 
 			stl::write_thunk_call<Release::PlayerAutoAim>(autoAim.address() + OFFSET(0x201, 0x201));
-			logger::info("Installed Player Auto-Aiming logic");
+			logger::info("Installed Player 3rd person projectiles deviation logic");
 
 			stl::write_thunk_call<Release::WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
 			logger::info("Disabled default arrow deviation logic");

@@ -6,10 +6,10 @@ namespace NLA::Options
 	inline void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
 		if (mult > 1) {
 			auto percent = (mult - 1) * 100;
-			logger::info("\t{} with {} is {:.2f}% easier to use for {}", stage, weaponName, percent, actor);
+			logger::info("\t{} with {} is {:.2f}% easier for {}", stage, weaponName, percent, actor);
 		} else if (mult < 1) {
 			auto percent = (1 - mult) * 100;
-			logger::info("\t{} with {} is {:.2f}% harder to use for {}", stage, weaponName, percent, actor);
+			logger::info("\t{} with {} is {:.2f}% harder for {}", stage, weaponName, percent, actor);
 		} else {
 			logger::info("\t{} with {} is at standard difficuly for {}", stage, weaponName, actor);
 		}
@@ -117,12 +117,6 @@ namespace NLA::Options
 		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
 		
-		logger::info("");
-		LogSkillMultiplier("Player", "Bows", "Aiming", Player.aimMultipliers.bow);
-		LogSkillMultiplier("Player", "Crossbows", "Aiming", Player.aimMultipliers.crossbow);
-		LogSkillMultiplier("Player", "Spells", "Aiming", Player.aimMultipliers.spell);
-		LogSkillMultiplier("Player", "Staves", "Aiming", Player.aimMultipliers.staff);
-
 		logger::info("");
 		LogSkillMultiplier("Player", "Bows", "Release", Player.releaseMultipliers.bow);
 		LogSkillMultiplier("Player", "Crossbows", "Release", Player.releaseMultipliers.crossbow);
