@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RE/B/BSCoreTypes.h"
 #include "CombatAimController.h"
+#include "RE/B/BSCoreTypes.h"
 #include "RE/N/NiPoint3.h"
 
 namespace RE
@@ -9,7 +9,6 @@ namespace RE
 	class CombatProjectileAimController : public CombatAimController
 	{
 	public:
-	
 		~CombatProjectileAimController();  // 00
 
 		// override (CombatAimController)

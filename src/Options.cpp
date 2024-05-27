@@ -30,8 +30,7 @@ namespace NLA::Options
 	inline void LogStavesUseEnchantingSkill(std::string_view actor, bool stavesUseEnchantingSkill) {
 		if (stavesUseEnchantingSkill) {
 			logger::info("\t{}'s accuracy with staves is based on Enchanting skill", actor);
-		}
-		else {
+		} else {
 			logger::info("\t{}'s accuracy with staves is based on {}'s skill in spell's magic school", actor, actor);
 		}
 	}
@@ -39,8 +38,7 @@ namespace NLA::Options
 	inline void LogSpellsUseHighestMagicSkill(std::string_view actor, bool spellsUseHighestMagicSkill, bool stavesUseEnchantingSkill) {
 		if (spellsUseHighestMagicSkill) {
 			logger::info("\t{}'s accuracy with spells is based on the highest {}'s magic skill regardless of spell", actor, actor);
-		}
-		else {
+		} else {
 			logger::info("\t{}'s accuracy with spells is based on {}'s skill in spell's magic school", actor, actor);
 		}
 	}
@@ -48,8 +46,7 @@ namespace NLA::Options
 	inline void LogConcentrationSpellsRequireContinuousAim(std::string_view actor, bool concetrationSpellsRequireContinuousAim) {
 		if (concetrationSpellsRequireContinuousAim) {
 			logger::info("\t{} must aim continuously to maintain concentration spells", actor);
-		}
-		else {
+		} else {
 			logger::info("\t{} will always hit with concentration spells", actor);
 		}
 	}
@@ -91,7 +88,6 @@ namespace NLA::Options
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
 		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
-		
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -116,13 +112,13 @@ namespace NLA::Options
 		logger::info("\t{} with crossbows", Player.crossbowAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
-		
+
 		logger::info("");
 		LogSkillMultiplier("Player", "Bows", "Release", Player.releaseMultipliers.bow);
 		LogSkillMultiplier("Player", "Crossbows", "Release", Player.releaseMultipliers.crossbow);
 		LogSkillMultiplier("Player", "Spells", "Release", Player.releaseMultipliers.spell);
 		LogSkillMultiplier("Player", "Staves", "Release", Player.releaseMultipliers.staff);
-		
+
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
@@ -132,7 +128,7 @@ namespace NLA::Options
 
 	bool NPCConfig::ShouldLearn(RE::Actor* a_actor) {
 		if (!a_actor || a_actor->IsPlayerRef()) {
-			return true; // ShouldLearn only concerns NPCs, so we ignore players.
+			return true;  // ShouldLearn only concerns NPCs, so we ignore players.
 		}
 		if (!a_actor->HasAnyKeywordByEditorID(includeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(includeKeywords))) {
 			return false;
@@ -162,13 +158,11 @@ namespace NLA::Options
 
 	NPCConfig::NPCConfig(CSimpleIniA& ini) :
 		Config(ini, "NPC") {
-
 		concetrationSpellsRequireContinuousAim = ini.GetBoolValue("NPC", "bConcentrationSpellsRequireContinuousAim", concetrationSpellsRequireContinuousAim);
 
 		excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
 		includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
 	}
-
 
 	Config::SkillMultiplier::SkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix) {
 		std::string bowOption = fmt::format("fBow{}SkillMultiplier", prefix);

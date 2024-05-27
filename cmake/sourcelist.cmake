@@ -1,6 +1,6 @@
 set(sources ${sources}
 	src/PCH.cpp
-	src/main.cpp
 	src/Hooks.cpp
+	src/main.cpp
 	src/Options.cpp
 )

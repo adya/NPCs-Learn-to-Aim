@@ -147,7 +147,6 @@ namespace NLA
 
 		constexpr float toRadians = std::numbers::pi / 180.0f;
 
-		
 		float skillFactor = skillUsage.SkillFactor(attacker);
 		float maxSpread = skillFactor * Settings::fBowNPCSpreadAngle() * toRadians;
 #ifndef NDEBUG
@@ -155,7 +154,7 @@ namespace NLA
 #endif
 
 		std::uniform_real_distribution<float> angleRND(0, 2 * std::numbers::pi);
-		std::normal_distribution<float> spreadRND(0, 0.7f * maxSpread);
+		std::normal_distribution<float>       spreadRND(0, 0.7f * maxSpread);
 
 		float spread = std::abs(spreadRND(rnd));
 		float angle = angleRND(rnd);  // pick a random direction on a circle.
@@ -352,7 +351,7 @@ namespace NLA
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
 			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(33672, 34452) };
 			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(43009, 44200) };
-			
+
 			/* Speed is out of scope for now.
 			const REL::Relocation<std::uintptr_t> weaponanimchannel{ RELOCATION_ID(0, 42779) };
 			stl::write_vfunc<RE::ActorMagicCaster, Draw::ActorMagicCaster_Update>();
