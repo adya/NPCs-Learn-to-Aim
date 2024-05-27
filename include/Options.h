@@ -69,6 +69,8 @@ namespace NLA::Options
 				return aimMultipliers;
 			case kRelease:
 				return releaseMultipliers;
+			default:
+				return aimMultipliers;
 			}
 		}
 	};
