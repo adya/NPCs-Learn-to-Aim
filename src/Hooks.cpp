@@ -194,6 +194,11 @@ namespace NLA
 #ifndef NDEBUG
 					logger::info("Calculating NPC's Aim...");
 #endif
+					if (!controller || !controller->combatController) {
+						func(controller, target);
+						return;
+					}
+
 					RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
 					if (!attacker) {  // without an attacker we can't know the skill level.
 						func(controller, target);
@@ -213,11 +218,11 @@ namespace NLA
 
 					SkillUsage skillUsage{};
 
-					if (controller->projectile->IsArrow()) {  // This also works for bolts.
+					if (auto projectile = controller->projectile; projectile->IsArrow()) {  // This also works for bolts.
 						if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster)) {
 							skillUsage = SkillUsage(weapon, attacker, kAim);
 						}
-					} else if (const auto caster = controller->mcaster) {  // This also works for staffs.
+					} else if (const auto caster = controller->mcaster) {  // This also works for staves.
 						skillUsage = SkillUsage(caster->currentSpell, attacker, kAim);
 					}
 
@@ -292,6 +297,9 @@ namespace NLA
 			{
 				static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {
 					func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);
+
+					if (!projectile)
+						return;
 
 					SkillUsage skillUsage{};
 					if (auto spell = projectile->spell) {
