@@ -31,9 +31,7 @@ namespace NLA
 
 		SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker, SkillUsageContext context) :
 			SkillUsage() {
-			if (!weapon)
-				return;
-			if (!Options::NPC.ShouldLearn(attacker))
+			if (!weapon || !attacker || !Options::NPC.ShouldLearn(attacker))
 				return;
 
 			if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
@@ -57,11 +55,9 @@ namespace NLA
 
 		SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker, SkillUsageContext context) :
 			SkillUsage() {
-			if (!spell)
+			if (!spell || !attacker || !Options::NPC.ShouldLearn(attacker))
 				return;
-			if (!Options::NPC.ShouldLearn(attacker))
-				return;
-
+		
 			RE::ActorValue magicSkill = RE::ActorValue::kNone;
 
 			if (attacker && Options::For(attacker).spellsUseHighestMagicSkill) {
