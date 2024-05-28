@@ -58,6 +58,10 @@ namespace NLA
 			if (!spell || !attacker || !Options::NPC.ShouldLearn(attacker))
 				return;
 
+			// Only support aimed spells for now.
+			if (spell->GetDelivery() != RE::MagicSystem::Delivery::kAimed)
+				return;
+
 			RE::ActorValue magicSkill = RE::ActorValue::kNone;
 
 			if (attacker && Options::For(attacker).spellsUseHighestMagicSkill) {
@@ -70,8 +74,8 @@ namespace NLA
 			}
 
 			if (magicSkill == RE::ActorValue::kNone) {
-				if (auto effect = spell->GetCostliestEffectItem()) {
-					if (auto base = effect->baseEffect) {
+				if (auto effect = spell->GetCostliestEffectItem(); effect) {
+					if (auto base = effect->baseEffect; base) {
 						magicSkill = base->GetMagickSkill();
 					}
 				}
@@ -218,11 +222,11 @@ namespace NLA
 
 					SkillUsage skillUsage{};
 
-					if (auto projectile = controller->projectile; projectile->IsArrow()) {  // This also works for bolts.
-						if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster)) {
+					if (auto projectile = controller->projectile; projectile && projectile->IsArrow()) {  // This also works for bolts.
+						if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster); weapon) {
 							skillUsage = SkillUsage(weapon, attacker, kAim);
 						}
-					} else if (const auto caster = controller->mcaster) {  // This also works for staves.
+					} else if (const auto caster = controller->mcaster; caster) {  // This also works for staves.
 						skillUsage = SkillUsage(caster->currentSpell, attacker, kAim);
 					}
 
@@ -302,9 +306,9 @@ namespace NLA
 						return;
 
 					SkillUsage skillUsage{};
-					if (auto spell = projectile->spell) {
+					if (auto spell = projectile->spell; spell) {
 						skillUsage = SkillUsage(spell, player, kRelease);
-					} else if (auto weapon = projectile->weaponSource) {
+					} else if (auto weapon = projectile->weaponSource; weapon) {
 						skillUsage = SkillUsage(weapon, player, kRelease);
 					}
 
