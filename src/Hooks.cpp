@@ -57,7 +57,7 @@ namespace NLA
 			SkillUsage() {
 			if (!spell || !attacker || !Options::NPC.ShouldLearn(attacker))
 				return;
-		
+
 			RE::ActorValue magicSkill = RE::ActorValue::kNone;
 
 			if (attacker && Options::For(attacker).spellsUseHighestMagicSkill) {
