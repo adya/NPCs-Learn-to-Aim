@@ -222,10 +222,9 @@ namespace NLA
 
 					SkillUsage skillUsage{};
 
-					if (auto projectile = controller->projectile; projectile && projectile->IsArrow()) {  // This also works for bolts.
-						if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster); weapon) {
-							skillUsage = SkillUsage(weapon, attacker, kAim);
-						}
+					// This works for bows, crossbows and... guns :)
+					if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster); weapon && weapon->formType == RE::FormType::Weapon) {
+						skillUsage = SkillUsage(weapon, attacker, kAim);
 					} else if (const auto caster = controller->mcaster; caster) {  // This also works for staves.
 						skillUsage = SkillUsage(caster->currentSpell, attacker, kAim);
 					}
