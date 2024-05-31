@@ -120,6 +120,11 @@
       "name": "vs2022-windows-vcpkg-se-debug",
       "configurePreset": "vs2022-windows-vcpkg-se",
       "configuration": "Debug"
+    },
+    {
+      "name": "vs2022-windows-vcpkg-vr-debug",
+      "configurePreset": "vs2022-windows-vcpkg-vr",
+      "configuration": "Debug"
     }
   ]
 }
