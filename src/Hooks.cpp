@@ -357,7 +357,7 @@ namespace NLA
 		void Install() {
 			const REL::Relocation<std::uintptr_t> combatControllerUpdate{ RELOCATION_ID(43162, 44384) };
 			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
-			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(33672, 34452) };
+			const REL::Relocation<std::uintptr_t> launchProjectile{ RELOCATION_ID(42928, 44108) };
 			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(43009, 44200) };
 
 			/* Speed is out of scope for now.
@@ -377,7 +377,7 @@ namespace NLA
 			stl::write_thunk_call<Release::WeaponFireProjectile>(weaponFire.address() + OFFSET(0xE82, 0xE60));
 			logger::info("Installed modded arrow deviation logic");
 
-			stl::write_thunk_call<Release::LaunchSpellProjectile>(launchSpell.address() + OFFSET(0x377, 0x354));
+			stl::write_thunk_call<Release::LaunchSpellProjectile>(launchProjectile.address());
 			logger::info("Installed spells deviation logic");
 		}
 	}
