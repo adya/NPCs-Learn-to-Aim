@@ -370,10 +370,10 @@ namespace NLA
 			stl::write_thunk_call<Release::PlayerAutoAim>(autoAim.address() + OFFSET(0x201, 0x201));
 			logger::info("Installed Player 3rd person projectiles deviation logic");
 
-			stl::write_thunk_call<Release::WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET(0xCB0, 0xCD5));
+			stl::write_thunk_call<Release::WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET_3(0xCB0, 0xCD5, 0xFFF));
 			logger::info("Disabled default arrow deviation logic");
 
-			stl::write_thunk_call<Release::WeaponFireProjectile>(weaponFire.address() + OFFSET(0xE82, 0xE60));
+			stl::write_thunk_call<Release::WeaponFireProjectile>(weaponFire.address() + OFFSET_3(0xE82, 0xE60, 0x11ED));
 			logger::info("Installed modded arrow deviation logic");
 
 			stl::write_thunk_call<Release::LaunchSpellProjectile>(launchSpell.address() + OFFSET(0x377, 0x354));

@@ -3,7 +3,7 @@
                           -CMAKE_VR_BUILD_PRESET vs2022-windows-vcpkg-vr `
                           -FOMOD_INCLUDE_PDB $true `
                           -FOMOD_REQUIRED_INSTALLATION_DIR 'FOMOD/Required Files' `
-                          -FOMOD_MOD_NAME 'NPCs Names Distributor' `
+                          -FOMOD_MOD_NAME 'NPCs Learn to Aim' `
                           -FOMOD_MOD_AUTHOR sasnikol `
                           -FOMOD_MOD_NEXUS_ID 73081 `
                           -FOMOD_DEFAULT_IMAGE FOMOD/images/cover.png
@@ -14,7 +14,7 @@
                           -CMAKE_BUILD_CONFIGURATION: Debug `
                           -FOMOD_INCLUDE_PDB $true `
                           -FOMOD_REQUIRED_INSTALLATION_DIR 'FOMOD/Required Files' `
-                          -FOMOD_MOD_NAME 'NPCs Names Distributor Debug' `
+                          -FOMOD_MOD_NAME 'NPCs Learn to Aim Debug' `
                           -FOMOD_MOD_AUTHOR sasnikol `
                           -FOMOD_MOD_NEXUS_ID 73081 `
                           -FOMOD_DEFAULT_IMAGE FOMOD/images/cover_debug.png
