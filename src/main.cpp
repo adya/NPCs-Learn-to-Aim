@@ -48,8 +48,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 		return false;
 	}
 #	ifdef SKYRIMVR
-	if (!REL::IDDatabase::get().IsVRAddressLibraryAtLeastVersion(Version::PROJECT.data(), "0.134.0", true))
-	{
+	if (!REL::IDDatabase::get().IsVRAddressLibraryAtLeastVersion(Version::PROJECT.data(), "0.134.0", true)) {
 		return false;
 	}
 #	endif
