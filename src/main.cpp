@@ -17,7 +17,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	SKSE::PluginVersionData v;
 	v.PluginVersion(Version::MAJOR);
-	v.PluginName("NPCsLearnToAim");
+	v.PluginName(Version::PROJECT.data());
 	v.AuthorName("sasnikol");
 	v.UsesAddressLibrary();
 	v.UsesUpdatedStructs();
@@ -28,7 +28,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 #else
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info) {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = "NPCsLearnToAim";
+	a_info->name = Version::PROJECT.data();
 	a_info->version = Version::MAJOR;
 
 	if (a_skse->IsEditor()) {
@@ -47,6 +47,12 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
 		return false;
 	}
+#	ifdef SKYRIMVR
+	if (!REL::IDDatabase::get().IsVRAddressLibraryAtLeastVersion(Version::PROJECT.data(), "0.134.0", true))
+	{
+		return false;
+	}
+#	endif
 
 	return true;
 }
