@@ -13,7 +13,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 	}
 }
 
-#ifdef SKYRIM_AE
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	SKSE::PluginVersionData v;
 	v.PluginVersion(Version::MAJOR);
@@ -21,46 +20,22 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	v.AuthorName("sasnikol");
 	v.UsesAddressLibrary();
 	v.UsesUpdatedStructs();
-	v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
+	v.CompatibleVersions({ SKSE::RUNTIME_SSE_LATEST, SKSE::RUNTIME_LATEST_VR });
 
 	return v;
 }();
-#else
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info) {
+
+extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* a_info) {
+	a_info->name = SKSEPlugin_Version.pluginName;
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = Version::PROJECT.data();
-	a_info->version = Version::MAJOR;
-
-	if (a_skse->IsEditor()) {
-		logger::critical("Loaded in editor, marking as incompatible"sv);
-		return false;
-	}
-
-	const auto ver = a_skse->RuntimeVersion();
-	if (ver <
-#	ifndef SKYRIMVR
-	    SKSE::RUNTIME_1_5_39
-#	else
-	    SKSE::RUNTIME_VR_1_4_15
-#	endif
-	) {
-		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
-		return false;
-	}
-#	ifdef SKYRIMVR
-	if (!REL::IDDatabase::get().IsVRAddressLibraryAtLeastVersion(Version::PROJECT.data(), "0.134.0", true)) {
-		return false;
-	}
-#	endif
-
+	a_info->version = SKSEPlugin_Version.pluginVersion;
 	return true;
 }
-#endif
 
 void InitializeLog() {
 	auto path = logger::log_directory();
 	if (!path) {
-		stl::report_and_fail("Failed to find standard logging directory"sv);
+		SKSE::stl::report_and_fail("Failed to find standard logging directory"sv);
 	}
 
 	*path /= fmt::format(FMT_STRING("{}.log"), Version::PROJECT);
@@ -80,9 +55,23 @@ void InitializeLog() {
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse) {
 	InitializeLog();
 
+	if (a_skse->IsEditor()) {
+		logger::critical("Loaded in editor, marking as incompatible"sv);
+		return false;
+	}
+
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 
+#ifdef ENABLE_SKYRIM_VR
+	if (REL::Module::IsVR()) {
+		REL::IDDB::get().IsVRAddressLibraryAtLeastVersion("0.134.0", true);
+	}
+#endif
+
 	SKSE::Init(a_skse);
+
+	// Pre-allocate trampoline space upfront. Each write_call<5> hook needs 14 bytes.
+	SKSE::AllocTrampoline(14 * 5);
 
 	SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 

@@ -32,6 +32,4 @@
 *.app
 
 build/
-buildae/
-buildvr/
 .vs/

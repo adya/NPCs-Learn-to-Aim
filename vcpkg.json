@@ -1,13 +1,20 @@
 {
   "name": "nla",
-  "version-string": "1.0.3",
+  "version-string": "2.0.0",
   "description": "A mod that makes NPCs aim accuracy depend on their Archery skill",
   "homepage": "https://github.com/adya/NPCs-Learn-to-Aim.git",
   "license": "GPL-3.0",
+  "builtin-baseline": "ee12231b20c95013c6638d845d04c91559a1d1ff",
   "dependencies": [
     "boost-stl-interfaces",
+    "directxmath",
+    "directxtk",
+    "nlohmann-json",
+    "rapidcsv",
     "rsm-binary-io",
+    "simpleini",
     "spdlog",
+    "toml11",
     "xbyak"
   ]
 }

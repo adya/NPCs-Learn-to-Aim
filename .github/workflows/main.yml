@@ -10,17 +10,11 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
-  release:
-    uses: adya/pack-skse-mod/.github/workflows/pack.yml@main
+  run:
+    uses: adya/pack-skse-mod/.github/workflows/pack.yml@ng
     with:
-      CMAKE_SE_BUILD_PRESET: 'vs2022-windows-vcpkg-se'
-      CMAKE_AE_BUILD_PRESET: 'vs2022-windows-vcpkg-ae'
-      CMAKE_VR_BUILD_PRESET: 'vs2022-windows-vcpkg-vr'
-      FOMOD_INCLUDE_PDB: true
-      FOMOD_MOD_NAME: "NPCs Learn to Aim"
-      FOMOD_MOD_AUTHOR: "sasnikol"
-      FOMOD_MOD_NEXUS_ID: "117908"
-      FOMOD_DEFAULT_IMAGE: "FOMOD/images/cover.png"
-      FOMOD_REQUIRED_INSTALLATION_DIR: "FOMOD/Required"
-      VCPKG_COMMIT_ID: '06475a351672e6fad52e707b33e30eaf2811d341'
+      MOD_NAME: "NPCs Learn to Aim"
