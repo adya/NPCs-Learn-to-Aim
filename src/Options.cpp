@@ -44,6 +44,14 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogConcentrationSpellRangeMultiplier(std::string_view actor, bool enabled, float minMult, float maxMult) {
+		if (!enabled) {
+			logger::info("	{} always have vanilla reach with concentration spells", actor);
+		} else {
+			logger::info("	{} reach concentration spells at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, minMult, maxMult);
+		}
+	}
+
 	inline void LogConcentrationSpellsRequireContinuousAim(std::string_view actor, bool concetrationSpellsRequireContinuousAim) {
 		if (concetrationSpellsRequireContinuousAim) {
 			logger::info("\t{} must aim continuously to maintain concentration spells", actor);
@@ -89,6 +97,7 @@ namespace NLA::Options
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
 		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
+		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -123,6 +132,8 @@ namespace NLA::Options
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
+		LogConcentrationSpellsRequireContinuousAim("Player", Player.concetrationSpellsRequireContinuousAim);
+		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("{:*^40}", "");
 	}
@@ -150,11 +161,15 @@ namespace NLA::Options
 		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", stavesUseEnchantingSkill);
 
 		spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bSpellsUseHighestMagicSkill", spellsUseHighestMagicSkill);
+
+		concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bEnableConcentrationSpellRangeScaling", concentrationSpellRangeScaling);
+		concentrationSpellMinRangeMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", concentrationSpellMinRangeMultiplier));
+		concentrationSpellMaxRangeMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", concentrationSpellMaxRangeMultiplier));
 	}
 
 	PlayerConfig::PlayerConfig(CSimpleIniA& ini) :
 		Config(ini, "Player") {
-		concetrationSpellsRequireContinuousAim = false;
+		concetrationSpellsRequireContinuousAim = ini.GetBoolValue("Player", "bConcentrationSpellsRequireContinuousAim", concetrationSpellsRequireContinuousAim);
 	}
 
 	NPCConfig::NPCConfig(CSimpleIniA& ini) :

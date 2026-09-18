@@ -36,11 +36,20 @@ namespace NLA::Options
 		SkillMultiplier aimMultipliers;
 		SkillMultiplier releaseMultipliers;
 
-		bool stavesUseEnchantingSkill = false;  // if true, staves use the enchanting skill instead of the spell's primary effect's school skill.
+		/// If true, staves use the enchanting skill instead of the spell's primary effect's school skill.
+		bool stavesUseEnchantingSkill = false;  
 
-		bool spellsUseHighestMagicSkill = false;  // if true, the highest NPC's magic skill is used to aim spells, instead of the spell's primary effect's school skill.
+		/// If true, the highest NPC's magic skill is used to aim spells, instead of the spell's primary effect's school skill.
+		bool spellsUseHighestMagicSkill = false;
 
-		bool concetrationSpellsRequireContinuousAim = true;  // if true, concentration spells require continuous aiming, breaking aim point will interrupt the spell. Only works for NPCs.
+		/// If true, concentration spells require continuous aiming, where the beam/flow will wander around the target.
+		bool concetrationSpellsRequireContinuousAim = true; 
+
+		/// If true, concentration spells would reach farther as the skill in corresponding school increases.
+		bool concentrationSpellRangeScaling = true;
+
+		float concentrationSpellMinRangeMultiplier = 1.2f;
+		float concentrationSpellMaxRangeMultiplier = 2.5f;
 
 		Config() = default;
 		Config(CSimpleIniA& ini, const char* section);
@@ -95,7 +104,7 @@ namespace NLA::Options
 		           releaseMultipliers,
 		           stavesUseEnchantingSkill,
 		           spellsUseHighestMagicSkill,
-		           false) {}
+		           true) {}
 	};
 
 	struct NPCConfig : Config
