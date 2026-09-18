@@ -1,5 +1,6 @@
 #include "Options.h"
 #include "CLIBUtil/string.hpp"
+#include <fmt/ranges.h>
 
 namespace NLA::Options
 {

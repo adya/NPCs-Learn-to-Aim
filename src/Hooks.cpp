@@ -1,6 +1,7 @@
 #include "Hooks.h"
-#include "CombatProjectileAimController.h"
 #include "Options.h"
+#include "RE/C/CombatProjectileAimController.h"
+#include "Hooking.h"
 #include <algorithm>
 #include <numbers>
 
@@ -48,7 +49,7 @@ namespace NLA
 				}
 			}
 
-			if (attacker->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+			if (attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
 				multiplier -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
 			}
 		}
@@ -68,7 +69,7 @@ namespace NLA
 				std::array<RE::ActorValue, 5> properties = { RE::ActorValue::kAlteration, RE::ActorValue::kConjuration, RE::ActorValue::kDestruction, RE::ActorValue::kIllusion, RE::ActorValue::kRestoration };
 
 				auto highestMagicSkill = std::ranges::max_element(properties, [&attacker](RE::ActorValue a, RE::ActorValue b) {
-					return attacker->GetActorValue(a) < attacker->GetActorValue(b);
+					return attacker->AsActorValueOwner()->GetActorValue(a) < attacker->AsActorValueOwner()->GetActorValue(b);
 				});
 				magicSkill = *highestMagicSkill;
 			}
@@ -105,7 +106,7 @@ namespace NLA
 				break;
 			}
 
-			if (attacker->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+			if (attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
 				multiplier -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
 			}
 		}
@@ -133,7 +134,7 @@ namespace NLA
 		inline float Skill(RE::Actor* actor) const {
 			if (!actor || skill == RE::ActorValue::kNone)
 				return 0.0f;
-			return actor->GetActorValue(skill);
+			return actor->AsActorValueOwner()->GetActorValue(skill);
 		}
 
 		inline float EffectiveSkill(RE::Actor* actor) const {
@@ -186,24 +187,30 @@ namespace NLA
 
 	namespace Hooks
 	{
-		namespace Aim
+		namespace Accuracy
 		{
 			// The full mod should be a combination of both hooks: weapon/spell fire and aiming in CombatProjectileAimController.
 			// While the former provides a random deviation of projectile angle, the latter still randomizes the aim point:
 			// * Controller determines general ability of NPC to aim at a specific point accurately.
 			// * Firing function determines NPCs ability to actually make the projectile go in the desired direction.
-			struct CalculateAim
+			struct CombatProjectileAimController_Update
 			{
+				static inline constexpr REL::RelocationID  relocation{ 43162, 44384 };
+				static inline constexpr REL::VariantOffset offset{ 0x103, 0x97, 0x103 };
+				static inline constexpr Signature           signature{ "E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 84 C0 74" };
+
+				static inline void post_hook() { logger::info("Installed Aiming logic"); }
+
 				static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
 #ifndef NDEBUG
 					logger::info("Calculating NPC's Aim...");
 #endif
-					if (!controller || !controller->combatController) {
+					if (!controller || !controller->combat_control) {
 						func(controller, target);
 						return;
 					}
 
-					RE::Actor* attacker = controller->combatController->attackerHandle.get().get();
+					RE::Actor* attacker = controller->combat_control->attackerHandle.get().get();
 					if (!attacker) {  // without an attacker we can't know the skill level.
 						func(controller, target);
 						return;
@@ -250,13 +257,19 @@ namespace NLA
 			};
 		}
 
-		namespace Release
+		namespace Precision
 		{
 			/// Disable original random offset for arrows.
 			/// This allows replacing randomization logic with our own.
 			/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.
 			struct WeapFireAmmoRangomizeArrowDirection
 			{
+				static inline constexpr REL::RelocationID  relocation{ 17693, 18102 };
+				static inline constexpr REL::VariantOffset offset{ 0xCB0, 0xCD5, 0xFFF };
+				static inline constexpr VariantSignature<"E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59", "E8 ?? ?? ?? ?? 0F 28 F0 41 0F 28 CF 41 0F 28 C2", "E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59"> signature;
+
+				static inline void post_hook() { logger::info("Disabled default arrow deviation logic"); }
+
 				static float thunk(float min, float max) {
 					return 0;
 				}
@@ -266,6 +279,12 @@ namespace NLA
 
 			struct LaunchSpellProjectile
 			{
+				static inline constexpr REL::RelocationID  relocation{ 33672, 34452 };
+				static inline constexpr REL::VariantOffset offset{ 0x377, 0x354, 0x377 };
+				static inline constexpr Signature           signature{ "E8 ?? ?? ?? ?? 48 C7 44 24 ?? 00 00 00 00 48 8D" };
+
+				static inline void post_hook() { logger::info("Installed spells deviation logic"); }
+
 				static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 #ifndef NDEBUG
 					Options::Load();
@@ -282,6 +301,12 @@ namespace NLA
 
 			struct WeaponFireProjectile
 			{
+				static inline constexpr REL::RelocationID  relocation{ 17693, 18102 };
+				static inline constexpr REL::VariantOffset offset{ 0xE82, 0xE60, 0x11ED };
+				static inline constexpr VariantSignature<"E8 ?? ?? ?? ?? 48 8D 55 ?? 48 8D 4D ?? E8", "E8 ?? ?? ?? ?? 8B 75 88 85 F6 0F 84", "E8 ?? ?? ?? ?? 48 8D 55 ?? 48 8D 4D ?? E8"> signature;
+
+				static inline void post_hook() { logger::info("Installed modded arrow deviation logic"); }
+
 				static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 #ifndef NDEBUG
 					Options::Load();
@@ -298,6 +323,12 @@ namespace NLA
 
 			struct PlayerAutoAim
 			{
+				static inline constexpr REL::RelocationID  relocation{ 43009, 44200 };
+				static inline constexpr REL::VariantOffset offset{ 0x201, 0x201, 0x201 };
+				static inline constexpr Signature           signature{ "E8 ?? ?? ?? ?? 8B 87 ?? ?? ?? ?? C1 E8 11 A8 01" };
+
+				static inline void post_hook() { logger::info("Installed Player 3rd person projectiles deviation logic"); }
+
 				static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {
 					func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);
 
@@ -305,9 +336,9 @@ namespace NLA
 						return;
 
 					SkillUsage skillUsage{};
-					if (auto spell = projectile->spell; spell) {
+					if (auto spell = projectile->GetProjectileRuntimeData().spell; spell) {
 						skillUsage = SkillUsage(spell, player, kRelease);
-					} else if (auto weapon = projectile->weaponSource; weapon) {
+					} else if (auto weapon = projectile->GetProjectileRuntimeData().weaponSource; weapon) {
 						skillUsage = SkillUsage(weapon, player, kRelease);
 					}
 
@@ -325,59 +356,12 @@ namespace NLA
 			};
 		}
 
-		/* Speed is out of scope for now.
-		namespace Draw
-		{
-			struct DrawWeaponAnimationChannel_GetWeaponSpeed
-			{
-				static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
-					float speed = func(owner, weapon, leftHand);
-					logger::info("ACTOR: Draw speed mult: {:.4f}", speed);
-					return speed;
-				}
-
-				static inline REL::Relocation<decltype(thunk)> func;
-			};
-
-			struct ActorMagicCaster_Update
-			{
-				static void thunk(RE::ActorMagicCaster* caster, float remainingTime) {
-					func(caster, remainingTime);
-					logger::info("ACTOR: Magic caster update: {:.4f}", remainingTime);
-				}
-
-				static inline REL::Relocation<decltype(thunk)> func;
-
-				static inline constexpr std::size_t index{ 0 };
-				static inline constexpr std::size_t size{ 0x1D };
-			};
-		}*/
-
 		void Install() {
-			const REL::Relocation<std::uintptr_t> combatControllerUpdate{ RELOCATION_ID(43162, 44384) };
-			const REL::Relocation<std::uintptr_t> weaponFire{ RELOCATION_ID(17693, 18102) };
-			const REL::Relocation<std::uintptr_t> launchSpell{ RELOCATION_ID(33672, 34452) };
-			const REL::Relocation<std::uintptr_t> autoAim{ RELOCATION_ID(43009, 44200) };
-
-			/* Speed is out of scope for now.
-			const REL::Relocation<std::uintptr_t> weaponanimchannel{ RELOCATION_ID(0, 42779) };
-			stl::write_vfunc<RE::ActorMagicCaster, Draw::ActorMagicCaster_Update>();
-			stl::write_thunk_call<Draw::DrawWeaponAnimationChannel_GetWeaponSpeed>(weaponanimchannel.address() + OFFSET(0, 0x29));*/
-
-			stl::write_thunk_call<Aim::CalculateAim>(combatControllerUpdate.address() + OFFSET(0x103, 0x97));
-			logger::info("Installed Aiming logic");
-
-			stl::write_thunk_call<Release::PlayerAutoAim>(autoAim.address() + OFFSET(0x201, 0x201));
-			logger::info("Installed Player 3rd person projectiles deviation logic");
-
-			stl::write_thunk_call<Release::WeapFireAmmoRangomizeArrowDirection>(weaponFire.address() + OFFSET_3(0xCB0, 0xCD5, 0xFFF));
-			logger::info("Disabled default arrow deviation logic");
-
-			stl::write_thunk_call<Release::WeaponFireProjectile>(weaponFire.address() + OFFSET_3(0xE82, 0xE60, 0x11ED));
-			logger::info("Installed modded arrow deviation logic");
-
-			stl::write_thunk_call<Release::LaunchSpellProjectile>(launchSpell.address() + OFFSET(0x377, 0x354));
-			logger::info("Installed spells deviation logic");
+			stl::install_hook<Accuracy::CalculateAim>();
+			stl::install_hook<Precision::PlayerAutoAim>();
+			stl::install_hook<Precision::WeapFireAmmoRangomizeArrowDirection>();
+			stl::install_hook<Precision::WeaponFireProjectile>();
+			stl::install_hook<Precision::LaunchSpellProjectile>();
 		}
 	}
 

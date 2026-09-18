@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 set(NAME "NPCsLearnToAim" CACHE STRING "")
-set(VERSION 1.0.3 CACHE STRING "")
-set(VR_VERSION 1)
-set(AE_VERSION 1)
+set(VERSION 2.0.0 CACHE STRING "")
 
 # ---- Options ----
 
 option(COPY_BUILD "Copy the build output to the Skyrim directory." TRUE)
-option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
-option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 
 # ---- Cache build vars ----
 
@@ -18,47 +14,21 @@ macro(set_from_environment VARIABLE)
 	endif ()
 endmacro()
 
-macro(find_commonlib_path)
-	if (CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-		# Check extern
-		find_path(CommonLibPath
-		include/REL/Relocation.h
-		PATHS extern/${CommonLibName})
-		if (${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-			#Check path
-			set_from_environment(${CommonLibName}Path)
-			set(CommonLibPath ${${CommonLibName}Path})
-		endif()
-	endif()
-endmacro()
+set(ENABLE_SKYRIM_SE ON CACHE BOOL "" FORCE)
+set(ENABLE_SKYRIM_AE ON CACHE BOOL "" FORCE)
+set(ENABLE_SKYRIM_VR ON CACHE BOOL "" FORCE)
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+
+set(SKSE_SUPPORT_XBYAK ON CACHE BOOL "" FORCE)
 
 set_from_environment(VCPKG_ROOT)
-if(BUILD_SKYRIMAE)
-	add_compile_definitions(SKYRIM_AE)
-	add_compile_definitions(SKYRIM_SUPPORT_AE)
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(SkyrimAEPath)
-	set(SkyrimPath ${SkyrimAEPath})
-	set(SkyrimVersion "Skyrim AE")
-	set(VERSION ${VERSION}.${AE_VERSION})
-elseif(BUILD_SKYRIMVR)
-	add_compile_definitions(SKYRIMVR)
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-	set(CommonLibName "CommonLibVR")
-	set_from_environment(SkyrimVRPath)
-	set(SkyrimPath ${SkyrimVRPath})
-	set(SkyrimVersion "Skyrim VR")
-	set(VERSION ${VERSION}.${VR_VERSION})
-else()
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(Skyrim64Path)
-	set(SkyrimPath ${Skyrim64Path})
-	set(SkyrimVersion "Skyrim SSE")
-endif()
-find_commonlib_path()
+set(SkyrimVersion "Skyrim SE/AE/VR")
+set_from_environment(Skyrim64Path)
+set(SkyrimPath ${Skyrim64Path})
+set(CommonLibPath "${CMAKE_CURRENT_SOURCE_DIR}/extern/CommonLibSSE-NG")
 message(
 	STATUS
-	"Building ${NAME} ${VERSION} for ${SkyrimVersion} at ${SkyrimPath} with ${CommonLibName} at ${CommonLibPath}."
+	"Building ${NAME} ${VERSION} for ${SkyrimVersion} at ${SkyrimPath} with CommonLibSSE-NG at ${CommonLibPath}."
 )
 
 if (DEFINED VCPKG_ROOT)
@@ -124,46 +94,58 @@ set(Boost_USE_STATIC_LIBS ON)
 
 # ---- Dependencies ----
 
-if (DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
-	add_subdirectory(${CommonLibPath} ${CommonLibName})
+if (IS_DIRECTORY ${CommonLibPath})
+	add_subdirectory(${CommonLibPath} CommonLibSSE-NG)
 else ()
 	message(
 		FATAL_ERROR
-		"Variable ${CommonLibName}Path is not set or in extern/."
+		"CommonLibSSE-NG submodule not found at ${CommonLibPath}. Run 'git submodule update --init --recursive'."
 	)
 endif()
 
 set(CLIB_UTIL_INCLUDE_DIRS "extern/CLibUtil/include")
+set(SKSE_HOOKING_INCLUDE_DIR "extern/SKSEHooking")
 
-# ---- Add source files ----
+# ---- Auto-discover all source and header files ----
 
-include(cmake/headerlist.cmake)
-include(cmake/sourcelist.cmake)
-include_directories(${PROJECT_SOURCE_DIR}/${CLIB_UTIL_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/extern/glm)
-
-source_group(
-	TREE
-		${CMAKE_CURRENT_SOURCE_DIR}
-	FILES
-		${headers}
-		${sources}
+file(GLOB_RECURSE ALL_SRC_FILES CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp
 )
 
-source_group(
-	TREE
-		${CMAKE_CURRENT_BINARY_DIR}
-	FILES
-		${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+# ---- Visual Studio folder grouping ----
+
+# All files go under "Source Files", preserving src/ substructure
+foreach(source_file ${ALL_SRC_FILES})
+	file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}/src" "${source_file}")
+	get_filename_component(dir "${rel_path}" PATH)
+	string(REPLACE "/" "\\" subfolder "${dir}")
+	source_group("Source Files\\${subfolder}" FILES "${source_file}")
+endforeach()
+
+# Remove PCH files from ALL_SRC_FILES
+list(FILTER ALL_SRC_FILES EXCLUDE REGEX "src[/\\\\]PCH\\.(cpp|h|hpp)$")
+
+set(PCH_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/src/PCH.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/PCH.cpp
 )
+
+source_group("Header Files" FILES ${CMAKE_CURRENT_BINARY_DIR}/include/Version.h)
+
+source_group("Precompile Header File" FILES ${PCH_FILES})
+
+source_group("Resource Files" FILES ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 
 # ---- Create DLL ----
 
 add_library(
 	${PROJECT_NAME}
 	SHARED
-	${headers}
-	${sources}
+	${ALL_SRC_FILES}
+	${PCH_FILES}
 	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
 	${CMAKE_CURRENT_BINARY_DIR}/version.rc
 	.clang-format
@@ -186,19 +168,22 @@ target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_BINARY_DIR}/include
-		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/src
+		${CMAKE_CURRENT_SOURCE_DIR}/${CLIB_UTIL_INCLUDE_DIRS}
+		${CMAKE_CURRENT_SOURCE_DIR}/extern/glm
+		${CMAKE_CURRENT_SOURCE_DIR}/${SKSE_HOOKING_INCLUDE_DIR}
 )
 
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-		${CommonLibName}::${CommonLibName}
+		CommonLibSSE::CommonLibSSE
 )
 
 target_precompile_headers(
 	${PROJECT_NAME}
 	PRIVATE
-		include/PCH.h
+		src/PCH.h
 )
 
 if (MSVC)
@@ -233,11 +218,11 @@ if (COPY_BUILD)
 		add_custom_command(
 			TARGET ${PROJECT_NAME}
 			POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy 
-				$<TARGET_FILE:${PROJECT_NAME}> 
+			COMMAND ${CMAKE_COMMAND} -E copy
+				$<TARGET_FILE:${PROJECT_NAME}>
 				${SkyrimPath}/Data/SKSE/Plugins/
-			COMMAND ${CMAKE_COMMAND} -E copy 
-				$<TARGET_PDB_FILE:${PROJECT_NAME}> 
+			COMMAND ${CMAKE_COMMAND} -E copy
+				$<TARGET_PDB_FILE:${PROJECT_NAME}>
 				${SkyrimPath}/Data/SKSE/Plugins/
 		)
 	else ()
