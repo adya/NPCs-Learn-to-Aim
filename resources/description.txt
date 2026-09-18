@@ -1,54 +1,54 @@
 [size=5][b]Intro[/b][/size]
 
-While working on a major update of [url=https://www.nexusmods.com/skyrimspecialedition/mods/77342]NPCs Learn Skills and Spells[/url] I've tried to figure out how to make Eagle Eye and Steady Hands useful for NPCs, one thing led to another and here it is - [b]NPCs Learn to Aim[/b] :)
+While working on a major update of [url=https://www.nexusmods.com/skyrimspecialedition/mods/77342]NPCs Learn Skills and Spells[/url] I've tried to figure out how to make Eagle Eye and Steady Hands useful for NPCs, one thing led to another and here it is - [b]NPCs Learn to Aim[/b] :)
 
 [quote][center][color=#e69138][size=2][b]DISCLAIMER[/b][/size][/color]
 [color=#e69138][b]This mod also can work on Player[/b][/color]. I feel like name might be a bit deceptive in this regard :)
-I created this mod as part of [b]NPCs Learn[/b] series, so I really wanted to preserve the name, but at the same time the emerged opportunity to support Player's aim was too tempting and I couldn't discard it.[/center]
+I created this mod as part of [b]NPCs Learn[/b] series, so I really wanted to preserve the name, but at the same time the emerged opportunity to support Player's aim was too tempting and I couldn't discard it.[/center]
 [/quote]
 
 
 [size=5][b]Overview[/b][/size]
 
-[b]NPCs Learn to Aim[/b] is an SKSE mod that refines existing Vanilla mechanic for NPC archers while also expanding it to mages and the Player. Each NPC will have a notable accuracy difference depending on their level in corresponding skill. This enables a few new tactics where you could debuff NPC's aiming skill (like Archery) and decreasing their threat, by making them miss most of the shots.
+[b]NPCs Learn to Aim[/b] is an SKSE mod that refines existing Vanilla mechanic for NPC archers while also expanding it to mages and the Player. Each NPC will have a notable difference in shooting quality depending on their level in corresponding skill. This enables a few new tactics where you could debuff NPC's aiming skill (like Archery) and decreasing their threat, by making them miss most of the shots.
 
-It also makes each ranged specialization ([color=#e06666]bows[/color], [color=#ffe599]crossbows[/color], [color=#a4c2f4]spells[/color], [color=#93c47d]staves[/color]) mechanic feel more unique. [color=#e06666]Bows [/color]are easy to use, but harder to master, [color=#ffe599]Crossbows [/color]simplify shooting, but harder to use compared to bows, [color=#93c47d]staves [/color]are a bit more difficult to aim than spells with your barehand.
+It also makes each ranged specialization ([color=#e06666]bows[/color], [color=#ffe599]crossbows[/color], [color=#a4c2f4]spells[/color], [color=#93c47d]staves[/color]) mechanic feel more unique. [color=#e06666]Bows [/color]are easy to use, but harder to master, [color=#ffe599]Crossbows [/color]simplify shooting, but harder to use compared to bows, [color=#93c47d]staves [/color]are a bit more difficult to aim than spells with your barehand.
 
-The mod comes with a very detailed INI configuration where you can disable or enable aiming for individual ranged specializations as well as tweak how much skill affects the accuracy. See [b]Customization [/b]section for details.
+The mod comes with a very detailed INI configuration where you can disable or enable aiming for individual ranged specializations as well as tweak how much skill affects shooting quality. See [b]Customization [/b]section for details.
 
-In [b]NPCs Learn to Aim[/b] NPC's accuracy is determined by two factors:
+In [b]NPCs Learn to Aim[/b] NPC's shooting quality is determined by two factors:
 
 [list=1]
-[*][color=#6d9eeb][b]Aim[/b] [/color]- ability to accurately point the weapon at the target[/*]
-[*][color=#ffd966][b]Release[/b] [/color]- ability to fire a projectile at the desired aim point [color=#b6b6b6][size=1][i](this is what Vanilla game has for archers)[/i][/size][/color][/*]
+[*][color=#6d9eeb][b]Accuracy[/b] [/color]- ability to accurately point the weapon at the target[/*]
+[*][color=#ffd966][b]Precision[/b] [/color]- ability to fire a projectile at the desired aim point [color=#b6b6b6][size=1][i](this is what Vanilla game has for archers)[/i][/size][/color][/*]
 [/list]
 
-To make each ranged specialization feel more unique, each type has different difficulty for [b][color=#6d9eeb]Aim [/color][/b]and [b][color=#ffd966]Release[/color][/b]. So, for example, an NPC with Archery level 30 would shoot fairly poorly with a [color=#e06666]Bow [/color]but would show much better accuracy if given a [color=#ffe599]crossbow[/color].
+To make each ranged specialization feel more unique, each type has different difficulty for [b][color=#6d9eeb]Accuracy [/color][/b]and [b][color=#ffd966]Precision[/color][/b]. So, for example, an NPC with Archery level 30 would shoot fairly poorly with a [color=#e06666]Bow [/color]but would shoot much better if given a [color=#ffe599]crossbow[/color].
 
 
 [b][size=5]NPCs Learn[/size][/b]
 
 [color=#e06666][size=4][b]Bows[/b][/size][/color]
 
-Bows are the most common ranged weapon in Skyrim. They are quite straightforward when it comes to [b][color=#6d9eeb]aiming[/color][/b], but require more skill to properly [b][color=#ffd966]release [/color][/b]the arrow to hit the desired target.
+Bows are the most common ranged weapon in Skyrim. They are quite straightforward when it comes to [b][color=#6d9eeb]Accuracy[/color][/b], but require more skill for good [b][color=#ffd966]Precision [/color][/b]when releasing the arrow to hit the desired target.
 
 [img]https://i.imgur.com/a12MOrz.gif[/img]
 
 [color=#ffe599][size=4][b]Crossbows[/b][/size][/color]
 
-Crossbows are meant to eliminate the problem of poor [b][color=#ffd966]release [/color][/b]and drastically reduce the entry skill level required to decently shoot at targets. However, they are a bit bulkier than bows and [b][color=#6d9eeb]aiming [/color][/b]requires some practice.
+Crossbows are meant to eliminate the problem of poor [b][color=#ffd966]Precision [/color][/b]and drastically reduce the entry skill level required to decently shoot at targets. However, they are a bit bulkier than bows and [b][color=#6d9eeb]Accuracy [/color][/b]requires some practice.
 
 [img]https://i.imgur.com/4v4irjc.gif[/img]
 
 [color=#a4c2f4][size=4][b]Spells[/b][/size][/color]
 
-Spells, being casted with your hands, make [b][color=#6d9eeb]aiming [/color][/b]feel very natural, thus easy. However, controlling magic projectiles and [b][color=#ffd966]releasing [/color][/b]them at the right point takes some skill.
+Spells, being casted with your hands, make [b][color=#6d9eeb]Accuracy [/color][/b]feel very natural, thus easy. However, controlling magic projectiles for good [b][color=#ffd966]Precision [/color][/b]takes some skill.
 
 [img]https://i.imgur.com/fsisD4K.gif[/img]
 
 [color=#93c47d][size=4][b]Staves[/b][/size][/color]
 
-Staves, being great ready-to-use pre-charged spells, come in handy as they don't require any magicka from a mage. [b][color=#6d9eeb]Aiming[/color][/b] them might feel a bit weird and requires getting used to. But projectile [b][color=#ffd966]release[/color][/b] is notably easier than hand-casted spells, since staff handles it consistently.
+Staves, being great ready-to-use pre-charged spells, come in handy as they don't require any magicka from a mage. [b][color=#6d9eeb]Accuracy[/color][/b] with them might feel a bit weird and requires getting used to. But [b][color=#ffd966]Precision[/color][/b] is notably easier than hand-casted spells, since staff handles the projectile consistently.
 
 [img]https://i.imgur.com/xNS1ASQ.gif[/img]
 
@@ -57,7 +57,7 @@ Staves, being great ready-to-use pre-charged spells, come in handy as they don't
 
 While main focus of the mod is to add some depth to NPCs, the way it's implemented automatically makes it work for Player. So, if you want to experience what NPCs have to deal with you can enable this feature (you can pick a preset during FOMOD installation or manually enable/disable this feature in INI file).
 
-Only [color=#ffd966][b]release[/b] [/color]factor is dependent on Player's character skill. While [color=#6d9eeb][b]aiming [/b][/color]is a pure Player's skill. To make it a bit more challenging you can disable crosshair and learn to aim the hard way :)
+Only [color=#ffd966][b]Precision[/b] [/color]factor is dependent on Player's character skill. While [color=#6d9eeb][b]Accuracy [/b][/color]is a pure Player's skill. To make it a bit more challenging you can disable crosshair and learn to aim the hard way :)
 
 [quote][center][color=#6fa8dc][size=2][b]NOTE[/b][/size][/color]
 [i]For Player's sake the mod's effect is tuned down for Player, compared to what NPCs go through, so that stray shots are less annoying.
@@ -67,25 +67,25 @@ You can increase or decrease it further in the INI file.[/i][/center]
 
 [color=#e06666][size=4][b]Bows
 [/b][/size][/color]
-While [color=#6d9eeb][b]aiming [/b][/color]purely depends on Player, [color=#ffd966][b]releasing [/b][/color]arrows will take practice (e.g. progressing Archery), so that unless you invest in Archery you won't be able to become a sniper right at the beginning of the game.
- 
+While [color=#6d9eeb][b]Accuracy [/b][/color]purely depends on Player, [color=#ffd966][b]Precision [/b][/color]with arrows will take practice (e.g. progressing Archery), so that unless you invest in Archery you won't be able to become a sniper right at the beginning of the game.
+ 
 [img]https://i.imgur.com/T2rey3d.gif[/img]
 
 
 [color=#ffe599][size=4][b]Crossbows[/b][/size][/color]
 
-Given that crossbows provide near perfect [b][color=#ffd966]release[/color][/b] (by default), once you figure out how to [b][color=#6d9eeb]aim [/color][/b]with crossbows, they become a perfect way of leveling up Archery with much less random shots :) however, since they are less common to come across, it might be harder to have enough bolts supplies.
+Given that crossbows provide near perfect [b][color=#ffd966]Precision[/color][/b] (by default), once you figure out [b][color=#6d9eeb]Accuracy [/color][/b]with crossbows, they become a perfect way of leveling up Archery with much less random shots :) however, since they are less common to come across, it might be harder to have enough bolts supplies.
 
 [img]https://i.imgur.com/zakMi93.gif[/img]
 [center][color=#b6b6b6][size=2](effects on a gif is exaggerated for demonstration purposes)[/size][/color][/center]
 
 [color=#a4c2f4][size=4][b]Spells[/b][/size][/color]
 
-Pretty much the same as bows. You figure out how to [b][color=#6d9eeb]aim [/color][/b]with hands and practice your [b][color=#ffd966]release [/color][/b](skill) until it becomes second nature to your character.
+Pretty much the same as bows. You figure out [b][color=#6d9eeb]Accuracy [/color][/b]with hands and practice your [b][color=#ffd966]Precision [/color][/b](skill) until it becomes second nature to your character.
 [quote][center][color=#6fa8dc][size=2][b]NOTE[/b][/size][/color]
-[i]By default, accuracy is calculated based on the magic skill associated with the spell being casted.
-So that while mastering Destruction skill will give you near perfect release of Destruction spells,
-you'd struggle with releasing Restoration spells, unless you level up Restoration skill too.
+[i]By default, shooting quality is calculated based on the magic skill associated with the spell being casted.
+So that while mastering Destruction skill will give you near perfect [b][color=#ffd966]Precision[/color][/b] with Destruction spells,
+you'd struggle with [b][color=#ffd966]Precision[/color][/b] for Restoration spells, unless you level up Restoration skill too.
 
 This can also be customized in INI.[/i][/center]
 [/quote]
@@ -94,10 +94,10 @@ This can also be customized in INI.[/i][/center]
 [center][/center]
 [b][color=#93c47d][size=4]Staves[/size][/color][/b]
 
-Staves have a slightly better [b][color=#ffd966]release[/color][/b] than spells for the Player.
+Staves have a slightly better [b][color=#ffd966]Precision[/color][/b] than spells for the Player.
 
 [img]https://i.imgur.com/lpmRIgF.gif[/img]
-[center][color=#b6b6b6][size=2]Effect on this gif is a bit exaggerated as I recorded it before adjusting the release for staves :)[/size][/color][/center]
+[center][color=#b6b6b6][size=2]Effect on this gif is a bit exaggerated as I recorded it before adjusting Precision for staves :)[/size][/color][/center]
 
 [size=5][b]Customization[/b][/size]
 
@@ -106,15 +106,15 @@ You can customize just about any aspect of the mod. INI configuration with detai
 First of all, [b]NPCs Learn to Aim[/b] is built (and balanced) around Vanilla game settings, so by changing them you can globally control mod's effect on both NPCs and the Player:
 
 [list]
-[*][b][color=#6d9eeb]fCombatRangedAimVariance[/color][/b][size=1][i] [color=#b6b6b6](default: 0.9)[/color][/i][/size] - a maximum multiplier for aiming offsets. Changing it only affects NPCs. Decrease it to make [b][color=#6d9eeb]aiming [/color][/b]less disperse, 0 value will effectively disable the [color=#6d9eeb][b]aiming[/b] [/color]factor on NPCs. In the mod this is multiplier is further affected by skill factor, but generally value of this setting corresponds an aim multiplier at skill level 40. The multiplier is twice of that value at skill level 10.[/*]
+[*][b][color=#6d9eeb]fCombatRangedAimVariance[/color][/b][size=1][i] [color=#b6b6b6](default: 0.9)[/color][/i][/size] - a maximum multiplier for aiming offsets. Changing it only affects NPCs. Decrease it to make [b][color=#6d9eeb]Accuracy [/color][/b]less disperse, 0 value will effectively disable the [color=#6d9eeb][b]Accuracy[/b] [/color]factor on NPCs. In the mod this is multiplier is further affected by skill factor, but generally value of this setting corresponds an Accuracy multiplier at skill level 40. The multiplier is twice of that value at skill level 10.[/*]
 [/list]
 
 [list]
-[*][b][color=#6d9eeb]fCombatAimProjectileRandomOffset[/color][/b][i][size=1] [color=#b6b6b6](default: 16)[/color][/size][/i] - a flat aiming offset that will be further multiplied by a random multiplier based on skill and [b][color=#6d9eeb]fCombatRangedAimVariance[/color][/b]. Changing it only affects NPCs. Increasing this value will affect by how much NPC's aim will be offseted from the perfect aim point.[/*]
+[*][b][color=#6d9eeb]fCombatAimProjectileRandomOffset[/color][/b][i][size=1] [color=#b6b6b6](default: 16)[/color][/size][/i] - a flat aiming offset that will be further multiplied by a random multiplier based on skill and [b][color=#6d9eeb]fCombatRangedAimVariance[/color][/b]. Changing it only affects NPCs. Increasing this value will affect by how much NPC's Accuracy will be offset from the perfect aim point.[/*]
 [/list]
 
 [list]
-[*][b][color=#ffd966]fBowNPCSpreadAngle[/color][/b][i][size=1] [color=#b6b6b6](default: 4)[/color][/size][/i] - a maximum angle (in degrees) of projectile's deflection upon [b][color=#ffd966]release[/color][/b]. Changing this setting will affect both NPCs and the Player. This has a similar effect as aiming offset, but controls specifically [b][color=#ffd966]release [/color][/b]factor. Decreasing it will reduce projectile's spread. 0 value will guarantee perfect shots at aiming point.[/*]
+[*][b][color=#ffd966]fBowNPCSpreadAngle[/color][/b][i][size=1] [color=#b6b6b6](default: 4)[/color][/size][/i] - a maximum angle (in degrees) of projectile's deflection upon [b][color=#ffd966]Precision[/color][/b]. Changing this setting will affect both NPCs and the Player. This has a similar effect as aiming offset, but controls specifically the [b][color=#ffd966]Precision [/color][/b]factor. Decreasing it will reduce projectile's spread. 0 value will guarantee perfect shots at aiming point.[/*]
 [/list]
 
 
@@ -132,31 +132,31 @@ This option is disabled by default.
 
 [color=#b6d7a8][size=4][b]Staves use Enchanting skill
 
-[/b][/size][/color]Makes [b][color=#93c47d]staves[/color][/b] accuracy depend on wielder's Enchanting skill, rather than magic skill associated with the spell (or highest magic skill). This option makes less sense for NPCs since there aren't many NPCs that invest in Enchanting skill. However, for the Player this might be an interesting flavor.
+[/b][/size][/color]Makes [b][color=#93c47d]staves[/color][/b]' shooting quality depend on wielder's Enchanting skill, rather than magic skill associated with the spell (or highest magic skill). This option makes less sense for NPCs since there aren't many NPCs that invest in Enchanting skill. However, for the Player this might be an interesting flavor.
 
 This option is disabled by default.
 
 
 [b][size=4]Skill multipliers[/size]
 
-[/b]If global settings are too broad or sensitive for your needs, you can further customize how much skill affects accuracy of each individual ranged specialization, both for NPCs and the Player.
+[/b]If global settings are too broad or sensitive for your needs, you can further customize how much skill affects shooting quality of each individual ranged specialization, both for NPCs and the Player.
 
 
 [b][color=#8e7cc3][size=4]Blindness[/size][/color][/b]
 
-Cool feature that [url=https://www.nexusmods.com/skyrimspecialedition/users/2148728]po3 [/url]suggested :) NPCs that are blind will have a severe debuff on [b][color=#6d9eeb]aiming[/color][/b], requiring them to have much higher skill to be able to aim properly. However, their [color=#ffd966][b]release[/b][/color] is slightly buffed to depict improved other senses. Albeit, there are not many blind NPCs, especially archers (hopefully some other mods make use of blindness effect). You can still customize the impact of [b]Blindness[/b] on NPC's accuracy.
+Cool feature that [url=https://www.nexusmods.com/skyrimspecialedition/users/2148728]po3 [/url]suggested :) NPCs that are blind will have a severe debuff on [b][color=#6d9eeb]Accuracy[/color][/b], requiring them to have much higher skill to be able to aim properly. However, their [color=#ffd966][b]Precision[/b][/color] is slightly buffed to depict improved other senses. Albeit, there are not many blind NPCs, especially archers (hopefully some other mods make use of blindness effect). You can still customize the impact of [b]Blindness[/b] on NPC's shooting quality.
 
 
 [b][color=#76a5af][size=5]Compatibility[/size][/color][/b]
 
 NPCs Learn to Aim should be compatible with pretty much everything.
 
-It also comes with a handy way to include/exclude certain NPCs using keywords. By default, mod is enabled for all NPCs with [b]ActorTypeNPC [/b](which should be all playable races). Providing custom keywords in [b]sIncludeKeywords [/b]or [b]sExcludeKeywords [/b]in the INI to enable or disable individual NPCs. Use power of SPID to provide any logic you'd like.
+It also comes with a handy way to include/exclude certain NPCs using keywords. By default, mod is enabled for all NPCs with [b]ActorTypeNPC [/b](which should be all playable races). Providing custom keywords in [b]sIncludeKeywords [/b]or [b]sExcludeKeywords [/b]in the INI to enable or disable individual NPCs. Use power of SPID to provide any logic you'd like.
 
-[url=https://www.nexusmods.com/skyrimspecialedition/mods/51614]True Directional Movement'[/url]s Target Lock feature is incompatible with [b]Player Learns[/b] module :) once you've locked a target [b]TDM[/b] takes over projectile trajectory calculations and makes it always a perfect hit.
+[url=https://www.nexusmods.com/skyrimspecialedition/mods/51614]True Directional Movement'[/url]s Target Lock feature is incompatible with [b]Player Learns[/b] module :) once you've locked a target [b]TDM[/b] takes over projectile trajectory calculations and makes it always a perfect hit.
 
 
 [color=#3c78d8][size=5][b]Support[/b][/size][/color]
-Thank you for using my mods! If you enjoy them and would like to support me, you can use the links below. [url=https://www.flaticon.com/search?author_id=353&style_id=&type=standard&word=cat][img]https://i.imgur.com/1roacCR.png[/img]
+Thank you for using my mods! If you enjoy them and would like to support me, you can use the links below. [url=https://www.flaticon.com/search?author_id=353&style_id=&type=standard&word=cat][img]https://i.imgur.com/1roacCR.png[/img]
 [/url]
 [i][b][b][size=6][color=#ffff00][url=https://patreon.com/Arkhlus?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_cjavascript-event-strippedjoin_link][img]https://i.imgur.com/tkWIT9M.gif[/img][/url][/color][/size][/b][/b][/i]

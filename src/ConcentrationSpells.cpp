@@ -112,7 +112,7 @@ namespace NLA::ConcentrationSpells
 				if (projectile && rotation) {
 					if (auto attacker = GetAttacker(projectile); attacker) {
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
-						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kRelease); skillUsage) {
+						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
 							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage);
 							ApplyRangeScaling(projectile, attacker, skillUsage);
 							LocalContext::current = { projectile, offset };
@@ -152,7 +152,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration beam aiming wander logic"); }
+			static inline void post_hook() { logger::info("Installed concentration beam accuracy wander logic"); }
 		};
 
 		struct UpdateImpl_MakeRotation
@@ -164,7 +164,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration beam node-aim wander logic"); }
+			static inline void post_hook() { logger::info("Installed concentration beam node-accuracy wander logic"); }
 		};
 	}
 
@@ -179,7 +179,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration flame-beam node-aim wander logic"); }
+			static inline void post_hook() { logger::info("Installed concentration flame-beam node-accuracy wander logic"); }
 		};
 
 		struct UpdateImpl_CopyRotation
@@ -191,7 +191,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration flame-beam aiming wander logic"); }
+			static inline void post_hook() { logger::info("Installed concentration flame-beam accuracy wander logic"); }
 		};
 	}
 

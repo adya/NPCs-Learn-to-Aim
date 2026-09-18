@@ -80,18 +80,18 @@ namespace NLA::Options
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
 
 		logger::info("");
-		LogSkillMultiplier("NPCs", "Bows", "Aiming", NPC.aimMultipliers.bow);
-		LogSkillMultiplier("NPCs", "Crossbows", "Aiming", NPC.aimMultipliers.crossbow);
-		LogSkillMultiplier("NPCs", "Spells", "Aiming", NPC.aimMultipliers.spell);
-		LogSkillMultiplier("NPCs", "Staves", "Aiming", NPC.aimMultipliers.staff);
-		LogBlindnessSkillMultiplier("NPCs", "aiming", NPC.aimMultipliers.blindness);
+		LogSkillMultiplier("NPCs", "Bows", "Accuracy", NPC.accuracyMultipliers.bow);
+		LogSkillMultiplier("NPCs", "Crossbows", "Accuracy", NPC.accuracyMultipliers.crossbow);
+		LogSkillMultiplier("NPCs", "Spells", "Accuracy", NPC.accuracyMultipliers.spell);
+		LogSkillMultiplier("NPCs", "Staves", "Accuracy", NPC.accuracyMultipliers.staff);
+		LogBlindnessSkillMultiplier("NPCs", "accuracy", NPC.accuracyMultipliers.blindness);
 
 		logger::info("");
-		LogSkillMultiplier("NPCs", "Bows", "Release", NPC.releaseMultipliers.bow);
-		LogSkillMultiplier("NPCs", "Crossbows", "Release", NPC.releaseMultipliers.crossbow);
-		LogSkillMultiplier("NPCs", "Spells", "Release", NPC.releaseMultipliers.spell);
-		LogSkillMultiplier("NPCs", "Staves", "Release", NPC.releaseMultipliers.staff);
-		LogBlindnessSkillMultiplier("NPCs", "release", NPC.releaseMultipliers.blindness);
+		LogSkillMultiplier("NPCs", "Bows", "Precision", NPC.precisionMultipliers.bow);
+		LogSkillMultiplier("NPCs", "Crossbows", "Precision", NPC.precisionMultipliers.crossbow);
+		LogSkillMultiplier("NPCs", "Spells", "Precision", NPC.precisionMultipliers.spell);
+		LogSkillMultiplier("NPCs", "Staves", "Precision", NPC.precisionMultipliers.staff);
+		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
 
 		logger::info("");
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
@@ -124,10 +124,10 @@ namespace NLA::Options
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
 
 		logger::info("");
-		LogSkillMultiplier("Player", "Bows", "Release", Player.releaseMultipliers.bow);
-		LogSkillMultiplier("Player", "Crossbows", "Release", Player.releaseMultipliers.crossbow);
-		LogSkillMultiplier("Player", "Spells", "Release", Player.releaseMultipliers.spell);
-		LogSkillMultiplier("Player", "Staves", "Release", Player.releaseMultipliers.staff);
+		LogSkillMultiplier("Player", "Bows", "Precision", Player.precisionMultipliers.bow);
+		LogSkillMultiplier("Player", "Crossbows", "Precision", Player.precisionMultipliers.crossbow);
+		LogSkillMultiplier("Player", "Spells", "Precision", Player.precisionMultipliers.spell);
+		LogSkillMultiplier("Player", "Staves", "Precision", Player.precisionMultipliers.staff);
 
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
@@ -155,8 +155,8 @@ namespace NLA::Options
 		bowAiming = ini.GetBoolValue(a_section, "bEnableBowAim", bowAiming);
 		crossbowAiming = ini.GetBoolValue(a_section, "bEnableCrossbowAim", crossbowAiming);
 
-		aimMultipliers = SkillMultiplier(ini, a_section, "Aim");
-		releaseMultipliers = SkillMultiplier(ini, a_section, "Release");
+		accuracyMultipliers = SkillMultiplier(ini, a_section, "Accuracy");
+		precisionMultipliers = SkillMultiplier(ini, a_section, "Precision");
 
 		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", stavesUseEnchantingSkill);
 

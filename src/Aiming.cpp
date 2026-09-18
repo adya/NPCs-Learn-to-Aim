@@ -84,11 +84,11 @@ namespace NLA
 			static inline constexpr REL::VariantOffset offset{ 0x103, 0x97, 0x103 };
 			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 84 C0 74" };
 
-			static inline void post_hook() { logger::info("Installed Aiming logic"); }
+			static inline void post_hook() { logger::info("Installed Accuracy logic"); }
 
 			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {
 #ifndef NDEBUG
-				logger::info("Calculating NPC's Aim...");
+				logger::info("Calculating NPC's Accuracy...");
 #endif
 				if (!controller || !controller->combat_control) {
 					func(controller, target);
@@ -116,7 +116,7 @@ namespace NLA
 
 				// This works for bows, crossbows, staves, spells and... guns :)
 				if (auto source = GetSource(controller->mcaster); source) {
-					skillUsage = std::visit([&](auto* form) { return SkillUsage(form, attacker, kAim); }, *source);
+					skillUsage = std::visit([&](auto* form) { return SkillUsage(form, attacker, kAccuracy); }, *source);
 				}
 
 				// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
@@ -127,7 +127,7 @@ namespace NLA
 					controller->aimVariance = 2.0f * aimVariance * skillUsage.SkillFactor(attacker);
 #ifndef NDEBUG
 					float aimOffset = Settings::fCombatAimProjectileRandomOffset();
-					logger::info("Aiming:");
+					logger::info("Accuracy:");
 					logger::info("\tSkill: {} (base: {})", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker));
 					logger::info("\tVariance: {:.4f} (base: {:.4f})", controller->aimVariance, aimVariance);
 					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->aimOffset, aimOffset, aimOffset * controller->aimVariance);
@@ -179,7 +179,7 @@ namespace NLA
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				if (!IsBeamProjectile(launchData.projectileBase)) { // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
 					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-					if (auto skillUsage = SkillUsage(launchData.spell, attacker, kRelease); skillUsage) {
+					if (auto skillUsage = SkillUsage(launchData.spell, attacker, kPrecision); skillUsage) {
 						AddRandomSpread(launchData, skillUsage);
 					}
 				}
@@ -203,7 +203,7 @@ namespace NLA
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kRelease); skillUsage) {
+				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kPrecision); skillUsage) {
 					AddRandomSpread(launchData, skillUsage);
 				}
 				func(projectile, launchData);
@@ -228,9 +228,9 @@ namespace NLA
 
 				SkillUsage skillUsage{};
 				if (auto spell = projectile->GetProjectileRuntimeData().spell; spell) {
-					skillUsage = SkillUsage(spell, player, kRelease);
+					skillUsage = SkillUsage(spell, player, kPrecision);
 				} else if (auto weapon = projectile->GetProjectileRuntimeData().weaponSource; weapon) {
-					skillUsage = SkillUsage(weapon, player, kRelease);
+					skillUsage = SkillUsage(weapon, player, kPrecision);
 				}
 
 				if (skillUsage) {

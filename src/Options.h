@@ -4,8 +4,8 @@ namespace NLA
 {
 	enum SkillUsageContext
 	{
-		kAim,
-		kRelease
+		kAccuracy,
+		kPrecision
 	};
 }
 
@@ -33,17 +33,17 @@ namespace NLA::Options
 		bool bowAiming = true;
 		bool crossbowAiming = true;
 
-		SkillMultiplier aimMultipliers;
-		SkillMultiplier releaseMultipliers;
+		SkillMultiplier accuracyMultipliers;
+		SkillMultiplier precisionMultipliers;
 
 		/// If true, staves use the enchanting skill instead of the spell's primary effect's school skill.
-		bool stavesUseEnchantingSkill = false;  
+		bool stavesUseEnchantingSkill = false;
 
 		/// If true, the highest NPC's magic skill is used to aim spells, instead of the spell's primary effect's school skill.
 		bool spellsUseHighestMagicSkill = false;
 
-		/// If true, concentration spells require continuous aiming, where the beam/flow will wander around the target.
-		bool concetrationSpellsRequireContinuousAim = true; 
+		/// If true, concentration spells require continuous accuracy, where the beam/flow will wander around the target.
+		bool concetrationSpellsRequireContinuousAim = true;
 
 		/// If true, concentration spells would reach farther as the skill in corresponding school increases.
 		bool concentrationSpellRangeScaling = true;
@@ -57,8 +57,8 @@ namespace NLA::Options
 		       bool            staffAiming,
 		       bool            bowAiming,
 		       bool            crossbowAiming,
-		       SkillMultiplier aimMultipliers,
-		       SkillMultiplier releaseMultipliers,
+		       SkillMultiplier accuracyMultipliers,
+		       SkillMultiplier precisionMultipliers,
 		       bool            stavesUseEnchantingSkill,
 		       bool            spellsUseHighestMagicSkill,
 		       bool            concetrationSpellsRequireContinuousAim) :
@@ -66,20 +66,20 @@ namespace NLA::Options
 			staffAiming(staffAiming),
 			bowAiming(bowAiming),
 			crossbowAiming(crossbowAiming),
-			aimMultipliers(aimMultipliers),
-			releaseMultipliers(releaseMultipliers),
+			accuracyMultipliers(accuracyMultipliers),
+			precisionMultipliers(precisionMultipliers),
 			stavesUseEnchantingSkill(stavesUseEnchantingSkill),
 			spellsUseHighestMagicSkill(spellsUseHighestMagicSkill),
 			concetrationSpellsRequireContinuousAim(concetrationSpellsRequireContinuousAim) {}
 
 		inline const SkillMultiplier& MultiplierFor(SkillUsageContext context) const {
 			switch (context) {
-			case kAim:
-				return aimMultipliers;
-			case kRelease:
-				return releaseMultipliers;
+			case kAccuracy:
+				return accuracyMultipliers;
+			case kPrecision:
+				return precisionMultipliers;
 			default:
-				return aimMultipliers;
+				return accuracyMultipliers;
 			}
 		}
 	};
@@ -92,16 +92,16 @@ namespace NLA::Options
 		             bool            staffAiming,
 		             bool            bowAiming,
 		             bool            crossbowAiming,
-		             SkillMultiplier aimMultipliers,
-		             SkillMultiplier releaseMultipliers,
+		             SkillMultiplier accuracyMultipliers,
+		             SkillMultiplier precisionMultipliers,
 		             bool            stavesUseEnchantingSkill,
 		             bool            spellsUseHighestMagicSkill) :
 			Config(spellAiming,
 		           staffAiming,
 		           bowAiming,
 		           crossbowAiming,
-		           aimMultipliers,
-		           releaseMultipliers,
+		           accuracyMultipliers,
+		           precisionMultipliers,
 		           stavesUseEnchantingSkill,
 		           spellsUseHighestMagicSkill,
 		           true) {}
@@ -118,8 +118,8 @@ namespace NLA::Options
 		          bool                     staffAiming,
 		          bool                     bowAiming,
 		          bool                     crossbowAiming,
-		          SkillMultiplier          aimMultipliers,
-		          SkillMultiplier          releaseMultipliers,
+		          SkillMultiplier          accuracyMultipliers,
+		          SkillMultiplier          precisionMultipliers,
 		          bool                     stavesUseEnchantingSkill,
 		          bool                     spellsUseHighestMagicSkill,
 		          bool                     concetrationSpellsRequireContinuousAim,
@@ -129,8 +129,8 @@ namespace NLA::Options
 		           staffAiming,
 		           bowAiming,
 		           crossbowAiming,
-		           aimMultipliers,
-		           releaseMultipliers,
+		           accuracyMultipliers,
+		           precisionMultipliers,
 		           stavesUseEnchantingSkill,
 		           spellsUseHighestMagicSkill,
 		           concetrationSpellsRequireContinuousAim),
