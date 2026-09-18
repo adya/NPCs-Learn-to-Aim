@@ -3,7 +3,6 @@
 #include "RE/C/CombatProjectileAimController.h"
 #include "Hooking.h"
 #include "SkillUsage.h"
-#include <numbers>
 
 namespace NLA
 {
@@ -11,6 +10,27 @@ namespace NLA
 	{
 		bool IsBeamProjectile(const RE::BGSProjectile* base) {
 			return base && base->data.types.any(RE::BGSProjectileData::Type::kBeam);
+		}
+
+		using MCasterSource = std::variant<RE::TESObjectWEAP*, RE::MagicItem*>;
+
+		/// Attempts to retrieve the source of the projectile that is being launched.
+		/// There were reports of access violation which bypass the usual nullptr checks, 
+		/// so this is an attempt to catch such exception and handle gracefully.
+		std::optional<MCasterSource> GetSource(RE::MagicCaster* mcaster) {
+			if (!mcaster)
+				return std::nullopt;
+
+			__try {
+				if (auto* weapon = reinterpret_cast<RE::TESObjectWEAP*>(mcaster); weapon->formType == RE::FormType::Weapon) {
+					return weapon;
+				}
+
+				return mcaster->currentSpell;
+			} __except (EXCEPTION_EXECUTE_HANDLER) {
+				logger::warn("Caught an access violation while probing CombatProjectileAimController's caster.");
+				return std::nullopt;
+			}
 		}
 	}
 
@@ -94,11 +114,9 @@ namespace NLA
 
 				SkillUsage skillUsage{};
 
-				// This works for bows, crossbows and... guns :)
-				if (const auto weapon = reinterpret_cast<RE::TESObjectWEAP*>(controller->mcaster); weapon && weapon->formType == RE::FormType::Weapon) {
-					skillUsage = SkillUsage(weapon, attacker, kAim);
-				} else if (const auto caster = controller->mcaster; caster) {  // This also works for staves.
-					skillUsage = SkillUsage(caster->currentSpell, attacker, kAim);
+				// This works for bows, crossbows, staves, spells and... guns :)
+				if (auto source = GetSource(controller->mcaster); source) {
+					skillUsage = std::visit([&](auto* form) { return SkillUsage(form, attacker, kAim); }, *source);
 				}
 
 				// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
