@@ -71,7 +71,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SKSE::Init(a_skse);
 
 	// Pre-allocate trampoline space upfront. Each write_call<5> hook needs 14 bytes.
-	SKSE::AllocTrampoline(14 * 5);
+	SKSE::AllocTrampoline(14 * 16);
 
 	SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 
