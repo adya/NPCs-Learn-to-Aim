@@ -75,7 +75,7 @@ namespace NLA::ConcentrationSpells
 		if (!options.concentrationSpellRangeScaling)
 			return;
 		
-		if (auto& runtimeData = projectile->GetProjectileRuntimeData(); !runtimeData.impacts.empty()) {  // already hit something, don't change range anymore.
+		if (auto& runtimeData = projectile->GetProjectileRuntimeData(); runtimeData.impacts.empty()) {  // already hit something, don't change range anymore.
 			if (auto base = projectile->GetProjectileBase(); base) {
 				float rangeMult = skillUsage.LerpSkillFactor(attacker, options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier);
 
