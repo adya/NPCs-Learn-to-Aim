@@ -148,7 +148,7 @@ namespace NLA::Menu
 			ShowTooltip(tooltip);
 		}
 
-		void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.0f, float max = 3.0f) {
+		void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.01f, float max = 10.0f) {
 			TableNextColumn();
 			SetNextItemWidth(-1.0f);
 			if (SliderFloat(id, &value, min, max, "x%.2f")) {
