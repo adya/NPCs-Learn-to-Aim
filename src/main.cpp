@@ -15,7 +15,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 	}
 }
 
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
+SKSE_EXPORT constinit auto SKSEPlugin_Version = []() {
 	SKSE::PluginVersionData v;
 	v.PluginVersion(Version::MAJOR);
 	v.PluginName(Version::PROJECT.data());
@@ -27,7 +27,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	return v;
 }();
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* a_info) {
+SKSE_EXPORT bool SKSEPlugin_Query(SKSE::QueryInterface*, SKSE::PluginInfo* a_info) {
 	a_info->name = SKSEPlugin_Version.pluginName;
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
 	a_info->version = SKSEPlugin_Version.pluginVersion;
@@ -54,7 +54,7 @@ void InitializeLog() {
 	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
 }
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse) {
+SKSE_EXPORT bool SKSEPlugin_Load(const SKSE::LoadInterface* a_skse) {
 	InitializeLog();
 
 	if (a_skse->IsEditor()) {

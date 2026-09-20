@@ -124,13 +124,13 @@ namespace NLA
 				// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
 				if (skillUsage) {
 					float aimVariance = Settings::fCombatRangedAimVariance();
-					controller->aimVariance = 2.0f * aimVariance * skillUsage.SkillFactor(attacker);
+					controller->radiusMode = 2.0f * aimVariance * skillUsage.SkillFactor(attacker);
 #ifndef NDEBUG
 					float aimOffset = Settings::fCombatAimProjectileRandomOffset();
 					logger::info("Accuracy:");
 					logger::info("\tSkill: {} (base: {})", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker));
-					logger::info("\tVariance: {:.4f} (base: {:.4f})", controller->aimVariance, aimVariance);
-					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->aimOffset, aimOffset, aimOffset * controller->aimVariance);
+					logger::info("\tVariance: {:.4f} (base: {:.4f})", controller->radiusMode, aimVariance);
+					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->unk8C, aimOffset, aimOffset * controller->radiusMode);
 #endif
 				}
 				func(controller, target);
