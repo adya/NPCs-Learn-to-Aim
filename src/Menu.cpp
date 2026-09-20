@@ -151,7 +151,7 @@ namespace NLA::Menu
 		void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.0f, float max = 3.0f) {
 			TableNextColumn();
 			SetNextItemWidth(-1.0f);
-			if (SliderFloat(id, &value, min, max, "%.2fx")) {
+			if (SliderFloat(id, &value, min, max, "x%.2f")) {
 				value = RoundTo2Decimals(value);
 			}
 			if (IsItemDeactivatedAfterEdit()) {
