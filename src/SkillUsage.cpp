@@ -35,23 +35,19 @@ namespace NLA
 			return;
 
 		RE::ActorValue magicSkill = RE::ActorValue::kNone;
-
-		if (attacker && Options::For(attacker).spellsUseHighestMagicSkill) {
-			std::array<RE::ActorValue, 5> properties = { RE::ActorValue::kAlteration, RE::ActorValue::kConjuration, RE::ActorValue::kDestruction, RE::ActorValue::kIllusion, RE::ActorValue::kRestoration };
-
-			auto highestMagicSkill = std::ranges::max_element(properties, [&attacker](RE::ActorValue a, RE::ActorValue b) {
-				return attacker->AsActorValueOwner()->GetActorValue(a) < attacker->AsActorValueOwner()->GetActorValue(b);
-			});
-			magicSkill = *highestMagicSkill;
-		}
-
-		if (magicSkill == RE::ActorValue::kNone) {
-			if (auto effect = spell->GetCostliestEffectItem(); effect) {
-				if (auto base = effect->baseEffect; base) {
-					magicSkill = base->GetMagickSkill();
-				}
+		if (auto effect = spell->GetCostliestEffectItem(); effect) {
+			if (auto base = effect->baseEffect; base) {
+				magicSkill = base->GetMagickSkill();
 			}
 		}
+
+		auto highestMagicSkill = [&attacker]() {
+			std::array<RE::ActorValue, 5> properties = { RE::ActorValue::kAlteration, RE::ActorValue::kConjuration, RE::ActorValue::kDestruction, RE::ActorValue::kIllusion, RE::ActorValue::kRestoration };
+
+			return *std::ranges::max_element(properties, [&attacker](RE::ActorValue a, RE::ActorValue b) {
+				return attacker->AsActorValueOwner()->GetActorValue(a) < attacker->AsActorValueOwner()->GetActorValue(b);
+			});
+		};
 
 		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
 
@@ -64,14 +60,21 @@ namespace NLA
 		case RE::MagicSystem::SpellType::kLeveledSpell:
 			weaponType = kSpell;
 			if (Options::For(attacker).spellAiming) {
-				skill = magicSkill;
+				const bool useHighestMagicSkill = isConcentration ? Options::For(attacker).concentrationSpellsUseHighestMagicSkill : Options::For(attacker).spellsUseHighestMagicSkill;
+				skill = useHighestMagicSkill ? highestMagicSkill() : magicSkill;
 				multiplier = isConcentration ? Options::For(attacker).MultiplierFor(context).concentrationSpell : Options::For(attacker).MultiplierFor(context).spell;
 			}
 			break;
 		case RE::MagicSystem::SpellType::kStaffEnchantment:
 			weaponType = kStaff;
 			if (Options::For(attacker).staffAiming) {
-				skill = Options::For(attacker).stavesUseEnchantingSkill ? RE::ActorValue::kEnchanting : magicSkill;
+				if (Options::For(attacker).stavesUseEnchantingSkill) {
+					skill = RE::ActorValue::kEnchanting;
+				} else if (Options::For(attacker).stavesUseHighestMagicSkill) {
+					skill = highestMagicSkill();
+				} else {
+					skill = magicSkill;
+				}
 				multiplier = Options::For(attacker).MultiplierFor(context).staff;
 			}
 			break;

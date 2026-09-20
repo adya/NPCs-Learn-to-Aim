@@ -44,7 +44,8 @@ namespace NLA::Menu
 		constexpr const char* kStaffAccuracyTooltip = "How much the skill contributes to Accuracy with staves. The higher this multiplier is the easier it is to aim.";
 		constexpr const char* kStaffPrecisionTooltip = "How much the skill contributes to Precision with staves. The higher this multiplier is the easier it is to hit the target.";
 		constexpr const char* kUseEnchantingSkillLabel = "Use Enchanting Skill";
-		constexpr const char* kUseEnchantingSkillTooltip = "When enabled, staff aiming is based on the Enchanting skill instead of the staff's spell's Magic school.";
+		constexpr const char* kUseEnchantingSkillTooltip = "When enabled, staff aiming is based on the Enchanting skill instead of the staff's spell's Magic school. Mutually exclusive with Use Highest Magic Skill.";
+		constexpr const char* kStaffUseHighestMagicSkillTooltip = "When enabled, staff aiming is based on the highest Magic skill, regardless of the staff's spell's Magic school. Mutually exclusive with Use Enchanting Skill.";
 		constexpr const char* kResetStavesButton = "Reset Staves to Default";
 
 		constexpr const char* kSpellLabel = "Learn Spells";
@@ -52,7 +53,7 @@ namespace NLA::Menu
 		constexpr const char* kSpellAccuracyTooltip = "How much the skill contributes to Accuracy with fire-and-forget spells. The higher this multiplier is the easier it is to aim.";
 		constexpr const char* kSpellPrecisionTooltip = "How much the skill contributes to Precision with fire-and-forget spells. The higher this multiplier is the easier it is to hit the target.";
 		constexpr const char* kUseHighestMagicSkillLabel = "Use Highest Magic Skill";
-		constexpr const char* kUseHighestMagicSkillTooltip = "When enabled, spells aiming is based on the highest Magic skill, regardless of the spell's Magic school. (affects Concentration Spells too)";
+		constexpr const char* kUseHighestMagicSkillTooltip = "When enabled, fire-and-forget spell aiming is based on the highest Magic skill, regardless of the spell's Magic school.";
 		constexpr const char* kResetSpellsButton = "Reset Spells to Default";
 
 		constexpr const char* kConcentrationSpellLabel = "Learn Concentration Spells";
@@ -65,6 +66,7 @@ namespace NLA::Menu
 		constexpr const char* kMaxRangeMultiplierHeader = "Max Range";
 		constexpr const char* kMinRangeMultiplierTooltip = "Concentration spell range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.";
 		constexpr const char* kMaxRangeMultiplierTooltip = "Concentration spell range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.";
+		constexpr const char* kConcentrationSpellUseHighestMagicSkillTooltip = "When enabled, concentration spell aiming is based on the highest Magic skill, regardless of the spell's Magic school.";
 		constexpr const char* kResetConcentrationSpellsButton = "Reset Concentration Spells to Default";
 
 		constexpr const char* kBlindnessLabel = "Blindness Affects Aim";
@@ -143,6 +145,17 @@ namespace NLA::Menu
 		void ToggleColumn(const char* label, bool& value, const char* tooltip) {
 			TableNextColumn();
 			if (Checkbox(label, &value)) {
+				Options::Save();
+			}
+			ShowTooltip(tooltip);
+		}
+
+		void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip) {
+			TableNextColumn();
+			if (Checkbox(label, &value)) {
+				if (value) {
+					other = false;
+				}
 				Options::Save();
 			}
 			ShowTooltip(tooltip);
@@ -245,7 +258,10 @@ namespace NLA::Menu
 			SliderColumn("##StaffPrecision", cfg.precisionMultipliers.staff, kStaffPrecisionTooltip);
 
 			TableNextRow();
-			ToggleColumn(kUseEnchantingSkillLabel, cfg.stavesUseEnchantingSkill, kUseEnchantingSkillTooltip);
+			ExclusiveToggleColumn(kUseEnchantingSkillLabel, cfg.stavesUseEnchantingSkill, cfg.stavesUseHighestMagicSkill, kUseEnchantingSkillTooltip);
+
+			TableNextRow();
+			ExclusiveToggleColumn(kUseHighestMagicSkillLabel, cfg.stavesUseHighestMagicSkill, cfg.stavesUseEnchantingSkill, kStaffUseHighestMagicSkillTooltip);
 			if (!cfg.staffAiming) {
 				EndDisabled();
 			}
@@ -259,6 +275,7 @@ namespace NLA::Menu
 				}
 				cfg.precisionMultipliers.staff = defaults.precisionMultipliers.staff;
 				cfg.stavesUseEnchantingSkill = defaults.stavesUseEnchantingSkill;
+				cfg.stavesUseHighestMagicSkill = defaults.stavesUseHighestMagicSkill;
 				Options::Save();
 			}
 			EmptyRow();
@@ -332,6 +349,9 @@ namespace NLA::Menu
 			if (!cfg.concentrationSpellRangeScaling) {
 				EndDisabled();
 			}
+
+			TableNextRow();
+			ToggleColumn(kUseHighestMagicSkillLabel, cfg.concentrationSpellsUseHighestMagicSkill, kConcentrationSpellUseHighestMagicSkillTooltip);
 			if (!cfg.concentrationSpellsAiming) {
 				EndDisabled();
 			}
@@ -347,6 +367,7 @@ namespace NLA::Menu
 				cfg.concentrationSpellRangeScaling = defaults.concentrationSpellRangeScaling;
 				cfg.concentrationSpellMinRangeMultiplier = defaults.concentrationSpellMinRangeMultiplier;
 				cfg.concentrationSpellMaxRangeMultiplier = defaults.concentrationSpellMaxRangeMultiplier;
+				cfg.concentrationSpellsUseHighestMagicSkill = defaults.concentrationSpellsUseHighestMagicSkill;
 				Options::Save();
 			}
 			EmptyRow();

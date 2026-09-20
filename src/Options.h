@@ -41,10 +41,18 @@ namespace NLA::Options
 		bool blindnessAffectsAiming = true;
 
 		/// If true, staves use the enchanting skill instead of the spell's primary effect's school skill.
+		/// Mutually exclusive with stavesUseHighestMagicSkill.
 		bool stavesUseEnchantingSkill = false;
 
-		/// If true, the highest NPC's magic skill is used to aim spells, instead of the spell's primary effect's school skill.
+		/// If true, staves use the highest NPC's magic skill instead of the spell's primary effect's school skill.
+		/// Mutually exclusive with stavesUseEnchantingSkill.
+		bool stavesUseHighestMagicSkill = false;
+
+		/// If true, the highest NPC's magic skill is used to aim fire-and-forget spells, instead of the spell's primary effect's school skill.
 		bool spellsUseHighestMagicSkill = false;
+
+		/// If true, the highest NPC's magic skill is used to aim concentration spells, instead of the spell's primary effect's school skill.
+		bool concentrationSpellsUseHighestMagicSkill = false;
 
 		/// If true, concentration spells require continuous accuracy, where the beam/flow will wander around the target.
 		bool concentrationSpellsAiming = true;
