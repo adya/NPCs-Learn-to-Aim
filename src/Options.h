@@ -23,7 +23,7 @@ namespace NLA::Options
 			float blindness;
 
 			SkillMultiplier() = default;
-			SkillMultiplier(CSimpleIniA& ini, const char* section, std::string_view prefix);
+			SkillMultiplier(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillMultiplier& defaults);
 			SkillMultiplier(float bow, float crossbow, float spell, float staff, float blindness) :
 				bow(bow), crossbow(crossbow), spell(spell), staff(staff), blindness(blindness) {}
 		};
@@ -36,6 +36,9 @@ namespace NLA::Options
 		SkillMultiplier accuracyMultipliers;
 		SkillMultiplier precisionMultipliers;
 
+		/// If true, being blinded further affects aiming according to the blindness multipliers.
+		bool blindnessAffectsAiming = true;
+
 		/// If true, staves use the enchanting skill instead of the spell's primary effect's school skill.
 		bool stavesUseEnchantingSkill = false;
 
@@ -43,7 +46,7 @@ namespace NLA::Options
 		bool spellsUseHighestMagicSkill = false;
 
 		/// If true, concentration spells require continuous accuracy, where the beam/flow will wander around the target.
-		bool concetrationSpellsRequireContinuousAim = true;
+		bool concentrationSpellsAiming = true;
 
 		/// If true, concentration spells would reach farther as the skill in corresponding school increases.
 		bool concentrationSpellRangeScaling = true;
@@ -52,25 +55,26 @@ namespace NLA::Options
 		float concentrationSpellMaxRangeMultiplier = 2.5f;
 
 		Config() = default;
-		Config(CSimpleIniA& ini, const char* section);
+
+		Config(CSimpleIniA& ini, const char* section, const Config& defaults);
 		Config(bool            spellAiming,
 		       bool            staffAiming,
 		       bool            bowAiming,
 		       bool            crossbowAiming,
+		       bool            concentrationSpellsAiming,
 		       SkillMultiplier accuracyMultipliers,
 		       SkillMultiplier precisionMultipliers,
 		       bool            stavesUseEnchantingSkill,
-		       bool            spellsUseHighestMagicSkill,
-		       bool            concetrationSpellsRequireContinuousAim) :
+		       bool            spellsUseHighestMagicSkill) :
 			spellAiming(spellAiming),
 			staffAiming(staffAiming),
 			bowAiming(bowAiming),
 			crossbowAiming(crossbowAiming),
+			concentrationSpellsAiming(concentrationSpellsAiming),
 			accuracyMultipliers(accuracyMultipliers),
 			precisionMultipliers(precisionMultipliers),
 			stavesUseEnchantingSkill(stavesUseEnchantingSkill),
-			spellsUseHighestMagicSkill(spellsUseHighestMagicSkill),
-			concetrationSpellsRequireContinuousAim(concetrationSpellsRequireContinuousAim) {}
+			spellsUseHighestMagicSkill(spellsUseHighestMagicSkill) {}
 
 		inline const SkillMultiplier& MultiplierFor(SkillUsageContext context) const {
 			switch (context) {
@@ -92,6 +96,7 @@ namespace NLA::Options
 		             bool            staffAiming,
 		             bool            bowAiming,
 		             bool            crossbowAiming,
+		             bool            concentrationSpellsAiming,
 		             SkillMultiplier accuracyMultipliers,
 		             SkillMultiplier precisionMultipliers,
 		             bool            stavesUseEnchantingSkill,
@@ -100,12 +105,15 @@ namespace NLA::Options
 		           staffAiming,
 		           bowAiming,
 		           crossbowAiming,
+		           concentrationSpellsAiming,
 		           accuracyMultipliers,
 		           precisionMultipliers,
 		           stavesUseEnchantingSkill,
-		           spellsUseHighestMagicSkill,
-		           true) {}
+		           spellsUseHighestMagicSkill) {}
+
+		static const PlayerConfig defaultConfig;
 	};
+	inline const PlayerConfig PlayerConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }, { 1.4f, 7.0f, 1.25f, 1.55f, 0.0f }, false, false };
 
 	struct NPCConfig : Config
 	{
@@ -118,30 +126,33 @@ namespace NLA::Options
 		          bool                     staffAiming,
 		          bool                     bowAiming,
 		          bool                     crossbowAiming,
+		          bool                     concentrationSpellsAiming,
 		          SkillMultiplier          accuracyMultipliers,
 		          SkillMultiplier          precisionMultipliers,
 		          bool                     stavesUseEnchantingSkill,
 		          bool                     spellsUseHighestMagicSkill,
-		          bool                     concetrationSpellsRequireContinuousAim,
 		          std::vector<std::string> excludeKeywords,
 		          std::vector<std::string> includeKeywords) :
 			Config(spellAiming,
 		           staffAiming,
 		           bowAiming,
 		           crossbowAiming,
+		           concentrationSpellsAiming,
 		           accuracyMultipliers,
 		           precisionMultipliers,
 		           stavesUseEnchantingSkill,
-		           spellsUseHighestMagicSkill,
-		           concetrationSpellsRequireContinuousAim),
+		           spellsUseHighestMagicSkill),
 			excludeKeywords(excludeKeywords),
 			includeKeywords(includeKeywords) {}
 
 		bool ShouldLearn(RE::Actor* actor);
-	};
 
-	inline NPCConfig    NPC{ true, true, true, true, { 1.0f, 0.85f, 1.15f, 0.85f, 0.2f }, { 1.0f, 7.0f, 0.85f, 1.15f, 1.5f }, false, false, true, {}, { "ActorTypeNPC" } };
-	inline PlayerConfig Player{ true, true, true, true, {}, { 1.4f, 7.0f, 1.25f, 1.55f, 0.0f }, false, false };
+		static const NPCConfig defaultConfig;
+	};
+	inline const NPCConfig NPCConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 0.85f, 1.15f, 0.85f, 0.2f }, { 1.0f, 7.0f, 0.85f, 1.15f, 1.5f }, false, false, {}, { "ActorTypeNPC" } };
+
+	inline NPCConfig    NPC{ NPCConfig::defaultConfig };
+	inline PlayerConfig Player{ PlayerConfig::defaultConfig };
 
 	/// Returns configuration for given actor. Note, that only common configuration is returned.
 	inline const Config& For(const RE::Actor* actor) {
@@ -152,6 +163,10 @@ namespace NLA::Options
 		}
 	}
 	void Load();
+	void Save();
+
+	/// An incremental identifier that can be used to track when Options are reloaded.
+	inline unsigned int currentID = 0;
 }
 
 namespace NLA::Settings
