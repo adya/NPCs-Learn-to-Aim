@@ -106,6 +106,8 @@ endif()
 set(CLIB_UTIL_INCLUDE_DIRS "extern/CLibUtil/include")
 set(SKSE_HOOKING_INCLUDE_DIR "extern/SKSEHooking")
 
+find_path(SKSE_MCP_INCLUDE_DIRS "SKSEMCP/SKSEMenuFramework.hpp")
+
 # ---- Auto-discover all source and header files ----
 
 file(GLOB_RECURSE ALL_SRC_FILES CONFIGURE_DEPENDS
@@ -172,6 +174,7 @@ target_include_directories(
 		${CMAKE_CURRENT_SOURCE_DIR}/${CLIB_UTIL_INCLUDE_DIRS}
 		${CMAKE_CURRENT_SOURCE_DIR}/extern/glm
 		${CMAKE_CURRENT_SOURCE_DIR}/${SKSE_HOOKING_INCLUDE_DIR}
+		${SKSE_MCP_INCLUDE_DIRS}
 )
 
 target_link_libraries(

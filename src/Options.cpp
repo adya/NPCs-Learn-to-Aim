@@ -1,9 +1,70 @@
 #include "Options.h"
 #include "CLIBUtil/string.hpp"
+#include <cmath>
 #include <fmt/ranges.h>
 
 namespace NLA::Options
 {
+	namespace
+	{
+		template <typename T>
+		void SetOrDeleteValue(CSimpleIniA&, const char*, const char*, const T&, const T&) {}
+
+		template <>
+		void SetOrDeleteValue<bool>(CSimpleIniA& ini, const char* section, const char* key, const bool& value, const bool& defaultValue) {
+			if (value != defaultValue) {
+				ini.SetBoolValue(section, key, value);
+			} else {
+				ini.Delete(section, key, true);
+			}
+		}
+
+		template <>
+		void SetOrDeleteValue<float>(CSimpleIniA& ini, const char* section, const char* key, const float& value, const float& defaultValue) {
+			constexpr float kEpsilon = 0.001f;
+			if (std::abs(value - defaultValue) > kEpsilon) {
+				ini.SetDoubleValue(section, key, value);
+			} else {
+				ini.Delete(section, key, true);
+			}
+		}
+
+		void SetOrDeleteKeywords(CSimpleIniA& ini, const char* section, const char* key, const std::vector<std::string>& value, const std::vector<std::string>& defaultValue) {
+			if (value != defaultValue) {
+				ini.SetValue(section, key, fmt::format("{}", fmt::join(value, ",")).c_str());
+			} else {
+				ini.Delete(section, key, true);
+			}
+		}
+
+		void SaveSkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SkillMultiplier& value, const Config::SkillMultiplier& defaultValue) {
+			SetOrDeleteValue(ini, a_section, fmt::format("fBow{}SkillMultiplier", prefix).c_str(), value.bow, defaultValue.bow);
+			SetOrDeleteValue(ini, a_section, fmt::format("fCrossbow{}SkillMultiplier", prefix).c_str(), value.crossbow, defaultValue.crossbow);
+			SetOrDeleteValue(ini, a_section, fmt::format("fSpell{}SkillMultiplier", prefix).c_str(), value.spell, defaultValue.spell);
+			SetOrDeleteValue(ini, a_section, fmt::format("fStaff{}SkillMultiplier", prefix).c_str(), value.staff, defaultValue.staff);
+			SetOrDeleteValue(ini, a_section, fmt::format("fBlindness{}SkillMultiplier", prefix).c_str(), value.blindness, defaultValue.blindness);
+		}
+
+		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults) {
+			SetOrDeleteValue(ini, a_section, "bLearnSpells", custom.spellAiming, defaults.spellAiming);
+			SetOrDeleteValue(ini, a_section, "bLearnStaves", custom.staffAiming, defaults.staffAiming);
+			SetOrDeleteValue(ini, a_section, "bLearnBows", custom.bowAiming, defaults.bowAiming);
+			SetOrDeleteValue(ini, a_section, "bLearnCrossbows", custom.crossbowAiming, defaults.crossbowAiming);
+
+			SaveSkillMultiplier(ini, a_section, "Accuracy", custom.accuracyMultipliers, defaults.accuracyMultipliers);
+			SaveSkillMultiplier(ini, a_section, "Precision", custom.precisionMultipliers, defaults.precisionMultipliers);
+
+			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAim", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming);
+			SetOrDeleteValue(ini, a_section, "bUseEnchantingSkill", custom.stavesUseEnchantingSkill, defaults.stavesUseEnchantingSkill);
+			SetOrDeleteValue(ini, a_section, "bUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill);
+
+			SetOrDeleteValue(ini, a_section, "bLearnConcentrationSpells", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming);
+			SetOrDeleteValue(ini, a_section, "bScaleRangeWithSkill", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling);
+			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMinRangeMultiplier", custom.concentrationSpellMinRangeMultiplier, defaults.concentrationSpellMinRangeMultiplier);
+			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMaxRangeMultiplier", custom.concentrationSpellMaxRangeMultiplier, defaults.concentrationSpellMaxRangeMultiplier);
+		}
+	}
+
 	inline void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
 		if (mult > 1) {
 			auto percent = (mult - 1) * 100;
@@ -52,15 +113,9 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogConcentrationSpellsRequireContinuousAim(std::string_view actor, bool concetrationSpellsRequireContinuousAim) {
-		if (concetrationSpellsRequireContinuousAim) {
-			logger::info("\t{} must aim continuously to maintain concentration spells", actor);
-		} else {
-			logger::info("\t{} will always hit with concentration spells", actor);
-		}
-	}
-
 	void Load() {
+		++currentID;
+
 		logger::info("{:*^40}", "OPTIONS");
 		std::filesystem::path options = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
 		CSimpleIniA           ini{};
@@ -78,6 +133,7 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
+		logger::info("\tMages {} with concentration spells", NPC.concentrationSpellsAiming ? "will learn to aim" : "have perfect aim");
 
 		logger::info("");
 		LogSkillMultiplier("NPCs", "Bows", "Accuracy", NPC.accuracyMultipliers.bow);
@@ -96,7 +152,6 @@ namespace NLA::Options
 		logger::info("");
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill, NPC.stavesUseEnchantingSkill);
-		LogConcentrationSpellsRequireContinuousAim("NPCs", NPC.concetrationSpellsRequireContinuousAim);
 		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("");
@@ -122,6 +177,7 @@ namespace NLA::Options
 		logger::info("\t{} with crossbows", Player.crossbowAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
+		logger::info("\t{} with concentration spells", Player.concentrationSpellsAiming ? "Will learn to aim" : "Has perfect aim");
 
 		logger::info("");
 		LogSkillMultiplier("Player", "Bows", "Precision", Player.precisionMultipliers.bow);
@@ -132,10 +188,24 @@ namespace NLA::Options
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill);
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill, Player.stavesUseEnchantingSkill);
-		LogConcentrationSpellsRequireContinuousAim("Player", Player.concetrationSpellsRequireContinuousAim);
 		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("{:*^40}", "");
+	}
+
+	void Save() {
+		const std::filesystem::path options = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
+		CSimpleIniA                 ini{};
+		ini.SetUnicode();
+		ini.LoadFile(options.string().c_str());
+
+		SaveConfig(ini, "NPC", NPC, NPCConfig::defaultConfig);
+		SaveConfig(ini, "Player", Player, PlayerConfig::defaultConfig);
+
+		SetOrDeleteKeywords(ini, "NPC", "sExcludeKeywords", NPC.excludeKeywords, NPCConfig::defaultConfig.excludeKeywords);
+		SetOrDeleteKeywords(ini, "NPC", "sIncludeKeywords", NPC.includeKeywords, NPCConfig::defaultConfig.includeKeywords);
+
+		ini.SaveFile(options.string().c_str());
 	}
 
 	bool NPCConfig::ShouldLearn(RE::Actor* a_actor) {
@@ -149,38 +219,42 @@ namespace NLA::Options
 		return !a_actor->HasAnyKeywordByEditorID(excludeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(excludeKeywords));
 	}
 
-	Config::Config(CSimpleIniA& ini, const char* a_section) {
-		spellAiming = ini.GetBoolValue(a_section, "bEnableSpellAim", spellAiming);
-		staffAiming = ini.GetBoolValue(a_section, "bEnableStaffAim", staffAiming);
-		bowAiming = ini.GetBoolValue(a_section, "bEnableBowAim", bowAiming);
-		crossbowAiming = ini.GetBoolValue(a_section, "bEnableCrossbowAim", crossbowAiming);
+	Config::Config(CSimpleIniA& ini, const char* a_section, const Config& defaults) :
+		Config(defaults) {
+		spellAiming = ini.GetBoolValue(a_section, "bLearnSpells", spellAiming);
+		staffAiming = ini.GetBoolValue(a_section, "bLearnStaves", staffAiming);
+		bowAiming = ini.GetBoolValue(a_section, "bLearnBows", bowAiming);
+		crossbowAiming = ini.GetBoolValue(a_section, "bLearnCrossbows", crossbowAiming);
 
-		accuracyMultipliers = SkillMultiplier(ini, a_section, "Accuracy");
-		precisionMultipliers = SkillMultiplier(ini, a_section, "Precision");
+		accuracyMultipliers = SkillMultiplier(ini, a_section, "Accuracy", defaults.accuracyMultipliers);
+		precisionMultipliers = SkillMultiplier(ini, a_section, "Precision", defaults.precisionMultipliers);
 
-		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", stavesUseEnchantingSkill);
+		blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAim", blindnessAffectsAiming);
 
-		spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bSpellsUseHighestMagicSkill", spellsUseHighestMagicSkill);
+		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bUseEnchantingSkill", stavesUseEnchantingSkill);
 
-		concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bEnableConcentrationSpellRangeScaling", concentrationSpellRangeScaling);
-		concentrationSpellMinRangeMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", concentrationSpellMinRangeMultiplier));
-		concentrationSpellMaxRangeMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", concentrationSpellMaxRangeMultiplier));
+		spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bUseHighestMagicSkill", spellsUseHighestMagicSkill);
+
+		concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bScaleRangeWithSkill", concentrationSpellRangeScaling);
+		concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", concentrationSpellMinRangeMultiplier);
+		concentrationSpellMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", concentrationSpellMaxRangeMultiplier);
 	}
 
 	PlayerConfig::PlayerConfig(CSimpleIniA& ini) :
-		Config(ini, "Player") {
-		concetrationSpellsRequireContinuousAim = ini.GetBoolValue("Player", "bConcentrationSpellsRequireContinuousAim", concetrationSpellsRequireContinuousAim);
+		Config(ini, "Player", PlayerConfig::defaultConfig) {
+		concentrationSpellsAiming = ini.GetBoolValue("Player", "bLearnConcentrationSpells", concentrationSpellsAiming);
 	}
 
 	NPCConfig::NPCConfig(CSimpleIniA& ini) :
-		Config(ini, "NPC") {
-		concetrationSpellsRequireContinuousAim = ini.GetBoolValue("NPC", "bConcentrationSpellsRequireContinuousAim", concetrationSpellsRequireContinuousAim);
+		Config(ini, "NPC", NPCConfig::defaultConfig) {
+		concentrationSpellsAiming = ini.GetBoolValue("NPC", "bLearnConcentrationSpells", concentrationSpellsAiming);
 
 		excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
 		includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
 	}
 
-	Config::SkillMultiplier::SkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix) {
+	Config::SkillMultiplier::SkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillMultiplier& defaults) :
+		SkillMultiplier(defaults) {
 		std::string bowOption = fmt::format("fBow{}SkillMultiplier", prefix);
 		std::string crossbowOption = fmt::format("fCrossbow{}SkillMultiplier", prefix);
 		std::string spellOption = fmt::format("fSpell{}SkillMultiplier", prefix);

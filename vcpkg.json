@@ -13,6 +13,7 @@
     "rapidcsv",
     "rsm-binary-io",
     "simpleini",
+    "skse-mcp",
     "spdlog",
     "toml11",
     "xbyak"

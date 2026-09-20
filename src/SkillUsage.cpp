@@ -21,7 +21,7 @@ namespace NLA
 			}
 		}
 
-		if (attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+		if (Options::For(attacker).blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
 			multiplier -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
 		}
 	}
@@ -53,7 +53,7 @@ namespace NLA
 			}
 		}
 
-		if (!Options::For(attacker).concetrationSpellsRequireContinuousAim && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration) {
+		if (!Options::For(attacker).concentrationSpellsAiming && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration) {
 			return;
 		}
 
@@ -77,7 +77,7 @@ namespace NLA
 			break;
 		}
 
-		if (attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+		if (Options::For(attacker).blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
 			multiplier -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
 		}
 	}
