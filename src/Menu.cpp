@@ -1,4 +1,5 @@
 #include "Menu.h"
+#include "AimDebug.h"
 #include "CLIBUtil/string.hpp"
 #include "Options.h"
 #include <cmath>
@@ -85,8 +86,19 @@ namespace NLA::Menu
 		constexpr const char* kExcludeKeywordsTooltip = "NPCs with any of these keywords (on the NPC or its race) will never learn to aim.";
 		constexpr const char* kResetFiltersButton = "Reset Filters to Default";
 
+		constexpr const char* kMinHeadshotChanceTooltipFmt = "Chance for a skilled {} to go for a headshot at 0 effective Archery skill.";
+		constexpr const char* kMaxHeadshotChanceTooltipFmt = "Chance for a skilled {} to go for a headshot at 100 effective Archery skill.";
+
+		constexpr const char* kBowHeadshotLabel = "Bow Headshots";
+		constexpr const char* kBowHeadshotTooltip = "When enabled, sufficiently skilled archers have a chance to aim for the head instead of the chest.";
+		constexpr const char* kCrossbowHeadshotLabel = "Crossbow Headshots";
+		constexpr const char* kCrossbowHeadshotTooltip = "When enabled, sufficiently skilled crossbowmen have a chance to aim for the head instead of the chest.";
+
 		constexpr const char* kReloadSettingsButton = "Reload Settings";
 		constexpr const char* kReloadSettingsTooltip = "Reload all settings from the INI file, discarding any unsaved in-memory changes.";
+
+		constexpr const char* kShowAimDebugLabel = "Show Aim Debug Overlay";
+		constexpr const char* kShowAimDebugTooltip = "Draws a marker at the point each NPC is currently aiming at (yellow), or red if it's a headshot. For debugging only.";
 
 		void ShowTooltip(const char* text) {
 			if (IsItemHovered()) {
@@ -161,11 +173,26 @@ namespace NLA::Menu
 			ShowTooltip(tooltip);
 		}
 
-		void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.01f, float max = 10.0f) {
+		void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.01f, float max = 10.0f, const char* format = "x%.2f") {
 			TableNextColumn();
 			SetNextItemWidth(-1.0f);
-			if (SliderFloat(id, &value, min, max, "x%.2f")) {
+			if (SliderFloat(id, &value, min, max, format)) {
 				value = RoundTo2Decimals(value);
+			}
+			if (IsItemDeactivatedAfterEdit()) {
+				Options::Save();
+			}
+			ShowTooltip(tooltip);
+		}
+
+		/// Like SliderColumn, but for a 0-1 fraction that should read as a percentage (e.g. a chance)
+		/// rather than a raw decimal or "xN.NN" multiplier.
+		void PercentSliderColumn(const char* id, float& value, const char* tooltip) {
+			TableNextColumn();
+			SetNextItemWidth(-1.0f);
+			float percent = value * 100.0f;
+			if (SliderFloat(id, &percent, 0.0f, 100.0f, "%.0f%%")) {
+				value = percent / 100.0f;
 			}
 			if (IsItemDeactivatedAfterEdit()) {
 				Options::Save();
@@ -181,7 +208,7 @@ namespace NLA::Menu
 			EndDisabled();
 		}
 
-		void RenderBowRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
+		void RenderBowRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy, Options::NPCConfig::HeadshotSettings* headshots = nullptr, const Options::NPCConfig::HeadshotSettings* headshotDefaults = nullptr) {
 			PushID("Bows");
 			TableNextRow();
 			ToggleColumn(kBowLabel, cfg.bowAiming, kBowTooltip);
@@ -198,6 +225,19 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
+			if (headshots) {
+				TableNextRow();
+				ToggleColumn(kBowHeadshotLabel, headshots->bow, kBowHeadshotTooltip);
+				if (!headshots->bow) {
+					BeginDisabled();
+				}
+				PercentSliderColumn("##BowMinHeadshotChance", headshots->bowMinChance, fmt::format(kMinHeadshotChanceTooltipFmt, "archer").c_str());
+				PercentSliderColumn("##BowMaxHeadshotChance", headshots->bowMaxChance, fmt::format(kMaxHeadshotChanceTooltipFmt, "archer").c_str());
+				if (!headshots->bow) {
+					EndDisabled();
+				}
+			}
+
 			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetBowsButton)) {
@@ -206,13 +246,18 @@ namespace NLA::Menu
 					cfg.accuracyMultipliers.bow = defaults.accuracyMultipliers.bow;
 				}
 				cfg.precisionMultipliers.bow = defaults.precisionMultipliers.bow;
+				if (headshots && headshotDefaults) {
+					headshots->bow = headshotDefaults->bow;
+					headshots->bowMinChance = headshotDefaults->bowMinChance;
+					headshots->bowMaxChance = headshotDefaults->bowMaxChance;
+				}
 				Options::Save();
 			}
 			EmptyRow();
 			PopID();
 		}
 
-		void RenderCrossbowRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
+		void RenderCrossbowRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy, Options::NPCConfig::HeadshotSettings* headshots = nullptr, const Options::NPCConfig::HeadshotSettings* headshotDefaults = nullptr) {
 			PushID("Crossbows");
 			TableNextRow();
 			ToggleColumn(kCrossbowLabel, cfg.crossbowAiming, kCrossbowTooltip);
@@ -229,6 +274,19 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
+			if (headshots) {
+				TableNextRow();
+				ToggleColumn(kCrossbowHeadshotLabel, headshots->crossbow, kCrossbowHeadshotTooltip);
+				if (!headshots->crossbow) {
+					BeginDisabled();
+				}
+				PercentSliderColumn("##CrossbowMinHeadshotChance", headshots->crossbowMinChance, fmt::format(kMinHeadshotChanceTooltipFmt, "crossbowman").c_str());
+				PercentSliderColumn("##CrossbowMaxHeadshotChance", headshots->crossbowMaxChance, fmt::format(kMaxHeadshotChanceTooltipFmt, "crossbowman").c_str());
+				if (!headshots->crossbow) {
+					EndDisabled();
+				}
+			}
+
 			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetCrossbowsButton)) {
@@ -237,6 +295,11 @@ namespace NLA::Menu
 					cfg.accuracyMultipliers.crossbow = defaults.accuracyMultipliers.crossbow;
 				}
 				cfg.precisionMultipliers.crossbow = defaults.precisionMultipliers.crossbow;
+				if (headshots && headshotDefaults) {
+					headshots->crossbow = headshotDefaults->crossbow;
+					headshots->crossbowMinChance = headshotDefaults->crossbowMinChance;
+					headshots->crossbowMaxChance = headshotDefaults->crossbowMaxChance;
+				}
 				Options::Save();
 			}
 			EmptyRow();
@@ -445,8 +508,8 @@ namespace NLA::Menu
 			PushID("NPC");
 			constexpr bool hasAccuracy = true;
 			if (BeginPageTable("NPCTable", hasAccuracy)) {
-				RenderBowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
-				RenderCrossbowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
+				RenderBowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy, &Options::NPC.headshots, &Options::NPCConfig::defaultConfig.headshots);
+				RenderCrossbowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy, &Options::NPC.headshots, &Options::NPCConfig::defaultConfig.headshots);
 				RenderStaffRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderConcentrationSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
@@ -478,6 +541,10 @@ namespace NLA::Menu
 				logger::info("Settings reloaded via menu");
 			}
 			ShowTooltip(kReloadSettingsTooltip);
+
+			Spacing();
+			Checkbox(kShowAimDebugLabel, &AimDebug::enabled);
+			ShowTooltip(kShowAimDebugTooltip);
 		}
 	}
 

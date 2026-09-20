@@ -126,6 +126,21 @@ namespace NLA::Options
 
 	struct NPCConfig : Config
 	{
+		struct HeadshotSettings
+		{
+			bool  bow = true;
+			float bowMinChance = 0.0f;
+			float bowMaxChance = 0.35f;
+
+			bool  crossbow = true;
+			float crossbowMinChance = 0.0f;
+			float crossbowMaxChance = 0.35f;
+
+			HeadshotSettings() = default;
+			HeadshotSettings(CSimpleIniA& ini, const char* section, const HeadshotSettings& defaults);
+		};
+		HeadshotSettings headshots{};
+
 		std::vector<std::string> excludeKeywords{};
 		std::vector<std::string> includeKeywords{};
 

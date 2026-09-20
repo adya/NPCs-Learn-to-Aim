@@ -46,6 +46,15 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("fBlindness{}SkillMultiplier", prefix).c_str(), value.blindness, defaultValue.blindness);
 		}
 
+		void SaveHeadshotSettings(CSimpleIniA& ini, const char* a_section, const NPCConfig::HeadshotSettings& value, const NPCConfig::HeadshotSettings& defaultValue) {
+			SetOrDeleteValue(ini, a_section, "bBowHeadshots", value.bow, defaultValue.bow);
+			SetOrDeleteValue(ini, a_section, "fBowMinHeadshotChance", value.bowMinChance, defaultValue.bowMinChance);
+			SetOrDeleteValue(ini, a_section, "fBowMaxHeadshotChance", value.bowMaxChance, defaultValue.bowMaxChance);
+			SetOrDeleteValue(ini, a_section, "bCrossbowHeadshots", value.crossbow, defaultValue.crossbow);
+			SetOrDeleteValue(ini, a_section, "fCrossbowMinHeadshotChance", value.crossbowMinChance, defaultValue.crossbowMinChance);
+			SetOrDeleteValue(ini, a_section, "fCrossbowMaxHeadshotChance", value.crossbowMaxChance, defaultValue.crossbowMaxChance);
+		}
+
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults) {
 			SetOrDeleteValue(ini, a_section, "bLearnSpells", custom.spellAiming, defaults.spellAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnStaves", custom.staffAiming, defaults.staffAiming);
@@ -147,6 +156,16 @@ namespace NLA::Options
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with concentration spells", NPC.concentrationSpellsAiming ? "will learn to aim" : "have perfect aim");
+		if (NPC.headshots.bow) {
+			logger::info("\tSkilled archers may go for headshots ({:.0f}%-{:.0f}% chance)", NPC.headshots.bowMinChance * 100, NPC.headshots.bowMaxChance * 100);
+		} else {
+			logger::info("\tArchers always aim for the chest");
+		}
+		if (NPC.headshots.crossbow) {
+			logger::info("\tSkilled crossbowmen may go for headshots ({:.0f}%-{:.0f}% chance)", NPC.headshots.crossbowMinChance * 100, NPC.headshots.crossbowMaxChance * 100);
+		} else {
+			logger::info("\tCrossbowmen always aim for the chest");
+		}
 
 		logger::info("");
 		LogSkillMultiplier("NPCs", "Bows", "Accuracy", NPC.accuracyMultipliers.bow);
@@ -220,6 +239,8 @@ namespace NLA::Options
 		SaveConfig(ini, "NPC", NPC, NPCConfig::defaultConfig);
 		SaveConfig(ini, "Player", Player, PlayerConfig::defaultConfig);
 
+		SaveHeadshotSettings(ini, "NPC", NPC.headshots, NPCConfig::defaultConfig.headshots);
+
 		SetOrDeleteKeywords(ini, "NPC", "sExcludeKeywords", NPC.excludeKeywords, NPCConfig::defaultConfig.excludeKeywords);
 		SetOrDeleteKeywords(ini, "NPC", "sIncludeKeywords", NPC.includeKeywords, NPCConfig::defaultConfig.includeKeywords);
 
@@ -269,8 +290,20 @@ namespace NLA::Options
 		Config(ini, "NPC", NPCConfig::defaultConfig) {
 		concentrationSpellsAiming = ini.GetBoolValue("NPC", "bLearnConcentrationSpells", concentrationSpellsAiming);
 
+		headshots = HeadshotSettings(ini, "NPC", headshots);
+
 		excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
 		includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
+	}
+
+	NPCConfig::HeadshotSettings::HeadshotSettings(CSimpleIniA& ini, const char* a_section, const HeadshotSettings& defaults) :
+		HeadshotSettings(defaults) {
+		bow = ini.GetBoolValue(a_section, "bBowHeadshots", bow);
+		bowMinChance = ini.GetDoubleValue(a_section, "fBowMinHeadshotChance", bowMinChance);
+		bowMaxChance = ini.GetDoubleValue(a_section, "fBowMaxHeadshotChance", bowMaxChance);
+		crossbow = ini.GetBoolValue(a_section, "bCrossbowHeadshots", crossbow);
+		crossbowMinChance = ini.GetDoubleValue(a_section, "fCrossbowMinHeadshotChance", crossbowMinChance);
+		crossbowMaxChance = ini.GetDoubleValue(a_section, "fCrossbowMaxHeadshotChance", crossbowMaxChance);
 	}
 
 	Config::SkillMultiplier::SkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillMultiplier& defaults) :

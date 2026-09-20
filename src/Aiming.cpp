@@ -4,6 +4,8 @@
 #include "Hooking.h"
 #include "SkillUsage.h"
 
+#include <unordered_map>
+
 namespace NLA
 {
 	namespace
@@ -12,10 +14,71 @@ namespace NLA
 			return base && base->data.types.any(RE::BGSProjectileData::Type::kBeam);
 		}
 
+		RE::NiAVObject* GetHeadNode(RE::Actor* target) {
+			auto* process = target->GetActorRuntimeData().currentProcess;
+			return process && process->middleHigh ? process->middleHigh->headNode : nullptr;
+		}
+
+		struct HeadshotDecision
+		{
+			RE::FormID                                              target;
+			bool                                                    headshot;
+			static std::unordered_map<RE::FormID, HeadshotDecision> active;
+
+			static bool ShouldAimForHead(RE::Actor* attacker, const SkillUsage& skillUsage, float minChance, float maxChance) {
+				float                                 chance = skillUsage.LerpSkillFactor(attacker, minChance, maxChance);
+				std::uniform_real_distribution<float> roll(0.0f, 1.0f);
+				return roll(rnd) < chance;
+			}
+
+			static bool MakeDecision(RE::Actor* attacker, RE::Actor* target, const SkillUsage& skillUsage) {
+				if (!attacker || !target || !skillUsage || attacker->IsPlayerRef()) {
+					return false;
+				}
+
+				if (auto it = HeadshotDecision::active.find(attacker->GetFormID()); it != HeadshotDecision::active.end() && it->second.target == target->GetFormID()) {
+					return it->second.headshot;
+				}
+
+				const auto& headshots = Options::NPC.headshots;
+				bool        headshot = false;
+				if (skillUsage.weaponType == kBow && headshots.bow) {
+					headshot = ShouldAimForHead(attacker, skillUsage, headshots.bowMinChance, headshots.bowMaxChance);
+				} else if (skillUsage.weaponType == kCrossbow && headshots.crossbow) {
+					headshot = ShouldAimForHead(attacker, skillUsage, headshots.crossbowMinChance, headshots.crossbowMaxChance);
+				}
+
+				HeadshotDecision::active[attacker->GetFormID()] = { target->GetFormID(), headshot };
+				return headshot;
+			}
+
+			static void ClearForAttacker(RE::Actor* attacker) {
+				if (!attacker) {
+					return;
+				}
+				HeadshotDecision::active.erase(attacker->GetFormID());
+			}
+		};
+		inline std::unordered_map<RE::FormID, HeadshotDecision> HeadshotDecision::active{};
+
+		void ApplyHeadshot(RE::CombatProjectileAimController* controller, RE::Actor* target) {
+			auto* head = GetHeadNode(target);
+			if (!head) {
+				return;
+			}
+
+			RE::NiPoint3 headOffset = head->world.translate - target->GetPosition();
+			RE::NiPoint3 delta = headOffset - controller->aimOffset;
+
+			controller->aim_location += delta;
+			controller->idealAimPosition += delta;
+			controller->aimOffset = headOffset;
+		}
+
 		using MCasterSource = std::variant<RE::TESObjectWEAP*, RE::MagicItem*>;
 
 		/// Attempts to retrieve the source of the projectile that is being launched.
-		/// There were reports of access violation which bypass the usual nullptr checks, 
+		/// There were reports of access violation which bypass the usual nullptr checks,
 		/// so this is an attempt to catch such exception and handle gracefully.
 		std::optional<MCasterSource> GetSource(RE::MagicCaster* mcaster) {
 			if (!mcaster)
@@ -133,7 +196,16 @@ namespace NLA
 					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->unk8C, aimOffset, aimOffset * controller->radiusMode);
 #endif
 				}
+				bool goingForHeadshot = HeadshotDecision::MakeDecision(attacker, target, skillUsage);
+#ifndef NDEBUG
+				if (goingForHeadshot) {
+					logger::info("\t{} is going for a headshot!", *attacker);
+				}
+#endif
 				func(controller, target);
+				if (goingForHeadshot) {
+					ApplyHeadshot(controller, target);
+				}
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
@@ -177,7 +249,7 @@ namespace NLA
 			static inline void post_hook() { logger::info("Installed spells deviation logic"); }
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
-				if (!IsBeamProjectile(launchData.projectileBase)) { // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
+				if (!IsBeamProjectile(launchData.projectileBase)) {  // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
 					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
 					if (auto skillUsage = SkillUsage(launchData.spell, attacker, kPrecision); skillUsage) {
 						AddRandomSpread(launchData, skillUsage);
@@ -206,6 +278,9 @@ namespace NLA
 				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kPrecision); skillUsage) {
 					AddRandomSpread(launchData, skillUsage);
 				}
+				
+				HeadshotDecision::ClearForAttacker(attacker);
+				
 				func(projectile, launchData);
 			}
 
