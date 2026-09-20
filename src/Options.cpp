@@ -56,6 +56,8 @@ namespace NLA::Options
 		}
 
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults) {
+			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled);
+
 			SetOrDeleteValue(ini, a_section, "bLearnSpells", custom.spellAiming, defaults.spellAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnStaves", custom.staffAiming, defaults.staffAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnBows", custom.bowAiming, defaults.bowAiming);
@@ -151,6 +153,10 @@ namespace NLA::Options
 		}
 
 		logger::info("NPC:");
+		if (!NPC.enabled) {
+			logger::info("\tMod is disabled for NPCs");
+			return;
+		}
 		logger::info("\tArchers {}", NPC.bowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
@@ -208,6 +214,10 @@ namespace NLA::Options
 
 		logger::info("");
 		logger::info("Player:");
+		if (!Player.enabled) {
+			logger::info("\tMod is disabled for Player");
+			return;
+		}
 		logger::info("\t{} with bows", Player.bowAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with crossbows", Player.crossbowAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
@@ -248,8 +258,15 @@ namespace NLA::Options
 	}
 
 	bool NPCConfig::ShouldLearn(RE::Actor* a_actor) {
-		if (!a_actor || a_actor->IsPlayerRef()) {
-			return true;  // ShouldLearn only concerns NPCs, so we ignore players.
+		if (!a_actor) {
+			return false;
+		}
+		if (a_actor->IsPlayerRef()) {
+			return Player.enabled;
+		}
+
+		if (!enabled) {
+			return false;
 		}
 		if (!a_actor->HasAnyKeywordByEditorID(includeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(includeKeywords))) {
 			return false;
@@ -260,6 +277,8 @@ namespace NLA::Options
 
 	Config::Config(CSimpleIniA& ini, const char* a_section, const Config& defaults) :
 		Config(defaults) {
+		enabled = ini.GetBoolValue(a_section, "bEnabled", enabled);
+
 		spellAiming = ini.GetBoolValue(a_section, "bLearnSpells", spellAiming);
 		staffAiming = ini.GetBoolValue(a_section, "bLearnStaves", staffAiming);
 		bowAiming = ini.GetBoolValue(a_section, "bLearnBows", bowAiming);

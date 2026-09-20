@@ -29,6 +29,9 @@ namespace NLA::Options
 				bow(bow), crossbow(crossbow), spell(spell), concentrationSpell(concentrationSpell), staff(staff), blindness(blindness) {}
 		};
 
+		/// Controls whether the mod works for given characters.
+		bool enabled = true;
+
 		bool spellAiming = true;
 		bool staffAiming = true;
 		bool bowAiming = true;

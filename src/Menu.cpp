@@ -100,6 +100,11 @@ namespace NLA::Menu
 		constexpr const char* kShowAimDebugLabel = "Show Aim Debug Overlay";
 		constexpr const char* kShowAimDebugTooltip = "Draws a marker at the point each NPC is currently aiming at (yellow), or red if it's a headshot. For debugging only.";
 
+		constexpr const char* kEnableNPCLabel = "Enable for NPCs";
+		constexpr const char* kEnableNPCTooltip = "Master switch for NPCs. When disabled, NPCs have vanilla aiming and all settings below are ignored.";
+		constexpr const char* kEnablePlayerLabel = "Enable for Player";
+		constexpr const char* kEnablePlayerTooltip = "Master switch for the Player. When disabled, the Player has vanilla aiming and all settings below are ignored.";
+
 		void ShowTooltip(const char* text) {
 			if (IsItemHovered()) {
 				BeginTooltip();
@@ -506,6 +511,16 @@ namespace NLA::Menu
 
 		void RenderNPCSection() {
 			PushID("NPC");
+
+			if (Checkbox(kEnableNPCLabel, &Options::NPC.enabled)) {
+				Options::Save();
+			}
+			ShowTooltip(kEnableNPCTooltip);
+			Spacing();
+
+			if (!Options::NPC.enabled) {
+				BeginDisabled();
+			}
 			constexpr bool hasAccuracy = true;
 			if (BeginPageTable("NPCTable", hasAccuracy)) {
 				RenderBowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy, &Options::NPC.headshots, &Options::NPCConfig::defaultConfig.headshots);
@@ -518,11 +533,24 @@ namespace NLA::Menu
 			}
 			Spacing();
 			RenderKeywordFilters();
+			if (!Options::NPC.enabled) {
+				EndDisabled();
+			}
 			PopID();
 		}
 
 		void RenderPlayerSection() {
 			PushID("Player");
+
+			if (Checkbox(kEnablePlayerLabel, &Options::Player.enabled)) {
+				Options::Save();
+			}
+			ShowTooltip(kEnablePlayerTooltip);
+			Spacing();
+
+			if (!Options::Player.enabled) {
+				BeginDisabled();
+			}
 			constexpr bool hasAccuracy = false;  // Player's accuracy multipliers are never used in gameplay.
 			if (BeginPageTable("PlayerTable", hasAccuracy)) {
 				RenderBowRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
@@ -531,6 +559,9 @@ namespace NLA::Menu
 				RenderSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderConcentrationSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				EndTable();
+			}
+			if (!Options::Player.enabled) {
+				EndDisabled();
 			}
 			PopID();
 		}
