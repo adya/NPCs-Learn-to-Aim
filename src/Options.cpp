@@ -41,6 +41,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("fBow{}SkillMultiplier", prefix).c_str(), value.bow, defaultValue.bow);
 			SetOrDeleteValue(ini, a_section, fmt::format("fCrossbow{}SkillMultiplier", prefix).c_str(), value.crossbow, defaultValue.crossbow);
 			SetOrDeleteValue(ini, a_section, fmt::format("fSpell{}SkillMultiplier", prefix).c_str(), value.spell, defaultValue.spell);
+			SetOrDeleteValue(ini, a_section, fmt::format("fConcentrationSpell{}SkillMultiplier", prefix).c_str(), value.concentrationSpell, defaultValue.concentrationSpell);
 			SetOrDeleteValue(ini, a_section, fmt::format("fStaff{}SkillMultiplier", prefix).c_str(), value.staff, defaultValue.staff);
 			SetOrDeleteValue(ini, a_section, fmt::format("fBlindness{}SkillMultiplier", prefix).c_str(), value.blindness, defaultValue.blindness);
 		}
@@ -139,6 +140,7 @@ namespace NLA::Options
 		LogSkillMultiplier("NPCs", "Bows", "Accuracy", NPC.accuracyMultipliers.bow);
 		LogSkillMultiplier("NPCs", "Crossbows", "Accuracy", NPC.accuracyMultipliers.crossbow);
 		LogSkillMultiplier("NPCs", "Spells", "Accuracy", NPC.accuracyMultipliers.spell);
+		LogSkillMultiplier("NPCs", "Concentration Spells", "Accuracy", NPC.accuracyMultipliers.concentrationSpell);
 		LogSkillMultiplier("NPCs", "Staves", "Accuracy", NPC.accuracyMultipliers.staff);
 		LogBlindnessSkillMultiplier("NPCs", "accuracy", NPC.accuracyMultipliers.blindness);
 
@@ -146,6 +148,7 @@ namespace NLA::Options
 		LogSkillMultiplier("NPCs", "Bows", "Precision", NPC.precisionMultipliers.bow);
 		LogSkillMultiplier("NPCs", "Crossbows", "Precision", NPC.precisionMultipliers.crossbow);
 		LogSkillMultiplier("NPCs", "Spells", "Precision", NPC.precisionMultipliers.spell);
+		LogSkillMultiplier("NPCs", "Concentration Spells", "Precision", NPC.precisionMultipliers.concentrationSpell);
 		LogSkillMultiplier("NPCs", "Staves", "Precision", NPC.precisionMultipliers.staff);
 		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
 
@@ -183,6 +186,7 @@ namespace NLA::Options
 		LogSkillMultiplier("Player", "Bows", "Precision", Player.precisionMultipliers.bow);
 		LogSkillMultiplier("Player", "Crossbows", "Precision", Player.precisionMultipliers.crossbow);
 		LogSkillMultiplier("Player", "Spells", "Precision", Player.precisionMultipliers.spell);
+		LogSkillMultiplier("Player", "Concentration Spells", "Precision", Player.precisionMultipliers.concentrationSpell);
 		LogSkillMultiplier("Player", "Staves", "Precision", Player.precisionMultipliers.staff);
 
 		logger::info("");
@@ -258,12 +262,14 @@ namespace NLA::Options
 		std::string bowOption = fmt::format("fBow{}SkillMultiplier", prefix);
 		std::string crossbowOption = fmt::format("fCrossbow{}SkillMultiplier", prefix);
 		std::string spellOption = fmt::format("fSpell{}SkillMultiplier", prefix);
+		std::string concentrationSpellOption = fmt::format("fConcentrationSpell{}SkillMultiplier", prefix);
 		std::string staffOption = fmt::format("fStaff{}SkillMultiplier", prefix);
 		std::string blindnessOption = fmt::format("fBlindness{}SkillMultiplier", prefix);
 
 		bow = ini.GetDoubleValue(a_section, bowOption.c_str(), bow);
 		crossbow = ini.GetDoubleValue(a_section, crossbowOption.c_str(), crossbow);
 		spell = ini.GetDoubleValue(a_section, spellOption.c_str(), spell);
+		concentrationSpell = ini.GetDoubleValue(a_section, concentrationSpellOption.c_str(), concentrationSpell);
 		staff = ini.GetDoubleValue(a_section, staffOption.c_str(), staff);
 		blindness = ini.GetDoubleValue(a_section, blindnessOption.c_str(), blindness);
 	}

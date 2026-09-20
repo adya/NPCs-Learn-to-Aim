@@ -53,7 +53,9 @@ namespace NLA
 			}
 		}
 
-		if (!Options::For(attacker).concentrationSpellsAiming && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration) {
+		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
+
+		if (!Options::For(attacker).concentrationSpellsAiming && isConcentration) {
 			return;
 		}
 
@@ -63,7 +65,7 @@ namespace NLA
 			weaponType = kSpell;
 			if (Options::For(attacker).spellAiming) {
 				skill = magicSkill;
-				multiplier = Options::For(attacker).MultiplierFor(context).spell;
+				multiplier = isConcentration ? Options::For(attacker).MultiplierFor(context).concentrationSpell : Options::For(attacker).MultiplierFor(context).spell;
 			}
 			break;
 		case RE::MagicSystem::SpellType::kStaffEnchantment:

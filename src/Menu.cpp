@@ -49,14 +49,16 @@ namespace NLA::Menu
 
 		constexpr const char* kSpellLabel = "Learn Spells";
 		constexpr const char* kSpellTooltip = "When enabled, corresponding Magic skill will affect aiming with spells.";
-		constexpr const char* kSpellAccuracyTooltip = "How much the skill contributes to Accuracy with spells. The higher this multiplier is the easier it is to aim. (affects Concentration Spells too)";
-		constexpr const char* kSpellPrecisionTooltip = "How much the skill contributes to Precision with spells. The higher this multiplier is the easier it is to hit the target. (affects Concentration Spells too)";
+		constexpr const char* kSpellAccuracyTooltip = "How much the skill contributes to Accuracy with fire-and-forget spells. The higher this multiplier is the easier it is to aim.";
+		constexpr const char* kSpellPrecisionTooltip = "How much the skill contributes to Precision with fire-and-forget spells. The higher this multiplier is the easier it is to hit the target.";
 		constexpr const char* kUseHighestMagicSkillLabel = "Use Highest Magic Skill";
 		constexpr const char* kUseHighestMagicSkillTooltip = "When enabled, spells aiming is based on the highest Magic skill, regardless of the spell's Magic school. (affects Concentration Spells too)";
 		constexpr const char* kResetSpellsButton = "Reset Spells to Default";
 
 		constexpr const char* kConcentrationSpellLabel = "Learn Concentration Spells";
-		constexpr const char* kConcentrationSpellTooltip = "When enabled, corresponding Magic skill will affect aiming with concentration spells (flames/sparks/frost/etc).";
+		constexpr const char* kConcentrationSpellTooltip = "When enabled, corresponding Magic skill will affect aiming with concentration spells (flames/sparks/frost/etc). Stream/Beam will wander around the aimed point.";
+		constexpr const char* kConcentrationSpellAccuracyTooltip = "How much the skill contributes to Accuracy with concentration spells. The higher this multiplier is the easier it is to aim.";
+		constexpr const char* kConcentrationSpellPrecisionTooltip = "How much the skill contributes to Precision with concentration spells. The higher this multiplier is the easier it is to hit the target.";
 		constexpr const char* kScaleRangeWithSkillLabel = "Scale Range With Skill";
 		constexpr const char* kScaleRangeWithSkillTooltip = "When enabled, corresponding Magic skill also affects concentration spells range. (the higher the skill the farther mage can hit)";
 		constexpr const char* kMinRangeMultiplierHeader = "Min Range";
@@ -298,7 +300,7 @@ namespace NLA::Menu
 			PopID();
 		}
 
-		void RenderConcentrationSpellRows(Options::Config& cfg, const Options::Config& defaults) {
+		void RenderConcentrationSpellRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
 			PushID("ConcentrationSpells");
 
 			TableNextRow();
@@ -307,6 +309,13 @@ namespace NLA::Menu
 			if (!cfg.concentrationSpellsAiming) {
 				BeginDisabled();
 			}
+			if (hasAccuracy) {
+				SliderColumn("##ConcentrationSpellAccuracy", cfg.accuracyMultipliers.concentrationSpell, kConcentrationSpellAccuracyTooltip);
+			} else {
+				NotApplicableColumn();
+			}
+			SliderColumn("##ConcentrationSpellPrecision", cfg.precisionMultipliers.concentrationSpell, kConcentrationSpellPrecisionTooltip);
+
 			TableNextRow();
 			TableSetColumnIndex(1);
 			CenteredHeaderCell(kMinRangeMultiplierHeader, false);
@@ -331,6 +340,10 @@ namespace NLA::Menu
 			TableNextColumn();
 			if (Button(kResetConcentrationSpellsButton)) {
 				cfg.concentrationSpellsAiming = defaults.concentrationSpellsAiming;
+				if (hasAccuracy) {
+					cfg.accuracyMultipliers.concentrationSpell = defaults.accuracyMultipliers.concentrationSpell;
+				}
+				cfg.precisionMultipliers.concentrationSpell = defaults.precisionMultipliers.concentrationSpell;
 				cfg.concentrationSpellRangeScaling = defaults.concentrationSpellRangeScaling;
 				cfg.concentrationSpellMinRangeMultiplier = defaults.concentrationSpellMinRangeMultiplier;
 				cfg.concentrationSpellMaxRangeMultiplier = defaults.concentrationSpellMaxRangeMultiplier;
@@ -415,7 +428,7 @@ namespace NLA::Menu
 				RenderCrossbowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderStaffRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
-				RenderConcentrationSpellRows(Options::NPC, Options::NPCConfig::defaultConfig);
+				RenderConcentrationSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderBlindnessRows(Options::NPC, Options::NPCConfig::defaultConfig);
 				EndTable();
 			}
@@ -432,7 +445,7 @@ namespace NLA::Menu
 				RenderCrossbowRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderStaffRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
-				RenderConcentrationSpellRows(Options::Player, Options::PlayerConfig::defaultConfig);
+				RenderConcentrationSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				EndTable();
 			}
 			PopID();
