@@ -70,17 +70,19 @@ namespace NLA::ConcentrationSpells
 	}
 
 	void ApplyRangeScaling(RE::Projectile* projectile, RE::Actor* attacker, const SkillUsage& skillUsage) {
-
 		const auto& options = Options::For(attacker);
 		if (!options.concentrationSpellRangeScaling)
 			return;
-		
-		if (auto& runtimeData = projectile->GetProjectileRuntimeData(); runtimeData.impacts.empty()) {  // already hit something, don't change range anymore.
-			if (auto base = projectile->GetProjectileBase(); base) {
-				float rangeMult = skillUsage.LerpSkillFactor(attacker, options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier);
 
-				runtimeData.range = base->data.range * rangeMult;
-			}
+		auto& runtimeData = projectile->GetProjectileRuntimeData();
+		if (!runtimeData.impacts.empty())  // already hit something, don't change range anymore.
+			return;
+
+		if (auto base = projectile->GetProjectileBase(); base) {
+			float rangeMult = skillUsage.LerpSkillFactor(attacker, options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier);
+
+			runtimeData.range = base->data.range * rangeMult;
+			logger::debug("Scaling range from {} to {} (multiplier: {})", base->data.range, runtimeData.range, rangeMult);
 		}
 	}
 
@@ -152,7 +154,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration beam accuracy wander logic"); }
+			static inline void post_hook() { logger::info("Installed free beam wander logic"); }
 		};
 
 		struct UpdateImpl_MakeRotation
@@ -164,7 +166,30 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration beam node-accuracy wander logic"); }
+			static inline void post_hook() { logger::info("Installed locked beam wander logic"); }
+		};
+
+		/// Scales range for raycasts when beam finds a target.
+		struct RunTargetPick
+		{
+			using Target = RE::BeamProjectile;
+
+			static inline constexpr VariantIndex index{ 0xB7, 0xB7, 0xB8 };
+
+			static bool thunk(RE::Projectile* projectile) {
+				if (projectile) {
+					if (auto attacker = GetAttacker(projectile); attacker) {
+						auto& runtimeData = projectile->GetProjectileRuntimeData();
+						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
+							ApplyRangeScaling(projectile, attacker, skillUsage);
+						}
+					}
+				}
+				return func(projectile);
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static inline void post_hook() { logger::info("Installed concentration beam range scaling logic"); }
 		};
 	}
 
@@ -179,7 +204,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration flame-beam node-accuracy wander logic"); }
+			static inline void post_hook() { logger::info("Installed free flame wander logic"); }
 		};
 
 		struct UpdateImpl_CopyRotation
@@ -191,13 +216,14 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration flame-beam accuracy wander logic"); }
+			static inline void post_hook() { logger::info("Installed locked flame wander logic"); }
 		};
 	}
 
 	void Install() {
 		stl::install_hook<BeamProjectile::UpdateImpl_CopyRotation>();
 		stl::install_hook<BeamProjectile::UpdateImpl_MakeRotation>();
+		stl::install_hook<BeamProjectile::RunTargetPick>();
 		stl::install_hook<FlameProjectile::UpdateImpl_CopyRotation>();
 		stl::install_hook<FlameProjectile::UpdateImpl_MakeRotation>();
 	}
