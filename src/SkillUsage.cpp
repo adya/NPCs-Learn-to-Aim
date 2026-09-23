@@ -7,22 +7,55 @@ namespace NLA
 		if (!weapon || !attacker || !Options::NPC.ShouldLearn(attacker))
 			return;
 
-		if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
-			weaponType = kCrossbow;
-			if (Options::For(attacker).crossbowAiming) {
-				skill = RE::ActorValue::kArchery;
-				multiplier = Options::For(attacker).MultiplierFor(context).crossbow;
-			}
-		} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
-			weaponType = kBow;
-			if (Options::For(attacker).bowAiming) {
-				skill = RE::ActorValue::kArchery;
-				multiplier = Options::For(attacker).MultiplierFor(context).bow;
-			}
-		}
+		const auto& options = Options::For(attacker);
 
-		if (Options::For(attacker).blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
-			std::get<float>(multiplier) -= (1 - Options::For(attacker).MultiplierFor(context).blindness);
+		switch (context) {
+		case kHeadshot:
+			{
+				// Headshots are an NPC-only feature.
+				if (attacker->IsPlayerRef())
+					break;
+
+				const auto& headshots = Options::NPC.headshots;
+				if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
+					weaponType = kCrossbow;
+					if (headshots.crossbow) {
+						skill = RE::ActorValue::kArchery;
+						multiplier = Range{ headshots.crossbowMinChance, headshots.crossbowMaxChance };
+					}
+				} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
+					weaponType = kBow;
+					if (headshots.bow) {
+						skill = RE::ActorValue::kArchery;
+						multiplier = Range{ headshots.bowMinChance, headshots.bowMaxChance };
+					}
+				}
+				break;
+			}
+		case kAccuracy:
+		case kPrecision:
+			{
+				if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
+					weaponType = kCrossbow;
+					if (options.crossbowAiming) {
+						skill = RE::ActorValue::kArchery;
+						multiplier = options.MultiplierFor(context).crossbow;
+					}
+				} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
+					weaponType = kBow;
+					if (options.bowAiming) {
+						skill = RE::ActorValue::kArchery;
+						multiplier = options.MultiplierFor(context).bow;
+					}
+				}
+
+				if (options.blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+					std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness);
+				}
+				break;
+			}
+		default:
+			break;
 		}
 	}
 
@@ -41,8 +74,10 @@ namespace NLA
 
 		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
 		const bool isFireAndForget = spell->GetCastingType() == RE::MagicSystem::CastingType::kFireAndForget;
+		const bool isAimed = spell->GetDelivery() == RE::MagicSystem::Delivery::kAimed;
 
-		if (context == kChargeTime) {
+		switch (context) {
+		case kChargeTime:
 			switch (spell->GetSpellType()) {
 			case RE::MagicSystem::SpellType::kSpell:
 			case RE::MagicSystem::SpellType::kLeveledSpell:
@@ -74,46 +109,63 @@ namespace NLA
 				// TODO: Think about fitting scrolls into all of this.
 				break;
 			}
-			return;
-		}
-
-		// Only support aimed spells.
-		if (spell->GetDelivery() != RE::MagicSystem::Delivery::kAimed)
-			return;
-
-		switch (spell->GetSpellType()) {
-		case RE::MagicSystem::SpellType::kSpell:
-		case RE::MagicSystem::SpellType::kLeveledSpell:
-			weaponType = kSpell;
-			if (isConcentration && options.concentrationSpellsAiming) {
-				const bool useHighestMagicSkill = options.concentrationSpellsUseHighestMagicSkill;
-				skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
-				multiplier = options.MultiplierFor(context).concentrationSpell;
-			} else if (isFireAndForget && options.spellAiming) {
-				const bool useHighestMagicSkill = options.spellsUseHighestMagicSkill;
-				skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
-				multiplier = options.MultiplierFor(context).spell;
-			}
 			break;
-		case RE::MagicSystem::SpellType::kStaffEnchantment:
-			weaponType = kStaff;
-			if (options.staffAiming) {
-				if (options.stavesUseEnchantingSkill) {
-					skill = RE::ActorValue::kEnchanting;
-				} else if (options.stavesUseHighestMagicSkill) {
-					skill = HighestMagicSkill(attacker);
-				} else {
-					skill = magicSkill;
+
+		case kRange:
+			if (isAimed && isConcentration && options.concentrationSpellRangeScaling) {
+				const auto spellType = spell->GetSpellType();
+				if (spellType == RE::MagicSystem::SpellType::kSpell || spellType == RE::MagicSystem::SpellType::kLeveledSpell) {
+					weaponType = kSpell;
+					skill = options.concentrationSpellsUseHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
+					multiplier = Range{ options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier };
 				}
-				multiplier = options.MultiplierFor(context).staff;
 			}
 			break;
+
+		case kAccuracy:
+		case kPrecision:
+			// Only support aimed spells.
+			if (!isAimed)
+				break;
+
+			switch (spell->GetSpellType()) {
+			case RE::MagicSystem::SpellType::kSpell:
+			case RE::MagicSystem::SpellType::kLeveledSpell:
+				weaponType = kSpell;
+				if (isConcentration && options.concentrationSpellsAiming) {
+					const bool useHighestMagicSkill = options.concentrationSpellsUseHighestMagicSkill;
+					skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
+					multiplier = options.MultiplierFor(context).concentrationSpell;
+				} else if (isFireAndForget && options.spellAiming) {
+					const bool useHighestMagicSkill = options.spellsUseHighestMagicSkill;
+					skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
+					multiplier = options.MultiplierFor(context).spell;
+				}
+				break;
+			case RE::MagicSystem::SpellType::kStaffEnchantment:
+				weaponType = kStaff;
+				if (options.staffAiming) {
+					if (options.stavesUseEnchantingSkill) {
+						skill = RE::ActorValue::kEnchanting;
+					} else if (options.stavesUseHighestMagicSkill) {
+						skill = HighestMagicSkill(attacker);
+					} else {
+						skill = magicSkill;
+					}
+					multiplier = options.MultiplierFor(context).staff;
+				}
+				break;
+			default:
+				break;
+			}
+
+			if (options.blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
+				std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness);
+			}
+			break;
+
 		default:
 			break;
-		}
-
-		if (options.blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
-			std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness);
 		}
 	}
 #ifndef NDEBUG
@@ -132,20 +184,18 @@ namespace NLA
 		return std::exp(0.025f * (10 - skill));
 	}
 
-	float SkillUsage::LerpSkillFactor(RE::Actor* actor, float minFactor, float maxFactor) const {
-		if (maxFactor == minFactor)
-			return minFactor;
+	float SkillUsage::LerpSkillFactor(RE::Actor* actor) const {
+		const Range* range = std::get_if<Range>(&multiplier);
+		if (!range)
+			return 1.0f;
+		if (range->max == range->min)
+			return range->min;
 
 		constexpr float rate = 0.025f;
 		const float     level = std::clamp(EffectiveSkill(actor), 0.0f, 100.0f);
 		const float     progress = (1.0f - std::exp(-rate * level)) / (1.0f - std::exp(-rate * 100.0f));
 
-		return minFactor + (maxFactor - minFactor) * progress;
-	}
-
-	float SkillUsage::LerpSkillFactor(RE::Actor* actor) const {
-		const Range* range = std::get_if<Range>(&multiplier);
-		return range ? LerpSkillFactor(actor, range->min, range->max) : 1.0f;
+		return range->min + (range->max - range->min) * progress;
 	}
 
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {
@@ -153,7 +203,9 @@ namespace NLA
 		return SkillFactor(actor) * Settings::fBowNPCSpreadAngle() * toRadians;
 	}
 
-	RE::NiPoint2 RandomSpreadOffset(float maxSpread) {
+	RE::NiPoint2 SkillUsage::RandomSpreadOffset(RE::Actor* actor) const {
+		const float maxSpread = MaxSpread(actor);
+
 		std::uniform_real_distribution<float> angleRND(0, 2 * std::numbers::pi_v<float>);
 		std::normal_distribution<float>       spreadRND(0, 0.7f * maxSpread);
 

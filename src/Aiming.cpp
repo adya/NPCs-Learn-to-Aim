@@ -1,7 +1,7 @@
 #include "Aiming.h"
+#include "Hooking.h"
 #include "Options.h"
 #include "RE/C/CombatProjectileAimController.h"
-#include "Hooking.h"
 #include "SkillUsage.h"
 
 #include <unordered_map>
@@ -25,8 +25,8 @@ namespace NLA
 			bool                                                    headshot;
 			static std::unordered_map<RE::FormID, HeadshotDecision> active;
 
-			static bool ShouldAimForHead(RE::Actor* attacker, const SkillUsage& skillUsage, float minChance, float maxChance) {
-				float                                 chance = skillUsage.LerpSkillFactor(attacker, minChance, maxChance);
+			static bool ShouldAimForHead(RE::Actor* attacker, const SkillUsage& skillUsage) {
+				float                                 chance = skillUsage.LerpSkillFactor(attacker);
 				std::uniform_real_distribution<float> roll(0.0f, 1.0f);
 				return roll(rnd) < chance;
 			}
@@ -40,13 +40,7 @@ namespace NLA
 					return it->second.headshot;
 				}
 
-				const auto& headshots = Options::NPC.headshots;
-				bool        headshot = false;
-				if (skillUsage.weaponType == kBow && headshots.bow) {
-					headshot = ShouldAimForHead(attacker, skillUsage, headshots.bowMinChance, headshots.bowMaxChance);
-				} else if (skillUsage.weaponType == kCrossbow && headshots.crossbow) {
-					headshot = ShouldAimForHead(attacker, skillUsage, headshots.crossbowMinChance, headshots.crossbowMaxChance);
-				}
+				const bool headshot = ShouldAimForHead(attacker, skillUsage);
 
 				HeadshotDecision::active[attacker->GetFormID()] = { target->GetFormID(), headshot };
 				return headshot;
@@ -102,12 +96,12 @@ namespace NLA
 			return;
 
 		float skillFactor = skillUsage.SkillFactor(attacker);
-		float maxSpread = skillUsage.MaxSpread(attacker);
 #ifndef NDEBUG
+		float maxSpread = skillUsage.MaxSpread(attacker);
 		float originalSkillFactor = skillUsage.OriginalSkillFactor(attacker);
 #endif
 
-		auto offset = RandomSpreadOffset(maxSpread);
+		auto offset = skillUsage.RandomSpreadOffset(attacker);
 
 #ifndef NDEBUG
 		auto originalAngleX = *angleX;
@@ -196,7 +190,13 @@ namespace NLA
 					logger::info("\taimOffset: {} (base: {:.4f}, max: {:.4f})", controller->unk8C, aimOffset, aimOffset * controller->radiusMode);
 #endif
 				}
-				bool goingForHeadshot = HeadshotDecision::MakeDecision(attacker, target, skillUsage);
+				SkillUsage headshotUsage{};
+				if (auto source = GetSource(controller->mcaster); source) {
+					if (auto* weapon = std::get_if<RE::TESObjectWEAP*>(&*source)) {
+						headshotUsage = SkillUsage(*weapon, attacker, kHeadshot);
+					}
+				}
+				bool goingForHeadshot = HeadshotDecision::MakeDecision(attacker, target, headshotUsage);
 #ifndef NDEBUG
 				if (goingForHeadshot) {
 					logger::info("\t{} is going for a headshot!", *attacker);
@@ -278,9 +278,9 @@ namespace NLA
 				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kPrecision); skillUsage) {
 					AddRandomSpread(launchData, skillUsage);
 				}
-				
+
 				HeadshotDecision::ClearForAttacker(attacker);
-				
+
 				func(projectile, launchData);
 			}
 

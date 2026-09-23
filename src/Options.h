@@ -7,7 +7,9 @@ namespace NLA
 		kAccuracy,
 		kPrecision,
 
-		kChargeTime
+		kChargeTime,
+		kRange,
+		kHeadshot
 	};
 }
 

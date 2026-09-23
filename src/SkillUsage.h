@@ -44,9 +44,6 @@ namespace NLA
 		float SkillFactor(RE::Actor* actor) const;
 
 		/// An interpolated multiplier for a skill in 0-100 range, controlling the growth of the factor in min-max range.
-		float LerpSkillFactor(RE::Actor* actor, float minFactor, float maxFactor) const;
-
-		/// An interpolated multiplier for a skill in 0-100 range, controlling the growth of the factor in min-max range.
 		float LerpSkillFactor(RE::Actor* actor) const;
 
 		float Skill(RE::Actor* actor) const {
@@ -60,10 +57,12 @@ namespace NLA
 			return Skill(actor) * (sensitivity ? *sensitivity : 1.0f);
 		}
 
+		/// Maximum angular deviation (in radians) for the shot, based on the current skill.
 		float MaxSpread(RE::Actor* actor) const;
-	};
 
-	RE::NiPoint2 RandomSpreadOffset(float maxSpread);
+		/// A random deviation in a random direction, with magnitude normally distributed within MaxSpread.
+		RE::NiPoint2 RandomSpreadOffset(RE::Actor* actor) const;
+	};
 
 	RE::ActorValue HighestMagicSkill(RE::Actor* actor);
 }

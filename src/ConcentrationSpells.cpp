@@ -8,23 +8,23 @@ namespace NLA::ConcentrationSpells
 {
 	struct WanderAnimation
 	{
-		RE::NiPoint2  start{ 0.0f, 0.0f };
-		RE::NiPoint2  finish{ 0.0f, 0.0f };
-		RE::NiPoint2  current{ 0.0f, 0.0f };
+		RE::NiPoint2 start{ 0.0f, 0.0f };
+		RE::NiPoint2 finish{ 0.0f, 0.0f };
+		RE::NiPoint2 current{ 0.0f, 0.0f };
 
 		std::uint32_t elapsedTicks = 0;
 		bool          paused = false;
 
 		/// Duration in which animation should glide from start to finish.
 		constexpr static std::uint32_t travelTicks = 45;
-		
+
 		/// Time that beam would stay at the same point before starting to glide to the next one.
 		constexpr static std::uint32_t pauseTicks = 20;
 
 		static std::unordered_map<RE::FormID, WanderAnimation> active;
 
-		bool Advance(float maxSpread) {
-			if (maxSpread <= 0.0f) {
+		bool Advance(RE::Actor* attacker, const SkillUsage& skillUsage) {
+			if (skillUsage.MaxSpread(attacker) <= 0.0f) {
 				return false;
 			}
 
@@ -34,7 +34,7 @@ namespace NLA::ConcentrationSpells
 			} else if (paused && elapsedTicks >= WanderAnimation::pauseTicks) {
 				start = finish;
 
-				finish = RandomSpreadOffset(maxSpread);
+				finish = skillUsage.RandomSpreadOffset(attacker);
 
 				paused = false;
 				elapsedTicks = 0;
@@ -58,7 +58,7 @@ namespace NLA::ConcentrationSpells
 
 	RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Actor* attacker, const SkillUsage& skillUsage) {
 		auto& anim = WanderAnimation::active[attacker->formID];
-		anim.Advance(skillUsage.MaxSpread(attacker));
+		anim.Advance(attacker, skillUsage);
 
 		RE::NiPoint3 euler{};
 		rotation->ToEulerAnglesXYZ(euler);
@@ -69,17 +69,17 @@ namespace NLA::ConcentrationSpells
 		return anim.current;
 	}
 
-	void ApplyRangeScaling(RE::Projectile* projectile, RE::Actor* attacker, const SkillUsage& skillUsage) {
-		const auto& options = Options::For(attacker);
-		if (!options.concentrationSpellRangeScaling)
-			return;
-
+	void ApplyRangeScaling(RE::Projectile* projectile, RE::Actor* attacker) {
 		auto& runtimeData = projectile->GetProjectileRuntimeData();
 		if (!runtimeData.impacts.empty())  // already hit something, don't change range anymore.
 			return;
 
+		auto skillUsage = SkillUsage(runtimeData.spell, attacker, kRange);
+		if (!skillUsage)
+			return;
+
 		if (auto base = projectile->GetProjectileBase(); base) {
-			float rangeMult = skillUsage.LerpSkillFactor(attacker, options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier);
+			float rangeMult = skillUsage.LerpSkillFactor(attacker);
 
 			runtimeData.range = base->data.range * rangeMult;
 			logger::debug("Scaling range from {} to {} (multiplier: {})", base->data.range, runtimeData.range, rangeMult);
@@ -116,9 +116,9 @@ namespace NLA::ConcentrationSpells
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
 							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage);
-							ApplyRangeScaling(projectile, attacker, skillUsage);
 							LocalContext::current = { projectile, offset };
 						}
+						ApplyRangeScaling(projectile, attacker);
 					}
 				}
 			}
@@ -179,10 +179,7 @@ namespace NLA::ConcentrationSpells
 			static bool thunk(RE::Projectile* projectile) {
 				if (projectile) {
 					if (auto attacker = GetAttacker(projectile); attacker) {
-						auto& runtimeData = projectile->GetProjectileRuntimeData();
-						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
-							ApplyRangeScaling(projectile, attacker, skillUsage);
-						}
+						ApplyRangeScaling(projectile, attacker);
 					}
 				}
 				return func(projectile);
