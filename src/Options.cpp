@@ -43,6 +43,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("fSpell{}SkillMultiplier", prefix).c_str(), value.spell, defaultValue.spell);
 			SetOrDeleteValue(ini, a_section, fmt::format("fConcentrationSpell{}SkillMultiplier", prefix).c_str(), value.concentrationSpell, defaultValue.concentrationSpell);
 			SetOrDeleteValue(ini, a_section, fmt::format("fStaff{}SkillMultiplier", prefix).c_str(), value.staff, defaultValue.staff);
+			SetOrDeleteValue(ini, a_section, fmt::format("fScroll{}SkillMultiplier", prefix).c_str(), value.scroll, defaultValue.scroll);
 			SetOrDeleteValue(ini, a_section, fmt::format("fBlindness{}SkillMultiplier", prefix).c_str(), value.blindness, defaultValue.blindness);
 		}
 
@@ -60,6 +61,7 @@ namespace NLA::Options
 
 			SetOrDeleteValue(ini, a_section, "bLearnSpells", custom.spellAiming, defaults.spellAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnStaves", custom.staffAiming, defaults.staffAiming);
+			SetOrDeleteValue(ini, a_section, "bLearnScrolls", custom.scrollAiming, defaults.scrollAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnBows", custom.bowAiming, defaults.bowAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnCrossbows", custom.crossbowAiming, defaults.crossbowAiming);
 
@@ -71,6 +73,8 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bStavesUseHighestMagicSkill", custom.stavesUseHighestMagicSkill, defaults.stavesUseHighestMagicSkill);
 			SetOrDeleteValue(ini, a_section, "bUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill);
 			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsUseHighestMagicSkill", custom.concentrationSpellsUseHighestMagicSkill, defaults.concentrationSpellsUseHighestMagicSkill);
+			SetOrDeleteValue(ini, a_section, "bScrollsUseEnchantingSkill", custom.scrollsUseEnchantingSkill, defaults.scrollsUseEnchantingSkill);
+			SetOrDeleteValue(ini, a_section, "bScrollsUseHighestMagicSkill", custom.scrollsUseHighestMagicSkill, defaults.scrollsUseHighestMagicSkill);
 
 			SetOrDeleteValue(ini, a_section, "bLearnConcentrationSpells", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming);
 			SetOrDeleteValue(ini, a_section, "bScaleRangeWithSkill", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling);
@@ -88,6 +92,10 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bScaleStaffChargeTimeWithSkill", custom.staffChargeTimeScaling, defaults.staffChargeTimeScaling);
 			SetOrDeleteValue(ini, a_section, "fStaffChargeSpeedMinMultiplier", custom.staffChargeSpeedMinMultiplier, defaults.staffChargeSpeedMinMultiplier);
 			SetOrDeleteValue(ini, a_section, "fStaffChargeSpeedMaxMultiplier", custom.staffChargeSpeedMaxMultiplier, defaults.staffChargeSpeedMaxMultiplier);
+
+			SetOrDeleteValue(ini, a_section, "bScaleScrollChargeTimeWithSkill", custom.scrollChargeTimeScaling, defaults.scrollChargeTimeScaling);
+			SetOrDeleteValue(ini, a_section, "fScrollChargeSpeedMinMultiplier", custom.scrollChargeSpeedMinMultiplier, defaults.scrollChargeSpeedMinMultiplier);
+			SetOrDeleteValue(ini, a_section, "fScrollChargeSpeedMaxMultiplier", custom.scrollChargeSpeedMaxMultiplier, defaults.scrollChargeSpeedMaxMultiplier);
 		}
 	}
 
@@ -130,6 +138,16 @@ namespace NLA::Options
 			logger::info("\t{}'s accuracy with spells is based on the highest {}'s magic skill regardless of spell", actor, actor);
 		} else {
 			logger::info("\t{}'s accuracy with spells is based on {}'s skill in spell's magic school", actor, actor);
+		}
+	}
+
+	inline void LogScrollsUseEnchantingSkill(std::string_view actor, bool scrollsUseEnchantingSkill, bool scrollsUseHighestMagicSkill) {
+		if (scrollsUseEnchantingSkill) {
+			logger::info("\t{}'s accuracy with scrolls is based on Enchanting skill", actor);
+		} else if (scrollsUseHighestMagicSkill) {
+			logger::info("\t{}'s accuracy with scrolls is based on the highest {}'s magic skill regardless of spell", actor, actor);
+		} else {
+			logger::info("\t{}'s accuracy with scrolls is based on {}'s skill in scroll's magic school", actor, actor);
 		}
 	}
 
@@ -195,6 +213,7 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
+		logger::info("\tMages {} with scrolls", NPC.scrollAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with concentration spells", NPC.concentrationSpellsAiming ? "will learn to aim" : "have perfect aim");
 		if (NPC.headshots.bow) {
 			logger::info("\tSkilled archers may go for headshots ({:.0f}%-{:.0f}% chance)", NPC.headshots.bowMinChance * 100, NPC.headshots.bowMaxChance * 100);
@@ -213,6 +232,7 @@ namespace NLA::Options
 		LogSkillMultiplier("NPCs", "Spells", "Accuracy", NPC.accuracyMultipliers.spell);
 		LogSkillMultiplier("NPCs", "Concentration Spells", "Accuracy", NPC.accuracyMultipliers.concentrationSpell);
 		LogSkillMultiplier("NPCs", "Staves", "Accuracy", NPC.accuracyMultipliers.staff);
+		LogSkillMultiplier("NPCs", "Scrolls", "Accuracy", NPC.accuracyMultipliers.scroll);
 		LogBlindnessSkillMultiplier("NPCs", "accuracy", NPC.accuracyMultipliers.blindness);
 
 		logger::info("");
@@ -221,11 +241,13 @@ namespace NLA::Options
 		LogSkillMultiplier("NPCs", "Spells", "Precision", NPC.precisionMultipliers.spell);
 		LogSkillMultiplier("NPCs", "Concentration Spells", "Precision", NPC.precisionMultipliers.concentrationSpell);
 		LogSkillMultiplier("NPCs", "Staves", "Precision", NPC.precisionMultipliers.staff);
+		LogSkillMultiplier("NPCs", "Scrolls", "Precision", NPC.precisionMultipliers.scroll);
 		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
 
 		logger::info("");
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill, NPC.stavesUseHighestMagicSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill);
+		LogScrollsUseEnchantingSkill("NPCs", NPC.scrollsUseEnchantingSkill, NPC.scrollsUseHighestMagicSkill);
 		LogConcentrationSpellsUseHighestMagicSkill("NPCs", NPC.concentrationSpellsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
 
@@ -233,6 +255,7 @@ namespace NLA::Options
 		LogChargeSpeedMultiplier("NPCs", "spells", NPC.spellChargeTimeScaling, NPC.spellChargeSpeedMinMultiplier, NPC.spellChargeSpeedMaxMultiplier);
 		LogChargeSpeedMultiplier("NPCs", "concentration spells", NPC.concentrationSpellChargeTimeScaling, NPC.concentrationSpellChargeSpeedMinMultiplier, NPC.concentrationSpellChargeSpeedMaxMultiplier);
 		LogChargeSpeedMultiplier("NPCs", "staves", NPC.staffChargeTimeScaling, NPC.staffChargeSpeedMinMultiplier, NPC.staffChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "scrolls", NPC.scrollChargeTimeScaling, NPC.scrollChargeSpeedMinMultiplier, NPC.scrollChargeSpeedMaxMultiplier);
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -261,6 +284,7 @@ namespace NLA::Options
 		logger::info("\t{} with crossbows", Player.crossbowAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
+		logger::info("\t{} with scrolls", Player.scrollAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with concentration spells", Player.concentrationSpellsAiming ? "Will learn to aim" : "Has perfect aim");
 
 		logger::info("");
@@ -269,10 +293,12 @@ namespace NLA::Options
 		LogSkillMultiplier("Player", "Spells", "Precision", Player.precisionMultipliers.spell);
 		LogSkillMultiplier("Player", "Concentration Spells", "Precision", Player.precisionMultipliers.concentrationSpell);
 		LogSkillMultiplier("Player", "Staves", "Precision", Player.precisionMultipliers.staff);
+		LogSkillMultiplier("Player", "Scrolls", "Precision", Player.precisionMultipliers.scroll);
 
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill, Player.stavesUseHighestMagicSkill);
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill);
+		LogScrollsUseEnchantingSkill("Player", Player.scrollsUseEnchantingSkill, Player.scrollsUseHighestMagicSkill);
 		LogConcentrationSpellsUseHighestMagicSkill("Player", Player.concentrationSpellsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
 
@@ -280,6 +306,7 @@ namespace NLA::Options
 		LogChargeSpeedMultiplier("Player", "spells", Player.spellChargeTimeScaling, Player.spellChargeSpeedMinMultiplier, Player.spellChargeSpeedMaxMultiplier);
 		LogChargeSpeedMultiplier("Player", "concentration spells", Player.concentrationSpellChargeTimeScaling, Player.concentrationSpellChargeSpeedMinMultiplier, Player.concentrationSpellChargeSpeedMaxMultiplier);
 		LogChargeSpeedMultiplier("Player", "staves", Player.staffChargeTimeScaling, Player.staffChargeSpeedMinMultiplier, Player.staffChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("Player", "scrolls", Player.scrollChargeTimeScaling, Player.scrollChargeSpeedMinMultiplier, Player.scrollChargeSpeedMaxMultiplier);
 
 		logger::info("{:*^40}", "");
 	}
@@ -325,6 +352,7 @@ namespace NLA::Options
 
 		spellAiming = ini.GetBoolValue(a_section, "bLearnSpells", spellAiming);
 		staffAiming = ini.GetBoolValue(a_section, "bLearnStaves", staffAiming);
+		scrollAiming = ini.GetBoolValue(a_section, "bLearnScrolls", scrollAiming);
 		bowAiming = ini.GetBoolValue(a_section, "bLearnBows", bowAiming);
 		crossbowAiming = ini.GetBoolValue(a_section, "bLearnCrossbows", crossbowAiming);
 
@@ -338,6 +366,8 @@ namespace NLA::Options
 
 		spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bUseHighestMagicSkill", spellsUseHighestMagicSkill);
 		concentrationSpellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationSpellsUseHighestMagicSkill", concentrationSpellsUseHighestMagicSkill);
+		scrollsUseEnchantingSkill = ini.GetBoolValue(a_section, "bScrollsUseEnchantingSkill", scrollsUseEnchantingSkill);
+		scrollsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bScrollsUseHighestMagicSkill", scrollsUseHighestMagicSkill);
 
 		concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bScaleRangeWithSkill", concentrationSpellRangeScaling);
 		concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", concentrationSpellMinRangeMultiplier);
@@ -354,6 +384,10 @@ namespace NLA::Options
 		staffChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleStaffChargeTimeWithSkill", staffChargeTimeScaling);
 		staffChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fStaffChargeSpeedMinMultiplier", staffChargeSpeedMinMultiplier);
 		staffChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fStaffChargeSpeedMaxMultiplier", staffChargeSpeedMaxMultiplier);
+
+		scrollChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleScrollChargeTimeWithSkill", scrollChargeTimeScaling);
+		scrollChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fScrollChargeSpeedMinMultiplier", scrollChargeSpeedMinMultiplier);
+		scrollChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fScrollChargeSpeedMaxMultiplier", scrollChargeSpeedMaxMultiplier);
 	}
 
 	PlayerConfig::PlayerConfig(CSimpleIniA& ini) :
@@ -388,6 +422,7 @@ namespace NLA::Options
 		std::string spellOption = fmt::format("fSpell{}SkillMultiplier", prefix);
 		std::string concentrationSpellOption = fmt::format("fConcentrationSpell{}SkillMultiplier", prefix);
 		std::string staffOption = fmt::format("fStaff{}SkillMultiplier", prefix);
+		std::string scrollOption = fmt::format("fScroll{}SkillMultiplier", prefix);
 		std::string blindnessOption = fmt::format("fBlindness{}SkillMultiplier", prefix);
 
 		bow = ini.GetDoubleValue(a_section, bowOption.c_str(), bow);
@@ -395,6 +430,7 @@ namespace NLA::Options
 		spell = ini.GetDoubleValue(a_section, spellOption.c_str(), spell);
 		concentrationSpell = ini.GetDoubleValue(a_section, concentrationSpellOption.c_str(), concentrationSpell);
 		staff = ini.GetDoubleValue(a_section, staffOption.c_str(), staff);
+		scroll = ini.GetDoubleValue(a_section, scrollOption.c_str(), scroll);
 		blindness = ini.GetDoubleValue(a_section, blindnessOption.c_str(), blindness);
 	}
 }

@@ -70,6 +70,15 @@ namespace NLA::Menu
 		constexpr const char* kConcentrationSpellUseHighestMagicSkillTooltip = "When enabled, concentration spell aiming is based on the highest Magic skill, regardless of the spell's Magic school.";
 		constexpr const char* kResetConcentrationSpellsButton = "Reset Concentration Spells to Default";
 
+		constexpr const char* kScrollLabel = "Learn Scrolls";
+		constexpr const char* kScrollTooltip = "When enabled, corresponding Magic skill will affect aiming with scrolls.";
+		constexpr const char* kScrollAccuracyTooltip = "How much the skill contributes to Accuracy with scrolls. The higher this multiplier is the easier it is to aim.";
+		constexpr const char* kScrollPrecisionTooltip = "How much the skill contributes to Precision with scrolls. The higher this multiplier is the easier it is to hit the target.";
+		constexpr const char* kScrollUseHighestMagicSkillTooltip = "When enabled, scroll aiming is based on the highest Magic skill, regardless of the scroll spell's Magic school.";
+		constexpr const char* kScrollUseEnchantingSkillTooltip = "When enabled, scroll aiming is based on the Enchanting skill instead of the scroll spell's Magic school. Mutually exclusive with Use Highest Magic Skill.";
+		constexpr const char* kScaleScrollChargeTimeWithSkillTooltip = "When enabled, corresponding skill also affects how fast scrolls charge/cast. (the higher the skill the faster the cast)";
+		constexpr const char* kResetScrollsButton = "Reset Scrolls to Default";
+
 		constexpr const char* kScaleChargeTimeWithSkillLabel = "Scale Charge Speed With Skill";
 		constexpr const char* kMinChargeSpeedMultiplierHeader = "Min Speed";
 		constexpr const char* kMaxChargeSpeedMultiplierHeader = "Max Speed";
@@ -511,6 +520,65 @@ namespace NLA::Menu
 			PopID();
 		}
 
+		void RenderScrollRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
+			PushID("Scrolls");
+			TableNextRow();
+			ToggleColumn(kScrollLabel, cfg.scrollAiming, kScrollTooltip);
+			if (!cfg.scrollAiming) {
+				BeginDisabled();
+			}
+			if (hasAccuracy) {
+				SliderColumn("##ScrollAccuracy", cfg.accuracyMultipliers.scroll, kScrollAccuracyTooltip);
+			} else {
+				NotApplicableColumn();
+			}
+			SliderColumn("##ScrollPrecision", cfg.precisionMultipliers.scroll, kScrollPrecisionTooltip);
+
+			TableNextRow();
+			ExclusiveToggleColumn(kUseEnchantingSkillLabel, cfg.scrollsUseEnchantingSkill, cfg.scrollsUseHighestMagicSkill, kScrollUseEnchantingSkillTooltip);
+
+			TableNextRow();
+			ExclusiveToggleColumn(kUseHighestMagicSkillLabel, cfg.scrollsUseHighestMagicSkill, cfg.scrollsUseEnchantingSkill, kScrollUseHighestMagicSkillTooltip);
+			if (!cfg.scrollAiming) {
+				EndDisabled();
+			}
+
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.scrollChargeTimeScaling, kScaleScrollChargeTimeWithSkillTooltip);
+			if (!cfg.scrollChargeTimeScaling) {
+				BeginDisabled();
+			}
+			SliderColumn("##ScrollMinChargeSpeedMultiplier", cfg.scrollChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			SliderColumn("##ScrollMaxChargeSpeedMultiplier", cfg.scrollChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			if (!cfg.scrollChargeTimeScaling) {
+				EndDisabled();
+			}
+
+			TableNextRow();
+			TableNextColumn();
+			if (Button(kResetScrollsButton)) {
+				cfg.scrollAiming = defaults.scrollAiming;
+				if (hasAccuracy) {
+					cfg.accuracyMultipliers.scroll = defaults.accuracyMultipliers.scroll;
+				}
+				cfg.precisionMultipliers.scroll = defaults.precisionMultipliers.scroll;
+				cfg.scrollsUseEnchantingSkill = defaults.scrollsUseEnchantingSkill;
+				cfg.scrollsUseHighestMagicSkill = defaults.scrollsUseHighestMagicSkill;
+				cfg.scrollChargeTimeScaling = defaults.scrollChargeTimeScaling;
+				cfg.scrollChargeSpeedMinMultiplier = defaults.scrollChargeSpeedMinMultiplier;
+				cfg.scrollChargeSpeedMaxMultiplier = defaults.scrollChargeSpeedMaxMultiplier;
+				Options::Save();
+			}
+			EmptyRow();
+			PopID();
+		}
+
 		void RenderBlindnessRows(Options::Config& cfg, const Options::Config& defaults) {
 			PushID("Blindness");
 			TableNextRow();
@@ -597,6 +665,7 @@ namespace NLA::Menu
 				RenderStaffRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderConcentrationSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
+				RenderScrollRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderBlindnessRows(Options::NPC, Options::NPCConfig::defaultConfig);
 				EndTable();
 			}
@@ -627,6 +696,7 @@ namespace NLA::Menu
 				RenderStaffRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderConcentrationSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
+				RenderScrollRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				EndTable();
 			}
 			if (!Options::Player.enabled) {

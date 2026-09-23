@@ -105,8 +105,20 @@ namespace NLA
 					multiplier = Range{ options.staffChargeSpeedMinMultiplier, options.staffChargeSpeedMaxMultiplier };
 				}
 				break;
+			case RE::MagicSystem::SpellType::kScroll:
+				weaponType = kScroll;
+				if (options.scrollChargeTimeScaling) {
+					if (options.scrollsUseEnchantingSkill) {
+						skill = RE::ActorValue::kEnchanting;
+					} else if (options.scrollsUseHighestMagicSkill) {
+						skill = HighestMagicSkill(attacker);
+					} else {
+						skill = magicSkill;
+					}
+					multiplier = Range{ options.scrollChargeSpeedMinMultiplier, options.scrollChargeSpeedMaxMultiplier };
+				}
+				break;
 			default:
-				// TODO: Think about fitting scrolls into all of this.
 				break;
 			}
 			break;
@@ -153,6 +165,19 @@ namespace NLA
 						skill = magicSkill;
 					}
 					multiplier = options.MultiplierFor(context).staff;
+				}
+				break;
+			case RE::MagicSystem::SpellType::kScroll:
+				weaponType = kScroll;
+				if (options.scrollAiming) {
+					if (options.scrollsUseEnchantingSkill) {
+						skill = RE::ActorValue::kEnchanting;
+					} else if (options.scrollsUseHighestMagicSkill) {
+						skill = HighestMagicSkill(attacker);
+					} else {
+						skill = magicSkill;
+					}
+					multiplier = options.MultiplierFor(context).scroll;
 				}
 				break;
 			default:

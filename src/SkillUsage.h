@@ -11,7 +11,8 @@ namespace NLA
 		kBow = 1,
 		kCrossbow = 2,
 		kSpell = 3,
-		kStaff = 4
+		kStaff = 4,
+		kScroll = 5
 	};
 
 	struct SkillUsage

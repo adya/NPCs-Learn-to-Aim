@@ -24,13 +24,14 @@ namespace NLA::Options
 			float spell;
 			float concentrationSpell;
 			float staff;
+			float scroll;
 
 			float blindness;
 
 			SkillMultiplier() = default;
 			SkillMultiplier(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillMultiplier& defaults);
-			SkillMultiplier(float bow, float crossbow, float spell, float concentrationSpell, float staff, float blindness) :
-				bow(bow), crossbow(crossbow), spell(spell), concentrationSpell(concentrationSpell), staff(staff), blindness(blindness) {}
+			SkillMultiplier(float bow, float crossbow, float spell, float concentrationSpell, float staff, float scroll, float blindness) :
+				bow(bow), crossbow(crossbow), spell(spell), concentrationSpell(concentrationSpell), staff(staff), scroll(scroll), blindness(blindness) {}
 		};
 
 		/// Controls whether the mod works for given characters.
@@ -38,6 +39,7 @@ namespace NLA::Options
 
 		bool spellAiming = true;
 		bool staffAiming = true;
+		bool scrollAiming = true;
 		bool bowAiming = true;
 		bool crossbowAiming = true;
 
@@ -61,6 +63,14 @@ namespace NLA::Options
 		/// If true, the highest NPC's magic skill is used to aim concentration spells, instead of the spell's primary effect's school skill.
 		bool concentrationSpellsUseHighestMagicSkill = false;
 
+		/// If true, scrolls use the enchanting skill instead of the scroll spell's primary effect's school skill.
+		/// Mutually exclusive with scrollsUseHighestMagicSkill.
+		bool scrollsUseEnchantingSkill = false;
+
+		/// If true, the highest NPC's magic skill is used to aim scrolls, instead of the scroll spell's primary effect's school skill.
+		/// Mutually exclusive with scrollsUseEnchantingSkill.
+		bool scrollsUseHighestMagicSkill = false;
+
 		/// If true, concentration spells require continuous accuracy, where the beam/flow will wander around the target.
 		bool concentrationSpellsAiming = true;
 
@@ -81,6 +91,10 @@ namespace NLA::Options
 		bool staffChargeTimeScaling = true;
 		float staffChargeSpeedMinMultiplier = 1.0f;
 		float staffChargeSpeedMaxMultiplier = 1.5f;
+
+		bool scrollChargeTimeScaling = true;
+		float scrollChargeSpeedMinMultiplier = 1.0f;
+		float scrollChargeSpeedMaxMultiplier = 1.5f;
 
 		Config() = default;
 
@@ -141,7 +155,7 @@ namespace NLA::Options
 
 		static const PlayerConfig defaultConfig;
 	};
-	inline const PlayerConfig PlayerConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }, { 1.4f, 7.0f, 1.25f, 1.25f, 1.55f, 0.0f }, false, false };
+	inline const PlayerConfig PlayerConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }, { 1.4f, 7.0f, 1.25f, 1.25f, 1.55f, 1.25f, 0.0f }, false, false };
 
 	struct NPCConfig : Config
 	{
@@ -192,7 +206,7 @@ namespace NLA::Options
 
 		static const NPCConfig defaultConfig;
 	};
-	inline const NPCConfig NPCConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 0.85f, 1.15f, 1.15f, 0.85f, 0.2f }, { 1.0f, 7.0f, 0.85f, 0.85f, 1.15f, 1.5f }, false, false, {}, { "ActorTypeNPC" } };
+	inline const NPCConfig NPCConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 0.85f, 1.15f, 1.15f, 0.85f, 1.15f, 0.2f }, { 1.0f, 7.0f, 0.85f, 0.85f, 1.15f, 0.85f, 1.5f }, false, false, {}, { "ActorTypeNPC" } };
 
 	inline NPCConfig    NPC{ NPCConfig::defaultConfig };
 	inline PlayerConfig Player{ PlayerConfig::defaultConfig };
