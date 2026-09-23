@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Options.h"
+#include <variant>
 
 namespace NLA
 {
@@ -15,13 +16,17 @@ namespace NLA
 
 	struct SkillUsage
 	{
-		RE::ActorValue skill{ RE::ActorValue::kNone };
-		float          multiplier{ 0 };
-		WeaponType     weaponType{ kNone };
+		struct Range
+		{
+			float min{ 1.0f };
+			float max{ 1.0f };
+		};
+
+		RE::ActorValue             skill{ RE::ActorValue::kNone };
+		std::variant<float, Range> multiplier{ 0.0f };
+		WeaponType                 weaponType{ kNone };
 
 		SkillUsage() = default;
-		SkillUsage(RE::ActorValue skill, float multiplier, WeaponType weaponType) :
-			skill(skill), multiplier(multiplier), weaponType(weaponType) {}
 
 		SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker, SkillUsageContext context);
 
@@ -41,6 +46,9 @@ namespace NLA
 		/// An interpolated multiplier for a skill in 0-100 range, controlling the growth of the factor in min-max range.
 		float LerpSkillFactor(RE::Actor* actor, float minFactor, float maxFactor) const;
 
+		/// An interpolated multiplier for a skill in 0-100 range, controlling the growth of the factor in min-max range.
+		float LerpSkillFactor(RE::Actor* actor) const;
+
 		float Skill(RE::Actor* actor) const {
 			if (!actor || skill == RE::ActorValue::kNone)
 				return 0.0f;
@@ -48,11 +56,14 @@ namespace NLA
 		}
 
 		float EffectiveSkill(RE::Actor* actor) const {
-			return Skill(actor) * multiplier;
+			const float* sensitivity = std::get_if<float>(&multiplier);
+			return Skill(actor) * (sensitivity ? *sensitivity : 1.0f);
 		}
 
 		float MaxSpread(RE::Actor* actor) const;
 	};
 
 	RE::NiPoint2 RandomSpreadOffset(float maxSpread);
+
+	RE::ActorValue HighestMagicSkill(RE::Actor* actor);
 }

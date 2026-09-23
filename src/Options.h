@@ -5,7 +5,9 @@ namespace NLA
 	enum SkillUsageContext
 	{
 		kAccuracy,
-		kPrecision
+		kPrecision,
+
+		kChargeTime
 	};
 }
 
@@ -65,6 +67,18 @@ namespace NLA::Options
 
 		float concentrationSpellMinRangeMultiplier = 1.2f;
 		float concentrationSpellMaxRangeMultiplier = 2.5f;
+
+		bool spellChargeTimeScaling = true;
+		float spellChargeSpeedMinMultiplier = 1.0f;
+		float spellChargeSpeedMaxMultiplier = 1.5f;
+
+		bool concentrationSpellChargeTimeScaling = true;
+		float concentrationSpellChargeSpeedMinMultiplier = 1.0f;
+		float concentrationSpellChargeSpeedMaxMultiplier = 1.5f;
+
+		bool staffChargeTimeScaling = true;
+		float staffChargeSpeedMinMultiplier = 1.0f;
+		float staffChargeSpeedMaxMultiplier = 1.5f;
 
 		Config() = default;
 

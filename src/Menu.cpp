@@ -70,6 +70,15 @@ namespace NLA::Menu
 		constexpr const char* kConcentrationSpellUseHighestMagicSkillTooltip = "When enabled, concentration spell aiming is based on the highest Magic skill, regardless of the spell's Magic school.";
 		constexpr const char* kResetConcentrationSpellsButton = "Reset Concentration Spells to Default";
 
+		constexpr const char* kScaleChargeTimeWithSkillLabel = "Scale Charge Speed With Skill";
+		constexpr const char* kMinChargeSpeedMultiplierHeader = "Min Speed";
+		constexpr const char* kMaxChargeSpeedMultiplierHeader = "Max Speed";
+		constexpr const char* kScaleSpellChargeTimeWithSkillTooltip = "When enabled, corresponding Magic skill also affects how fast fire-and-forget spells charge/cast. (the higher the skill the faster the cast)";
+		constexpr const char* kScaleConcentrationSpellChargeTimeWithSkillTooltip = "When enabled, corresponding Magic skill also affects how fast concentration spells charge/cast. (the higher the skill the faster the cast)";
+		constexpr const char* kScaleStaffChargeTimeWithSkillTooltip = "When enabled, corresponding skill also affects how fast staves charge/cast. (the higher the skill the faster the cast)";
+		constexpr const char* kMinChargeSpeedMultiplierTooltip = "Charge speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.";
+		constexpr const char* kMaxChargeSpeedMultiplierTooltip = "Charge speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.";
+
 		constexpr const char* kBlindnessLabel = "Blindness Affects Aim";
 		constexpr const char* kBlindnessTooltip = "When enabled, being blinded further affects aiming.";
 		constexpr const char* kBlindnessAccuracyTooltip = "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.";
@@ -335,6 +344,23 @@ namespace NLA::Menu
 			}
 
 			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.staffChargeTimeScaling, kScaleStaffChargeTimeWithSkillTooltip);
+			if (!cfg.staffChargeTimeScaling) {
+				BeginDisabled();
+			}
+			SliderColumn("##StaffMinChargeSpeedMultiplier", cfg.staffChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			SliderColumn("##StaffMaxChargeSpeedMultiplier", cfg.staffChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			if (!cfg.staffChargeTimeScaling) {
+				EndDisabled();
+			}
+
+			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetStavesButton)) {
 				cfg.staffAiming = defaults.staffAiming;
@@ -344,6 +370,9 @@ namespace NLA::Menu
 				cfg.precisionMultipliers.staff = defaults.precisionMultipliers.staff;
 				cfg.stavesUseEnchantingSkill = defaults.stavesUseEnchantingSkill;
 				cfg.stavesUseHighestMagicSkill = defaults.stavesUseHighestMagicSkill;
+				cfg.staffChargeTimeScaling = defaults.staffChargeTimeScaling;
+				cfg.staffChargeSpeedMinMultiplier = defaults.staffChargeSpeedMinMultiplier;
+				cfg.staffChargeSpeedMaxMultiplier = defaults.staffChargeSpeedMaxMultiplier;
 				Options::Save();
 			}
 			EmptyRow();
@@ -371,6 +400,23 @@ namespace NLA::Menu
 			}
 
 			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.spellChargeTimeScaling, kScaleSpellChargeTimeWithSkillTooltip);
+			if (!cfg.spellChargeTimeScaling) {
+				BeginDisabled();
+			}
+			SliderColumn("##SpellMinChargeSpeedMultiplier", cfg.spellChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			SliderColumn("##SpellMaxChargeSpeedMultiplier", cfg.spellChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			if (!cfg.spellChargeTimeScaling) {
+				EndDisabled();
+			}
+
+			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetSpellsButton)) {
 				cfg.spellAiming = defaults.spellAiming;
@@ -379,6 +425,9 @@ namespace NLA::Menu
 				}
 				cfg.precisionMultipliers.spell = defaults.precisionMultipliers.spell;
 				cfg.spellsUseHighestMagicSkill = defaults.spellsUseHighestMagicSkill;
+				cfg.spellChargeTimeScaling = defaults.spellChargeTimeScaling;
+				cfg.spellChargeSpeedMinMultiplier = defaults.spellChargeSpeedMinMultiplier;
+				cfg.spellChargeSpeedMaxMultiplier = defaults.spellChargeSpeedMaxMultiplier;
 				Options::Save();
 			}
 			EmptyRow();
@@ -425,6 +474,23 @@ namespace NLA::Menu
 			}
 
 			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.concentrationSpellChargeTimeScaling, kScaleConcentrationSpellChargeTimeWithSkillTooltip);
+			if (!cfg.concentrationSpellChargeTimeScaling) {
+				BeginDisabled();
+			}
+			SliderColumn("##ConcentrationSpellMinChargeSpeedMultiplier", cfg.concentrationSpellChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			SliderColumn("##ConcentrationSpellMaxChargeSpeedMultiplier", cfg.concentrationSpellChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			if (!cfg.concentrationSpellChargeTimeScaling) {
+				EndDisabled();
+			}
+
+			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetConcentrationSpellsButton)) {
 				cfg.concentrationSpellsAiming = defaults.concentrationSpellsAiming;
@@ -436,6 +502,9 @@ namespace NLA::Menu
 				cfg.concentrationSpellMinRangeMultiplier = defaults.concentrationSpellMinRangeMultiplier;
 				cfg.concentrationSpellMaxRangeMultiplier = defaults.concentrationSpellMaxRangeMultiplier;
 				cfg.concentrationSpellsUseHighestMagicSkill = defaults.concentrationSpellsUseHighestMagicSkill;
+				cfg.concentrationSpellChargeTimeScaling = defaults.concentrationSpellChargeTimeScaling;
+				cfg.concentrationSpellChargeSpeedMinMultiplier = defaults.concentrationSpellChargeSpeedMinMultiplier;
+				cfg.concentrationSpellChargeSpeedMaxMultiplier = defaults.concentrationSpellChargeSpeedMaxMultiplier;
 				Options::Save();
 			}
 			EmptyRow();

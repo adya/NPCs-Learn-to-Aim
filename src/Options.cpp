@@ -76,6 +76,18 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bScaleRangeWithSkill", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling);
 			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMinRangeMultiplier", custom.concentrationSpellMinRangeMultiplier, defaults.concentrationSpellMinRangeMultiplier);
 			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMaxRangeMultiplier", custom.concentrationSpellMaxRangeMultiplier, defaults.concentrationSpellMaxRangeMultiplier);
+
+			SetOrDeleteValue(ini, a_section, "bScaleSpellChargeTimeWithSkill", custom.spellChargeTimeScaling, defaults.spellChargeTimeScaling);
+			SetOrDeleteValue(ini, a_section, "fSpellChargeSpeedMinMultiplier", custom.spellChargeSpeedMinMultiplier, defaults.spellChargeSpeedMinMultiplier);
+			SetOrDeleteValue(ini, a_section, "fSpellChargeSpeedMaxMultiplier", custom.spellChargeSpeedMaxMultiplier, defaults.spellChargeSpeedMaxMultiplier);
+
+			SetOrDeleteValue(ini, a_section, "bScaleConcentrationSpellChargeTimeWithSkill", custom.concentrationSpellChargeTimeScaling, defaults.concentrationSpellChargeTimeScaling);
+			SetOrDeleteValue(ini, a_section, "fConcentrationSpellChargeSpeedMinMultiplier", custom.concentrationSpellChargeSpeedMinMultiplier, defaults.concentrationSpellChargeSpeedMinMultiplier);
+			SetOrDeleteValue(ini, a_section, "fConcentrationSpellChargeSpeedMaxMultiplier", custom.concentrationSpellChargeSpeedMaxMultiplier, defaults.concentrationSpellChargeSpeedMaxMultiplier);
+
+			SetOrDeleteValue(ini, a_section, "bScaleStaffChargeTimeWithSkill", custom.staffChargeTimeScaling, defaults.staffChargeTimeScaling);
+			SetOrDeleteValue(ini, a_section, "fStaffChargeSpeedMinMultiplier", custom.staffChargeSpeedMinMultiplier, defaults.staffChargeSpeedMinMultiplier);
+			SetOrDeleteValue(ini, a_section, "fStaffChargeSpeedMaxMultiplier", custom.staffChargeSpeedMaxMultiplier, defaults.staffChargeSpeedMaxMultiplier);
 		}
 	}
 
@@ -134,6 +146,28 @@ namespace NLA::Options
 			logger::info("	{} always have vanilla reach with concentration spells", actor);
 		} else {
 			logger::info("	{} reach concentration spells at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, minMult, maxMult);
+		}
+	}
+
+	inline std::string SpeedPercentPhrase(float mult) {
+		if (mult > 1) {
+			return fmt::format("{:.2f}% faster", (mult - 1) * 100);
+		} else if (mult < 1) {
+			return fmt::format("{:.2f}% slower", (1 - mult) * 100);
+		} else {
+			return "at vanilla speed";
+		}
+	}
+
+	inline void LogChargeSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
+		if (!enabled) {
+			logger::info("\t{} always charge/cast {} at vanilla speed", actor, categoryName);
+		} else if (minMult == maxMult) {
+			logger::info("\t{} charge/cast {} {}, regardless of skill", actor, categoryName, SpeedPercentPhrase(minMult));
+		} else if (minMult == 1.0f) {
+			logger::info("\t{} charge/cast {} up to {}, scaling with skill", actor, categoryName, SpeedPercentPhrase(maxMult));
+		} else {
+			logger::info("\t{} charge/cast {} {} at 0 skill, {} at 100 skill", actor, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
 		}
 	}
 
@@ -196,6 +230,11 @@ namespace NLA::Options
 		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("");
+		LogChargeSpeedMultiplier("NPCs", "spells", NPC.spellChargeTimeScaling, NPC.spellChargeSpeedMinMultiplier, NPC.spellChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "concentration spells", NPC.concentrationSpellChargeTimeScaling, NPC.concentrationSpellChargeSpeedMinMultiplier, NPC.concentrationSpellChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "staves", NPC.staffChargeTimeScaling, NPC.staffChargeSpeedMinMultiplier, NPC.staffChargeSpeedMaxMultiplier);
+
+		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
 			logger::info("\tAll NPCs will learn to aim");
 		} else {
@@ -236,6 +275,11 @@ namespace NLA::Options
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill);
 		LogConcentrationSpellsUseHighestMagicSkill("Player", Player.concentrationSpellsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
+
+		logger::info("");
+		LogChargeSpeedMultiplier("Player", "spells", Player.spellChargeTimeScaling, Player.spellChargeSpeedMinMultiplier, Player.spellChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("Player", "concentration spells", Player.concentrationSpellChargeTimeScaling, Player.concentrationSpellChargeSpeedMinMultiplier, Player.concentrationSpellChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("Player", "staves", Player.staffChargeTimeScaling, Player.staffChargeSpeedMinMultiplier, Player.staffChargeSpeedMaxMultiplier);
 
 		logger::info("{:*^40}", "");
 	}
@@ -298,6 +342,18 @@ namespace NLA::Options
 		concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bScaleRangeWithSkill", concentrationSpellRangeScaling);
 		concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", concentrationSpellMinRangeMultiplier);
 		concentrationSpellMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", concentrationSpellMaxRangeMultiplier);
+
+		spellChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleSpellChargeTimeWithSkill", spellChargeTimeScaling);
+		spellChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fSpellChargeSpeedMinMultiplier", spellChargeSpeedMinMultiplier);
+		spellChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fSpellChargeSpeedMaxMultiplier", spellChargeSpeedMaxMultiplier);
+
+		concentrationSpellChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleConcentrationSpellChargeTimeWithSkill", concentrationSpellChargeTimeScaling);
+		concentrationSpellChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellChargeSpeedMinMultiplier", concentrationSpellChargeSpeedMinMultiplier);
+		concentrationSpellChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellChargeSpeedMaxMultiplier", concentrationSpellChargeSpeedMaxMultiplier);
+
+		staffChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleStaffChargeTimeWithSkill", staffChargeTimeScaling);
+		staffChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fStaffChargeSpeedMinMultiplier", staffChargeSpeedMinMultiplier);
+		staffChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fStaffChargeSpeedMaxMultiplier", staffChargeSpeedMaxMultiplier);
 	}
 
 	PlayerConfig::PlayerConfig(CSimpleIniA& ini) :

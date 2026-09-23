@@ -2,6 +2,7 @@
 #include "Aiming.h"
 #include "RE/C/CombatProjectileAimController.h"
 #include "ConcentrationSpells.h"
+#include "ChargeTime.h"
 
 namespace NLA
 {
@@ -11,5 +12,6 @@ namespace NLA
 		Accuracy::Install();
 		Precision::Install();
 		ConcentrationSpells::Install();
+		ChargeTime::Install();
 	}
 }
