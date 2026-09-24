@@ -5,16 +5,6 @@
 
 namespace NLA
 {
-	enum WeaponType : std::uint8_t
-	{
-		kNone = 0,
-		kBow = 1,
-		kCrossbow = 2,
-		kSpell = 3,
-		kStaff = 4,
-		kScroll = 5
-	};
-
 	struct SkillUsage
 	{
 		struct Range
@@ -66,4 +56,6 @@ namespace NLA
 	};
 
 	RE::ActorValue HighestMagicSkill(RE::Actor* actor);
+
+	RE::ActorValue MagicSkillFor(const RE::MagicItem* spell, RE::Actor* caster);
 }

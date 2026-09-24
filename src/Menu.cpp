@@ -88,6 +88,30 @@ namespace NLA::Menu
 		constexpr const char* kMinChargeSpeedMultiplierTooltip = "Charge speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.";
 		constexpr const char* kMaxChargeSpeedMultiplierTooltip = "Charge speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.";
 
+		constexpr const char* kSpellOverchargeLabel = "Overcharge Steadies Aim";
+		constexpr const char* kSpellOverchargeTooltip = "When enabled, holding a fully charged spell before releasing it tightens its spread. The longer it's held, the steadier the shot, with diminishing returns.";
+		constexpr const char* kSpellOverchargeMaxReductionTooltip = "The most spread that overcharging can remove, approached the longer the spell is held. 50% means the spread can at best be halved.";
+		constexpr const char* kSpellOverchargeHalfDurationTooltip = "Duration of holding a fully charged spell to get roughly half of the max spread reduction. Lower means the aim steadies faster. 1 sec with 50% reduction means that in 1 second spread will be reduced by 25%.";
+		constexpr const char* kStaffOverchargeTooltip = "When enabled, holding a fully charged staff before releasing it tightens its spread. The longer it's held, the steadier the shot, with diminishing returns.";
+		constexpr const char* kStaffOverchargeMaxReductionTooltip = "The most spread that overcharging can remove, approached the longer the staff is held. 50% means the spread can at best be halved.";
+		constexpr const char* kStaffOverchargeHalfDurationTooltip = "Duration of holding a fully charged staff to get roughly half of the max spread reduction. Lower means the aim steadies faster. 1 sec with 50% reduction means that in 1 second spread will be reduced by 25%.";
+		constexpr const char* kScrollOverchargeTooltip = "When enabled, holding a fully charged scroll before releasing it tightens its spread. The longer it's held, the steadier the shot, with diminishing returns.";
+		constexpr const char* kScrollOverchargeMaxReductionTooltip = "The most spread that overcharging can remove, approached the longer the scroll is held. 50% means the spread can at best be halved.";
+		constexpr const char* kScrollOverchargeHalfDurationTooltip = "Duration of holding a fully charged scroll to get roughly half of the max spread reduction. Lower means the aim steadies faster. 1 sec with 50% reduction means that in 1 second spread will be reduced by 25%.";
+		constexpr const char* kSpellOverchargeMaxReductionHeader = "Max Reduction";
+		constexpr const char* kSpellOverchargeHalfDurationHeader = "Half Duration";
+
+		/// Explanations shown for one category's overcharge controls.
+		struct OverchargeTooltips
+		{
+			const char* toggle;
+			const char* maxReduction;
+			const char* halfDuration;
+		};
+		constexpr OverchargeTooltips kSpellOverchargeTooltips{ kSpellOverchargeTooltip, kSpellOverchargeMaxReductionTooltip, kSpellOverchargeHalfDurationTooltip };
+		constexpr OverchargeTooltips kStaffOverchargeTooltips{ kStaffOverchargeTooltip, kStaffOverchargeMaxReductionTooltip, kStaffOverchargeHalfDurationTooltip };
+		constexpr OverchargeTooltips kScrollOverchargeTooltips{ kScrollOverchargeTooltip, kScrollOverchargeMaxReductionTooltip, kScrollOverchargeHalfDurationTooltip };
+
 		constexpr const char* kBlindnessLabel = "Blindness Affects Aim";
 		constexpr const char* kBlindnessTooltip = "When enabled, being blinded further affects aiming.";
 		constexpr const char* kBlindnessAccuracyTooltip = "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.";
@@ -329,29 +353,30 @@ namespace NLA::Menu
 			PopID();
 		}
 
-		void RenderStaffRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
-			PushID("Staves");
+		/// Renders the "Max Reduction" / "Half Duration" header and the overcharge toggle row with its two sliders.
+		/// Expects to be called inside a PushID scope of the section it belongs to.
+		void RenderSpellOverchargeRows(Options::Config::SpellOvercharge& overcharge, const OverchargeTooltips& tooltips) {
 			TableNextRow();
-			ToggleColumn(kStaffLabel, cfg.staffAiming, kStaffTooltip);
-			if (!cfg.staffAiming) {
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kSpellOverchargeMaxReductionHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kSpellOverchargeHalfDurationHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kSpellOverchargeLabel, overcharge.enabled, tooltips.toggle);
+			if (!overcharge.enabled) {
 				BeginDisabled();
 			}
-			if (hasAccuracy) {
-				SliderColumn("##StaffAccuracy", cfg.accuracyMultipliers.staff, kStaffAccuracyTooltip);
-			} else {
-				NotApplicableColumn();
-			}
-			SliderColumn("##StaffPrecision", cfg.precisionMultipliers.staff, kStaffPrecisionTooltip);
-
-			TableNextRow();
-			ExclusiveToggleColumn(kUseEnchantingSkillLabel, cfg.stavesUseEnchantingSkill, cfg.stavesUseHighestMagicSkill, kUseEnchantingSkillTooltip);
-
-			TableNextRow();
-			ExclusiveToggleColumn(kUseHighestMagicSkillLabel, cfg.stavesUseHighestMagicSkill, cfg.stavesUseEnchantingSkill, kStaffUseHighestMagicSkillTooltip);
-			if (!cfg.staffAiming) {
+			PercentSliderColumn("##OverchargeMaxReduction", overcharge.maxSpreadReduction, tooltips.maxReduction);
+			SliderColumn("##OverchargeHalfDuration", overcharge.halfDuration, tooltips.halfDuration, 0.1f, 5.0f, "%.1fs");
+			if (!overcharge.enabled) {
 				EndDisabled();
 			}
+		}
 
+		/// Renders the "Min Speed" / "Max Speed" header and the charge-speed toggle row with its two sliders.
+		/// Expects to be called inside a PushID scope of the section it belongs to.
+		void RenderChargeSpeedRows(Options::Config::ChargeSpeed& chargeSpeed, const char* toggleTooltip, const char* minSliderID, const char* maxSliderID) {
 			TableNextRow();
 			TableSetColumnIndex(1);
 			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
@@ -359,29 +384,111 @@ namespace NLA::Menu
 			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
 
 			TableNextRow();
-			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.staffChargeTimeScaling, kScaleStaffChargeTimeWithSkillTooltip);
-			if (!cfg.staffChargeTimeScaling) {
+			ToggleColumn(kScaleChargeTimeWithSkillLabel, chargeSpeed.enabled, toggleTooltip);
+			if (!chargeSpeed.enabled) {
 				BeginDisabled();
 			}
-			SliderColumn("##StaffMinChargeSpeedMultiplier", cfg.staffChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			SliderColumn("##StaffMaxChargeSpeedMultiplier", cfg.staffChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			if (!cfg.staffChargeTimeScaling) {
+			SliderColumn(minSliderID, chargeSpeed.minMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			SliderColumn(maxSliderID, chargeSpeed.maxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			if (!chargeSpeed.enabled) {
+				EndDisabled();
+			}
+		}
+
+		/// Labels, tooltips, ImGui IDs and the Config fields that differ between staves and scrolls,
+		/// which otherwise render identical rows (enchanting/highest-magic-skill toggles, charge speed, overcharge).
+		struct StaffOrScrollCategory
+		{
+			const char* pushID;
+
+			const char* label;
+			const char* tooltip;
+			bool Options::Config::* aiming;
+
+			const char*                            accuracySliderID;
+			const char*                            accuracyTooltip;
+			const char*                            precisionSliderID;
+			const char*                            precisionTooltip;
+			float Options::Config::SkillMultiplier::* multiplier;
+
+			const char* useEnchantingSkillTooltip;
+			bool Options::Config::* useEnchantingSkill;
+
+			const char* useHighestMagicSkillTooltip;
+			bool Options::Config::* useHighestMagicSkill;
+
+			const char* chargeSpeedTooltip;
+			const char* minChargeSpeedID;
+			const char* maxChargeSpeedID;
+			Options::Config::ChargeSpeed Options::Config::* chargeSpeed;
+
+			Options::Config::SpellOvercharge Options::Config::* overcharge;
+			const OverchargeTooltips*                           overchargeTooltips;
+
+			const char* resetButtonLabel;
+		};
+
+		constexpr StaffOrScrollCategory kStaffCategory{
+			"Staves",
+			kStaffLabel, kStaffTooltip, &Options::Config::staffAiming,
+			"##StaffAccuracy", kStaffAccuracyTooltip, "##StaffPrecision", kStaffPrecisionTooltip, &Options::Config::SkillMultiplier::staff,
+			kUseEnchantingSkillTooltip, &Options::Config::stavesUseEnchantingSkill,
+			kStaffUseHighestMagicSkillTooltip, &Options::Config::stavesUseHighestMagicSkill,
+			kScaleStaffChargeTimeWithSkillTooltip, "##StaffMinChargeSpeedMultiplier", "##StaffMaxChargeSpeedMultiplier", &Options::Config::staffChargeSpeed,
+			&Options::Config::staffOvercharge, &kStaffOverchargeTooltips,
+			kResetStavesButton
+		};
+
+		constexpr StaffOrScrollCategory kScrollCategory{
+			"Scrolls",
+			kScrollLabel, kScrollTooltip, &Options::Config::scrollAiming,
+			"##ScrollAccuracy", kScrollAccuracyTooltip, "##ScrollPrecision", kScrollPrecisionTooltip, &Options::Config::SkillMultiplier::scroll,
+			kScrollUseEnchantingSkillTooltip, &Options::Config::scrollsUseEnchantingSkill,
+			kScrollUseHighestMagicSkillTooltip, &Options::Config::scrollsUseHighestMagicSkill,
+			kScaleScrollChargeTimeWithSkillTooltip, "##ScrollMinChargeSpeedMultiplier", "##ScrollMaxChargeSpeedMultiplier", &Options::Config::scrollChargeSpeed,
+			&Options::Config::scrollOvercharge, &kScrollOverchargeTooltips,
+			kResetScrollsButton
+		};
+
+		void RenderStaffOrScrollRows(const StaffOrScrollCategory& category, Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
+			PushID(category.pushID);
+			TableNextRow();
+			ToggleColumn(category.label, cfg.*category.aiming, category.tooltip);
+			if (!(cfg.*category.aiming)) {
+				BeginDisabled();
+			}
+			if (hasAccuracy) {
+				SliderColumn(category.accuracySliderID, cfg.accuracyMultipliers.*category.multiplier, category.accuracyTooltip);
+			} else {
+				NotApplicableColumn();
+			}
+			SliderColumn(category.precisionSliderID, cfg.precisionMultipliers.*category.multiplier, category.precisionTooltip);
+
+			TableNextRow();
+			ExclusiveToggleColumn(kUseEnchantingSkillLabel, cfg.*category.useEnchantingSkill, cfg.*category.useHighestMagicSkill, category.useEnchantingSkillTooltip);
+
+			TableNextRow();
+			ExclusiveToggleColumn(kUseHighestMagicSkillLabel, cfg.*category.useHighestMagicSkill, cfg.*category.useEnchantingSkill, category.useHighestMagicSkillTooltip);
+			if (!(cfg.*category.aiming)) {
 				EndDisabled();
 			}
 
+			RenderChargeSpeedRows(cfg.*category.chargeSpeed, category.chargeSpeedTooltip, category.minChargeSpeedID, category.maxChargeSpeedID);
+
+			RenderSpellOverchargeRows(cfg.*category.overcharge, *category.overchargeTooltips);
+
 			TableNextRow();
 			TableNextColumn();
-			if (Button(kResetStavesButton)) {
-				cfg.staffAiming = defaults.staffAiming;
+			if (Button(category.resetButtonLabel)) {
+				cfg.*category.aiming = defaults.*category.aiming;
 				if (hasAccuracy) {
-					cfg.accuracyMultipliers.staff = defaults.accuracyMultipliers.staff;
+					cfg.accuracyMultipliers.*category.multiplier = defaults.accuracyMultipliers.*category.multiplier;
 				}
-				cfg.precisionMultipliers.staff = defaults.precisionMultipliers.staff;
-				cfg.stavesUseEnchantingSkill = defaults.stavesUseEnchantingSkill;
-				cfg.stavesUseHighestMagicSkill = defaults.stavesUseHighestMagicSkill;
-				cfg.staffChargeTimeScaling = defaults.staffChargeTimeScaling;
-				cfg.staffChargeSpeedMinMultiplier = defaults.staffChargeSpeedMinMultiplier;
-				cfg.staffChargeSpeedMaxMultiplier = defaults.staffChargeSpeedMaxMultiplier;
+				cfg.precisionMultipliers.*category.multiplier = defaults.precisionMultipliers.*category.multiplier;
+				cfg.*category.useEnchantingSkill = defaults.*category.useEnchantingSkill;
+				cfg.*category.useHighestMagicSkill = defaults.*category.useHighestMagicSkill;
+				cfg.*category.chargeSpeed = defaults.*category.chargeSpeed;
+				cfg.*category.overcharge = defaults.*category.overcharge;
 				Options::Save();
 			}
 			EmptyRow();
@@ -408,22 +515,9 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
-			TableNextRow();
-			TableSetColumnIndex(1);
-			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
-			TableSetColumnIndex(2);
-			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
+			RenderChargeSpeedRows(cfg.spellChargeSpeed, kScaleSpellChargeTimeWithSkillTooltip, "##SpellMinChargeSpeedMultiplier", "##SpellMaxChargeSpeedMultiplier");
 
-			TableNextRow();
-			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.spellChargeTimeScaling, kScaleSpellChargeTimeWithSkillTooltip);
-			if (!cfg.spellChargeTimeScaling) {
-				BeginDisabled();
-			}
-			SliderColumn("##SpellMinChargeSpeedMultiplier", cfg.spellChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			SliderColumn("##SpellMaxChargeSpeedMultiplier", cfg.spellChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			if (!cfg.spellChargeTimeScaling) {
-				EndDisabled();
-			}
+			RenderSpellOverchargeRows(cfg.spellOvercharge, kSpellOverchargeTooltips);
 
 			TableNextRow();
 			TableNextColumn();
@@ -434,9 +528,8 @@ namespace NLA::Menu
 				}
 				cfg.precisionMultipliers.spell = defaults.precisionMultipliers.spell;
 				cfg.spellsUseHighestMagicSkill = defaults.spellsUseHighestMagicSkill;
-				cfg.spellChargeTimeScaling = defaults.spellChargeTimeScaling;
-				cfg.spellChargeSpeedMinMultiplier = defaults.spellChargeSpeedMinMultiplier;
-				cfg.spellChargeSpeedMaxMultiplier = defaults.spellChargeSpeedMaxMultiplier;
+				cfg.spellChargeSpeed = defaults.spellChargeSpeed;
+				cfg.spellOvercharge = defaults.spellOvercharge;
 				Options::Save();
 			}
 			EmptyRow();
@@ -482,22 +575,7 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
-			TableNextRow();
-			TableSetColumnIndex(1);
-			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
-			TableSetColumnIndex(2);
-			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
-
-			TableNextRow();
-			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.concentrationSpellChargeTimeScaling, kScaleConcentrationSpellChargeTimeWithSkillTooltip);
-			if (!cfg.concentrationSpellChargeTimeScaling) {
-				BeginDisabled();
-			}
-			SliderColumn("##ConcentrationSpellMinChargeSpeedMultiplier", cfg.concentrationSpellChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			SliderColumn("##ConcentrationSpellMaxChargeSpeedMultiplier", cfg.concentrationSpellChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			if (!cfg.concentrationSpellChargeTimeScaling) {
-				EndDisabled();
-			}
+			RenderChargeSpeedRows(cfg.concentrationSpellChargeSpeed, kScaleConcentrationSpellChargeTimeWithSkillTooltip, "##ConcentrationSpellMinChargeSpeedMultiplier", "##ConcentrationSpellMaxChargeSpeedMultiplier");
 
 			TableNextRow();
 			TableNextColumn();
@@ -511,68 +589,7 @@ namespace NLA::Menu
 				cfg.concentrationSpellMinRangeMultiplier = defaults.concentrationSpellMinRangeMultiplier;
 				cfg.concentrationSpellMaxRangeMultiplier = defaults.concentrationSpellMaxRangeMultiplier;
 				cfg.concentrationSpellsUseHighestMagicSkill = defaults.concentrationSpellsUseHighestMagicSkill;
-				cfg.concentrationSpellChargeTimeScaling = defaults.concentrationSpellChargeTimeScaling;
-				cfg.concentrationSpellChargeSpeedMinMultiplier = defaults.concentrationSpellChargeSpeedMinMultiplier;
-				cfg.concentrationSpellChargeSpeedMaxMultiplier = defaults.concentrationSpellChargeSpeedMaxMultiplier;
-				Options::Save();
-			}
-			EmptyRow();
-			PopID();
-		}
-
-		void RenderScrollRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy) {
-			PushID("Scrolls");
-			TableNextRow();
-			ToggleColumn(kScrollLabel, cfg.scrollAiming, kScrollTooltip);
-			if (!cfg.scrollAiming) {
-				BeginDisabled();
-			}
-			if (hasAccuracy) {
-				SliderColumn("##ScrollAccuracy", cfg.accuracyMultipliers.scroll, kScrollAccuracyTooltip);
-			} else {
-				NotApplicableColumn();
-			}
-			SliderColumn("##ScrollPrecision", cfg.precisionMultipliers.scroll, kScrollPrecisionTooltip);
-
-			TableNextRow();
-			ExclusiveToggleColumn(kUseEnchantingSkillLabel, cfg.scrollsUseEnchantingSkill, cfg.scrollsUseHighestMagicSkill, kScrollUseEnchantingSkillTooltip);
-
-			TableNextRow();
-			ExclusiveToggleColumn(kUseHighestMagicSkillLabel, cfg.scrollsUseHighestMagicSkill, cfg.scrollsUseEnchantingSkill, kScrollUseHighestMagicSkillTooltip);
-			if (!cfg.scrollAiming) {
-				EndDisabled();
-			}
-
-			TableNextRow();
-			TableSetColumnIndex(1);
-			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
-			TableSetColumnIndex(2);
-			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
-
-			TableNextRow();
-			ToggleColumn(kScaleChargeTimeWithSkillLabel, cfg.scrollChargeTimeScaling, kScaleScrollChargeTimeWithSkillTooltip);
-			if (!cfg.scrollChargeTimeScaling) {
-				BeginDisabled();
-			}
-			SliderColumn("##ScrollMinChargeSpeedMultiplier", cfg.scrollChargeSpeedMinMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			SliderColumn("##ScrollMaxChargeSpeedMultiplier", cfg.scrollChargeSpeedMaxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			if (!cfg.scrollChargeTimeScaling) {
-				EndDisabled();
-			}
-
-			TableNextRow();
-			TableNextColumn();
-			if (Button(kResetScrollsButton)) {
-				cfg.scrollAiming = defaults.scrollAiming;
-				if (hasAccuracy) {
-					cfg.accuracyMultipliers.scroll = defaults.accuracyMultipliers.scroll;
-				}
-				cfg.precisionMultipliers.scroll = defaults.precisionMultipliers.scroll;
-				cfg.scrollsUseEnchantingSkill = defaults.scrollsUseEnchantingSkill;
-				cfg.scrollsUseHighestMagicSkill = defaults.scrollsUseHighestMagicSkill;
-				cfg.scrollChargeTimeScaling = defaults.scrollChargeTimeScaling;
-				cfg.scrollChargeSpeedMinMultiplier = defaults.scrollChargeSpeedMinMultiplier;
-				cfg.scrollChargeSpeedMaxMultiplier = defaults.scrollChargeSpeedMaxMultiplier;
+				cfg.concentrationSpellChargeSpeed = defaults.concentrationSpellChargeSpeed;
 				Options::Save();
 			}
 			EmptyRow();
@@ -662,10 +679,10 @@ namespace NLA::Menu
 			if (BeginPageTable("NPCTable", hasAccuracy)) {
 				RenderBowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy, &Options::NPC.headshots, &Options::NPCConfig::defaultConfig.headshots);
 				RenderCrossbowRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy, &Options::NPC.headshots, &Options::NPCConfig::defaultConfig.headshots);
-				RenderStaffRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
+				RenderStaffOrScrollRows(kStaffCategory, Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderConcentrationSpellRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
-				RenderScrollRows(Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
+				RenderStaffOrScrollRows(kScrollCategory, Options::NPC, Options::NPCConfig::defaultConfig, hasAccuracy);
 				RenderBlindnessRows(Options::NPC, Options::NPCConfig::defaultConfig);
 				EndTable();
 			}
@@ -693,10 +710,10 @@ namespace NLA::Menu
 			if (BeginPageTable("PlayerTable", hasAccuracy)) {
 				RenderBowRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderCrossbowRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
-				RenderStaffRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
+				RenderStaffOrScrollRows(kStaffCategory, Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				RenderConcentrationSpellRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
-				RenderScrollRows(Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
+				RenderStaffOrScrollRows(kScrollCategory, Options::Player, Options::PlayerConfig::defaultConfig, hasAccuracy);
 				EndTable();
 			}
 			if (!Options::Player.enabled) {

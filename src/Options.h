@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 namespace NLA
 {
 	enum SkillUsageContext
@@ -10,6 +12,16 @@ namespace NLA
 		kChargeTime,
 		kRange,
 		kHeadshot
+	};
+
+	enum WeaponType : std::uint8_t
+	{
+		kNone = 0,
+		kBow = 1,
+		kCrossbow = 2,
+		kSpell = 3,
+		kStaff = 4,
+		kScroll = 5
 	};
 }
 
@@ -28,10 +40,34 @@ namespace NLA::Options
 
 			float blindness;
 
-			SkillMultiplier() = default;
-			SkillMultiplier(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillMultiplier& defaults);
-			SkillMultiplier(float bow, float crossbow, float spell, float concentrationSpell, float staff, float scroll, float blindness) :
-				bow(bow), crossbow(crossbow), spell(spell), concentrationSpell(concentrationSpell), staff(staff), scroll(scroll), blindness(blindness) {}
+			static SkillMultiplier FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillMultiplier& defaults);
+		};
+
+		/// Holding a fully charged spell steadies the caster's aim: the longer it's held, the smaller the spread.
+		struct SpellOvercharge
+		{
+			bool enabled = true;
+
+			/// The spread reduction (0-1) approached as overcharge time grows.
+			float maxSpreadReduction = 0.5f;
+
+			/// Seconds of overcharge to gain half of the max reduction.
+			/// Note, the reduction is not linear, so 2 * halfDuration does not give the full reduction.
+			float halfDuration = 1.0f;
+
+			SpellOvercharge() = default;
+			SpellOvercharge(CSimpleIniA& ini, const char* section, std::string_view name, const SpellOvercharge& defaults);
+		};
+
+		/// Controls how fast a spell/staff/scroll charges/casts, and whether that scales with skill.
+		struct ChargeSpeed
+		{
+			bool  enabled = true;
+			float minMultiplier = 1.0f;
+			float maxMultiplier = 1.5f;
+
+			ChargeSpeed() = default;
+			ChargeSpeed(CSimpleIniA& ini, const char* section, std::string_view prefix, const ChargeSpeed& defaults);
 		};
 
 		/// Controls whether the mod works for given characters.
@@ -80,43 +116,16 @@ namespace NLA::Options
 		float concentrationSpellMinRangeMultiplier = 1.2f;
 		float concentrationSpellMaxRangeMultiplier = 2.5f;
 
-		bool spellChargeTimeScaling = true;
-		float spellChargeSpeedMinMultiplier = 1.0f;
-		float spellChargeSpeedMaxMultiplier = 1.5f;
+		ChargeSpeed spellChargeSpeed;
+		ChargeSpeed concentrationSpellChargeSpeed;
+		ChargeSpeed staffChargeSpeed;
+		ChargeSpeed scrollChargeSpeed;
 
-		bool concentrationSpellChargeTimeScaling = true;
-		float concentrationSpellChargeSpeedMinMultiplier = 1.0f;
-		float concentrationSpellChargeSpeedMaxMultiplier = 1.5f;
+		SpellOvercharge spellOvercharge;
+		SpellOvercharge staffOvercharge;
+		SpellOvercharge scrollOvercharge;
 
-		bool staffChargeTimeScaling = true;
-		float staffChargeSpeedMinMultiplier = 1.0f;
-		float staffChargeSpeedMaxMultiplier = 1.5f;
-
-		bool scrollChargeTimeScaling = true;
-		float scrollChargeSpeedMinMultiplier = 1.0f;
-		float scrollChargeSpeedMaxMultiplier = 1.5f;
-
-		Config() = default;
-
-		Config(CSimpleIniA& ini, const char* section, const Config& defaults);
-		Config(bool            spellAiming,
-		       bool            staffAiming,
-		       bool            bowAiming,
-		       bool            crossbowAiming,
-		       bool            concentrationSpellsAiming,
-		       SkillMultiplier accuracyMultipliers,
-		       SkillMultiplier precisionMultipliers,
-		       bool            stavesUseEnchantingSkill,
-		       bool            spellsUseHighestMagicSkill) :
-			spellAiming(spellAiming),
-			staffAiming(staffAiming),
-			bowAiming(bowAiming),
-			crossbowAiming(crossbowAiming),
-			concentrationSpellsAiming(concentrationSpellsAiming),
-			accuracyMultipliers(accuracyMultipliers),
-			precisionMultipliers(precisionMultipliers),
-			stavesUseEnchantingSkill(stavesUseEnchantingSkill),
-			spellsUseHighestMagicSkill(spellsUseHighestMagicSkill) {}
+		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
 		inline const SkillMultiplier& MultiplierFor(SkillUsageContext context) const {
 			switch (context) {
@@ -128,34 +137,39 @@ namespace NLA::Options
 				return accuracyMultipliers;
 			}
 		}
+
+		inline const SpellOvercharge& SpellOverchargeFor(WeaponType type) const {
+			assert(type == kSpell || type == kStaff || type == kScroll);
+			switch (type) {
+			case kStaff:
+				return staffOvercharge;
+			case kScroll:
+				return scrollOvercharge;
+			default:
+				return spellOvercharge;
+			}
+		}
 	};
 
 	struct PlayerConfig : Config
 	{
-		PlayerConfig() = default;
-		PlayerConfig(CSimpleIniA& ini);
-		PlayerConfig(bool            spellAiming,
-		             bool            staffAiming,
-		             bool            bowAiming,
-		             bool            crossbowAiming,
-		             bool            concentrationSpellsAiming,
-		             SkillMultiplier accuracyMultipliers,
-		             SkillMultiplier precisionMultipliers,
-		             bool            stavesUseEnchantingSkill,
-		             bool            spellsUseHighestMagicSkill) :
-			Config(spellAiming,
-		           staffAiming,
-		           bowAiming,
-		           crossbowAiming,
-		           concentrationSpellsAiming,
-		           accuracyMultipliers,
-		           precisionMultipliers,
-		           stavesUseEnchantingSkill,
-		           spellsUseHighestMagicSkill) {}
+		static PlayerConfig FromIni(CSimpleIniA& ini);
 
 		static const PlayerConfig defaultConfig;
 	};
-	inline const PlayerConfig PlayerConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }, { 1.4f, 7.0f, 1.25f, 1.25f, 1.55f, 1.25f, 0.0f }, false, false };
+	inline const PlayerConfig PlayerConfig::defaultConfig{
+		Config{
+			.spellAiming = true,
+			.staffAiming = true,
+			.bowAiming = true,
+			.crossbowAiming = true,
+			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 1.0f, .spell = 1.0f, .concentrationSpell = 1.0f, .staff = 1.0f, .scroll = 1.0f, .blindness = 1.0f },
+			.precisionMultipliers = { .bow = 1.4f, .crossbow = 7.0f, .spell = 1.25f, .concentrationSpell = 1.25f, .staff = 1.55f, .scroll = 1.25f, .blindness = 0.0f },
+			.stavesUseEnchantingSkill = false,
+			.spellsUseHighestMagicSkill = false,
+			.concentrationSpellsAiming = true,
+		},
+	};
 
 	struct NPCConfig : Config
 	{
@@ -177,36 +191,28 @@ namespace NLA::Options
 		std::vector<std::string> excludeKeywords{};
 		std::vector<std::string> includeKeywords{};
 
-		NPCConfig() = default;
-		NPCConfig(CSimpleIniA& ini);
-		NPCConfig(bool                     spellAiming,
-		          bool                     staffAiming,
-		          bool                     bowAiming,
-		          bool                     crossbowAiming,
-		          bool                     concentrationSpellsAiming,
-		          SkillMultiplier          accuracyMultipliers,
-		          SkillMultiplier          precisionMultipliers,
-		          bool                     stavesUseEnchantingSkill,
-		          bool                     spellsUseHighestMagicSkill,
-		          std::vector<std::string> excludeKeywords,
-		          std::vector<std::string> includeKeywords) :
-			Config(spellAiming,
-		           staffAiming,
-		           bowAiming,
-		           crossbowAiming,
-		           concentrationSpellsAiming,
-		           accuracyMultipliers,
-		           precisionMultipliers,
-		           stavesUseEnchantingSkill,
-		           spellsUseHighestMagicSkill),
-			excludeKeywords(excludeKeywords),
-			includeKeywords(includeKeywords) {}
+		static NPCConfig FromIni(CSimpleIniA& ini);
 
 		bool ShouldLearn(RE::Actor* actor);
 
 		static const NPCConfig defaultConfig;
 	};
-	inline const NPCConfig NPCConfig::defaultConfig{ true, true, true, true, true, { 1.0f, 0.85f, 1.15f, 1.15f, 0.85f, 1.15f, 0.2f }, { 1.0f, 7.0f, 0.85f, 0.85f, 1.15f, 0.85f, 1.5f }, false, false, {}, { "ActorTypeNPC" } };
+	inline const NPCConfig NPCConfig::defaultConfig{
+		Config{
+			.spellAiming = true,
+			.staffAiming = true,
+			.bowAiming = true,
+			.crossbowAiming = true,
+			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 0.85f, .spell = 1.15f, .concentrationSpell = 1.15f, .staff = 0.85f, .scroll = 1.15f, .blindness = 0.2f },
+			.precisionMultipliers = { .bow = 1.0f, .crossbow = 7.0f, .spell = 0.85f, .concentrationSpell = 0.85f, .staff = 1.15f, .scroll = 0.85f, .blindness = 1.5f },
+			.stavesUseEnchantingSkill = false,
+			.spellsUseHighestMagicSkill = false,
+			.concentrationSpellsAiming = true,
+		},
+		{},
+		{},
+		{ "ActorTypeNPC" },
+	};
 
 	inline NPCConfig    NPC{ NPCConfig::defaultConfig };
 	inline PlayerConfig Player{ PlayerConfig::defaultConfig };

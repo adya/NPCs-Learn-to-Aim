@@ -1,4 +1,5 @@
 #include "Aiming.h"
+#include "ChargeTime.h"
 #include "Hooking.h"
 #include "Options.h"
 #include "RE/C/CombatProjectileAimController.h"
@@ -91,7 +92,25 @@ namespace NLA
 		}
 	}
 
-	void AddRandomSpread(float* angleX, float* angleZ, RE::Actor* attacker, const SkillUsage& skillUsage) {
+	namespace
+	{
+		bool IsHandledByPlayerAutoAim(const RE::Actor* attacker) {
+			if (!attacker || !attacker->IsPlayerRef())
+				return false;
+			auto* camera = RE::PlayerCamera::GetSingleton();
+			return camera && !camera->IsInFirstPerson();
+		}
+
+		float SpellOverchargeSpreadScale(float overchargeSeconds, const Options::Config& options, WeaponType type) {
+			const auto& overcharge = options.SpellOverchargeFor(type);
+			if (!overcharge.enabled || overchargeSeconds <= 0.0f)
+				return 1.0f;
+			// Half-life form: half of the max reduction is gained after halfDuration, 75% after twice that, and so on.
+			return 1.0f - overcharge.maxSpreadReduction * (1.0f - std::exp2(-overchargeSeconds / overcharge.halfDuration));
+		}
+	}
+
+	void AddRandomSpread(float* angleX, float* angleZ, RE::Actor* attacker, const SkillUsage& skillUsage, float spreadScale = 1.0f) {
 		if (!attacker)
 			return;
 
@@ -101,7 +120,7 @@ namespace NLA
 		float originalSkillFactor = skillUsage.OriginalSkillFactor(attacker);
 #endif
 
-		auto offset = skillUsage.RandomSpreadOffset(attacker);
+		auto offset = skillUsage.RandomSpreadOffset(attacker) * spreadScale;
 
 #ifndef NDEBUG
 		auto originalAngleX = *angleX;
@@ -121,12 +140,12 @@ namespace NLA
 #endif
 	}
 
-	void AddRandomSpread(RE::Projectile::LaunchData& launchData, const SkillUsage& skillUsage) {
+	void AddRandomSpread(RE::Projectile::LaunchData& launchData, const SkillUsage& skillUsage, float spreadScale = 1.0f) {
 		if (!launchData.shooter)
 			return;
 
 		auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-		AddRandomSpread(&launchData.angleX, &launchData.angleZ, attacker, skillUsage);
+		AddRandomSpread(&launchData.angleX, &launchData.angleZ, attacker, skillUsage, spreadScale);
 	}
 
 	namespace Accuracy
@@ -249,12 +268,30 @@ namespace NLA
 			static inline void post_hook() { logger::info("Installed spells deviation logic"); }
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
-				if (!IsBeamProjectile(launchData.projectileBase)) {  // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
-					auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-					if (auto skillUsage = SkillUsage(launchData.spell, attacker, kPrecision); skillUsage) {
-						AddRandomSpread(launchData, skillUsage);
+				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
+
+				// PlayerAutoAim will handle 3rd person aim.
+				if (!IsHandledByPlayerAutoAim(attacker)) {
+					const float overcharge = ChargeTime::PopSpellOverchargeDuration(attacker, launchData.castingSource);
+
+					if (!IsBeamProjectile(launchData.projectileBase)) {  // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
+						if (auto skillUsage = SkillUsage(launchData.spell, attacker, kPrecision); skillUsage) {
+							const float scale = SpellOverchargeSpreadScale(overcharge, Options::For(attacker), skillUsage.weaponType);
+#ifndef NDEBUG
+							if (overcharge > 0.0f) {
+								logger::info("ChargeTime: {} launched {} (source {}) after overcharging for {:.3f}s (spread x{:.3f})",
+								             attacker ? attacker->GetName() : "?",
+								             launchData.spell ? launchData.spell->GetName() : "?",
+								             std::to_underlying(launchData.castingSource),
+								             overcharge,
+								             scale);
+							}
+#endif
+							AddRandomSpread(launchData, skillUsage, scale);
+						}
 					}
 				}
+
 				func(projectile, launchData);
 			}
 
@@ -275,10 +312,14 @@ namespace NLA
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-				if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kPrecision); skillUsage) {
-					AddRandomSpread(launchData, skillUsage);
+				
+				// PlayerAutoAim will handle 3rd person aim.
+				if (!IsHandledByPlayerAutoAim(attacker)) {
+					if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kPrecision); skillUsage) {
+						AddRandomSpread(launchData, skillUsage);
+					}
 				}
-
+				
 				HeadshotDecision::ClearForAttacker(attacker);
 
 				func(projectile, launchData);
@@ -302,8 +343,13 @@ namespace NLA
 					return;
 
 				SkillUsage skillUsage{};
+				float      spreadScale = 1.0f;
 				if (auto spell = projectile->GetProjectileRuntimeData().spell; spell) {
+					const float overcharge = ChargeTime::PopSpellOverchargeDuration(player, projectile->GetProjectileRuntimeData().castingSource);
 					skillUsage = SkillUsage(spell, player, kPrecision);
+					if (skillUsage) {
+						spreadScale = SpellOverchargeSpreadScale(overcharge, Options::Player, skillUsage.weaponType);
+					}
 				} else if (auto weapon = projectile->GetProjectileRuntimeData().weaponSource; weapon) {
 					skillUsage = SkillUsage(weapon, player, kPrecision);
 				}
@@ -312,7 +358,7 @@ namespace NLA
 					// we need to preserve calculated tilt angles and only apply random spread to the launch angles.
 					*angleZ -= tiltZ;
 					*angleX -= tiltX;
-					AddRandomSpread(angleX, angleZ, player, skillUsage);
+					AddRandomSpread(angleX, angleZ, player, skillUsage, spreadScale);
 					*angleZ += tiltZ;
 					*angleX += tiltX;
 				}

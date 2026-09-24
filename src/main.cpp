@@ -1,3 +1,4 @@
+#include "ChargeTime.h"
 #include "Hooks.h"
 #include "Menu.h"
 #include "Options.h"
@@ -9,6 +10,10 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 		NLA::Install();
 		NLA::Options::Load();
 		NLA::Menu::Register();
+		break;
+	case SKSE::MessagingInterface::kPreLoadGame:
+	case SKSE::MessagingInterface::kNewGame:
+		NLA::ChargeTime::Reset();
 		break;
 	default:
 		break;

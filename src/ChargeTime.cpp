@@ -3,8 +3,43 @@
 #include "Options.h"
 #include "SkillUsage.h"
 
+#include <unordered_map>
+#include <utility>
+
 namespace NLA::ChargeTime
 {
+	namespace
+	{
+		struct Entry
+		{
+			RE::MagicCaster::State lastState{ RE::MagicCaster::State::kNone };
+
+			/// Time that spell is held in charged state in given casting source (e.g. left/right hand) for a given actor.
+			float chargedDuration{ 0.0f };
+
+			/// Total time that spell was overcharged for a given actor and casting source.
+			float overchargeDuration{ 0.0f };
+		};
+
+		std::unordered_map<std::uint64_t, Entry> entries;
+
+		std::uint64_t MakeKey(RE::FormID formID, RE::MagicSystem::CastingSource source) {
+			return (std::uint64_t(formID) << 8) | std::to_underlying(source);
+		}
+
+		bool IsReady(RE::MagicCaster::State state) {
+			return state == RE::MagicCaster::State::kReady;
+		}
+
+		bool IsCharging(RE::MagicCaster::State state) {
+			return state == RE::MagicCaster::State::kUnk02;  // Actually, the state during charging is 2, unlike enum's suggested kCharging = 5.
+		}
+
+		bool IsInterrupted(RE::MagicCaster::State state) {
+			return state == RE::MagicCaster::State::kUnk08 || state == RE::MagicCaster::State::kUnk09;
+		}
+	}
+
 	struct MagicCaster_Update
 	{
 		using Target = RE::ActorMagicCaster;
@@ -12,9 +47,53 @@ namespace NLA::ChargeTime
 		static inline constexpr VariantIndex index{ 0x1D, 0x1D, 0x1F };
 
 		static void thunk(RE::ActorMagicCaster* caster, float delta) {
-			if (caster && caster->state == RE::MagicCaster::State::kUnk02) {  // Actualy, the state during charging is 2, unlike enum's suggested kCharging = 5.
-				if (auto skillUsage = SkillUsage(caster->currentSpell, caster->actor, kChargeTime); skillUsage) {
-					delta *= skillUsage.LerpSkillFactor(caster->actor);
+			if (caster) {
+				const auto state = caster->state.get();
+
+				if (caster->actor) {
+					const auto key = MakeKey(caster->actor->GetFormID(), caster->castingSource);
+					auto&      entry = entries[key];
+					const auto prev = entry.lastState;
+
+					if (prev != state) {
+						if (IsReady(prev)) {
+							const float duration = entry.chargedDuration;
+							entry.chargedDuration = 0.0f;
+
+							logger::debug("ChargeTime: {} {} {} (source {}, state {} -> {}) after overcharging for {:.3f}s",
+							              caster->actor->GetName(),
+							              IsInterrupted(state) ? "was interrupted casting" : "released",
+							              caster->currentSpell ? caster->currentSpell->GetName() : "?",
+							              std::to_underlying(caster->castingSource),
+							              std::to_underlying(prev),
+							              std::to_underlying(state),
+							              duration);
+
+							if (IsInterrupted(state)) {
+								entry.overchargeDuration = 0.0f;
+							} else {
+								entry.overchargeDuration = duration;
+							}
+						} else if (IsCharging(state) || IsInterrupted(state)) {
+							entry.overchargeDuration = 0.0f;  // a new cast is starting or the previous one was cancelled.
+						}
+
+						entry.lastState = state;
+					}
+
+					if (IsReady(state)) {
+						entry.chargedDuration += delta;
+					}
+
+					if (state == RE::MagicCaster::State::kNone && entry.overchargeDuration == 0.0f) {
+						entries.erase(key);
+					}
+				}
+
+				if (IsCharging(state)) {
+					if (auto skillUsage = SkillUsage(caster->currentSpell, caster->actor, kChargeTime); skillUsage) {
+						delta *= skillUsage.LerpSkillFactor(caster->actor);
+					}
 				}
 			}
 
@@ -29,5 +108,29 @@ namespace NLA::ChargeTime
 
 	void Install() {
 		stl::install_hook<MagicCaster_Update>();
+	}
+
+	void Reset() {
+		entries.clear();
+	}
+
+	float PopSpellOverchargeDuration(RE::Actor* actor, RE::MagicSystem::CastingSource source) {
+		if (!actor) {
+			return 0.0f;
+		}
+
+		auto it = entries.find(MakeKey(actor->GetFormID(), source));
+		if (it == entries.end()) {
+			return 0.0f;
+		}
+
+		const float duration = it->second.overchargeDuration;
+		it->second.overchargeDuration = 0.0f;
+
+		if (it->second.lastState == RE::MagicCaster::State::kNone) {
+			entries.erase(it);
+		}
+
+		return duration;
 	}
 }
