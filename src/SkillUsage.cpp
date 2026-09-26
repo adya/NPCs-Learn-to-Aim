@@ -59,11 +59,11 @@ namespace NLA
 		}
 	}
 
-	SkillUsage::SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker, SkillUsageContext context) {
-		if (!spell || !attacker || !Options::NPC.ShouldLearn(attacker))
-			return;
+	RE::ActorValue MagicSkillFor(const RE::MagicItem* spell, RE::Actor* caster) {
+		if (!spell || !caster)
+			return RE::ActorValue::kNone;
 
-		const auto& options = Options::For(attacker);
+		const auto& options = Options::For(caster);
 
 		RE::ActorValue magicSkill = RE::ActorValue::kNone;
 		if (auto effect = spell->GetCostliestEffectItem(); effect) {
@@ -71,6 +71,43 @@ namespace NLA
 				magicSkill = base->GetMagickSkill();
 			}
 		}
+
+		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
+		const bool isFireAndForget = spell->GetCastingType() == RE::MagicSystem::CastingType::kFireAndForget;
+
+		switch (spell->GetSpellType()) {
+		case RE::MagicSystem::SpellType::kSpell:
+		case RE::MagicSystem::SpellType::kLeveledSpell:
+			if (isConcentration) {
+				return options.concentrationSpellsUseHighestMagicSkill ? HighestMagicSkill(caster) : magicSkill;
+			} else if (isFireAndForget) {
+				return options.spellsUseHighestMagicSkill ? HighestMagicSkill(caster) : magicSkill;
+			}
+			return magicSkill;
+		case RE::MagicSystem::SpellType::kStaffEnchantment:
+			if (options.stavesUseEnchantingSkill) {
+				return RE::ActorValue::kEnchanting;
+			} else if (options.stavesUseHighestMagicSkill) {
+				return HighestMagicSkill(caster);
+			}
+			return magicSkill;
+		case RE::MagicSystem::SpellType::kScroll:
+			if (options.scrollsUseEnchantingSkill) {
+				return RE::ActorValue::kEnchanting;
+			} else if (options.scrollsUseHighestMagicSkill) {
+				return HighestMagicSkill(caster);
+			}
+			return magicSkill;
+		default:
+			return magicSkill;
+		}
+	}
+
+	SkillUsage::SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker, SkillUsageContext context) {
+		if (!spell || !attacker || !Options::NPC.ShouldLearn(attacker))
+			return;
+
+		const auto& options = Options::For(attacker);
 
 		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
 		const bool isFireAndForget = spell->GetCastingType() == RE::MagicSystem::CastingType::kFireAndForget;
@@ -82,31 +119,29 @@ namespace NLA
 			case RE::MagicSystem::SpellType::kSpell:
 			case RE::MagicSystem::SpellType::kLeveledSpell:
 				weaponType = kSpell;
-				if (isConcentration && options.concentrationSpellChargeTimeScaling) {
-					const bool useHighestMagicSkill = options.concentrationSpellsUseHighestMagicSkill;
-					skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
-					multiplier = Range{ options.concentrationSpellChargeSpeedMinMultiplier, options.concentrationSpellChargeSpeedMaxMultiplier };
-				} else if (isFireAndForget && options.spellChargeTimeScaling) {
-					const bool useHighestMagicSkill = options.spellsUseHighestMagicSkill;
-					skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
-					multiplier = Range{ options.spellChargeSpeedMinMultiplier, options.spellChargeSpeedMaxMultiplier };
+				if (isConcentration && options.concentrationSpellChargeSpeed.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.concentrationSpellChargeSpeed.minMultiplier, options.concentrationSpellChargeSpeed.maxMultiplier };
+				} else if (isFireAndForget && options.spellChargeSpeed.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.spellChargeSpeed.minMultiplier, options.spellChargeSpeed.maxMultiplier };
 				}
 				break;
 			case RE::MagicSystem::SpellType::kStaffEnchantment:
 				weaponType = kStaff;
-				if (options.staffChargeTimeScaling) {
-					if (options.stavesUseEnchantingSkill) {
-						skill = RE::ActorValue::kEnchanting;
-					} else if (options.stavesUseHighestMagicSkill) {
-						skill = HighestMagicSkill(attacker);
-					} else {
-						skill = magicSkill;
-					}
-					multiplier = Range{ options.staffChargeSpeedMinMultiplier, options.staffChargeSpeedMaxMultiplier };
+				if (options.staffChargeSpeed.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.staffChargeSpeed.minMultiplier, options.staffChargeSpeed.maxMultiplier };
+				}
+				break;
+			case RE::MagicSystem::SpellType::kScroll:
+				weaponType = kScroll;
+				if (options.scrollChargeSpeed.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.scrollChargeSpeed.minMultiplier, options.scrollChargeSpeed.maxMultiplier };
 				}
 				break;
 			default:
-				// TODO: Think about fitting scrolls into all of this.
 				break;
 			}
 			break;
@@ -116,7 +151,7 @@ namespace NLA
 				const auto spellType = spell->GetSpellType();
 				if (spellType == RE::MagicSystem::SpellType::kSpell || spellType == RE::MagicSystem::SpellType::kLeveledSpell) {
 					weaponType = kSpell;
-					skill = options.concentrationSpellsUseHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
+					skill = MagicSkillFor(spell, attacker);
 					multiplier = Range{ options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier };
 				}
 			}
@@ -133,26 +168,25 @@ namespace NLA
 			case RE::MagicSystem::SpellType::kLeveledSpell:
 				weaponType = kSpell;
 				if (isConcentration && options.concentrationSpellsAiming) {
-					const bool useHighestMagicSkill = options.concentrationSpellsUseHighestMagicSkill;
-					skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
+					skill = MagicSkillFor(spell, attacker);
 					multiplier = options.MultiplierFor(context).concentrationSpell;
 				} else if (isFireAndForget && options.spellAiming) {
-					const bool useHighestMagicSkill = options.spellsUseHighestMagicSkill;
-					skill = useHighestMagicSkill ? HighestMagicSkill(attacker) : magicSkill;
+					skill = MagicSkillFor(spell, attacker);
 					multiplier = options.MultiplierFor(context).spell;
 				}
 				break;
 			case RE::MagicSystem::SpellType::kStaffEnchantment:
 				weaponType = kStaff;
 				if (options.staffAiming) {
-					if (options.stavesUseEnchantingSkill) {
-						skill = RE::ActorValue::kEnchanting;
-					} else if (options.stavesUseHighestMagicSkill) {
-						skill = HighestMagicSkill(attacker);
-					} else {
-						skill = magicSkill;
-					}
+					skill = MagicSkillFor(spell, attacker);
 					multiplier = options.MultiplierFor(context).staff;
+				}
+				break;
+			case RE::MagicSystem::SpellType::kScroll:
+				weaponType = kScroll;
+				if (options.scrollAiming) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = options.MultiplierFor(context).scroll;
 				}
 				break;
 			default:

@@ -43,6 +43,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("fSpell{}SkillMultiplier", prefix).c_str(), value.spell, defaultValue.spell);
 			SetOrDeleteValue(ini, a_section, fmt::format("fConcentrationSpell{}SkillMultiplier", prefix).c_str(), value.concentrationSpell, defaultValue.concentrationSpell);
 			SetOrDeleteValue(ini, a_section, fmt::format("fStaff{}SkillMultiplier", prefix).c_str(), value.staff, defaultValue.staff);
+			SetOrDeleteValue(ini, a_section, fmt::format("fScroll{}SkillMultiplier", prefix).c_str(), value.scroll, defaultValue.scroll);
 			SetOrDeleteValue(ini, a_section, fmt::format("fBlindness{}SkillMultiplier", prefix).c_str(), value.blindness, defaultValue.blindness);
 		}
 
@@ -55,11 +56,24 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "fCrossbowMaxHeadshotChance", value.crossbowMaxChance, defaultValue.crossbowMaxChance);
 		}
 
+		void SaveSpellOvercharge(CSimpleIniA& ini, const char* a_section, std::string_view name, const Config::SpellOvercharge& value, const Config::SpellOvercharge& defaultValue) {
+			SetOrDeleteValue(ini, a_section, fmt::format("b{}Overcharge", name).c_str(), value.enabled, defaultValue.enabled);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}OverchargeMaxSpreadReduction", name).c_str(), value.maxSpreadReduction, defaultValue.maxSpreadReduction);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}OverchargeHalfDuration", name).c_str(), value.halfDuration, defaultValue.halfDuration);
+		}
+
+		void SaveChargeSpeed(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::ChargeSpeed& value, const Config::ChargeSpeed& defaultValue) {
+			SetOrDeleteValue(ini, a_section, fmt::format("bScale{}ChargeTimeWithSkill", prefix).c_str(), value.enabled, defaultValue.enabled);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}ChargeSpeedMinMultiplier", prefix).c_str(), value.minMultiplier, defaultValue.minMultiplier);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}ChargeSpeedMaxMultiplier", prefix).c_str(), value.maxMultiplier, defaultValue.maxMultiplier);
+		}
+
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults) {
 			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled);
 
 			SetOrDeleteValue(ini, a_section, "bLearnSpells", custom.spellAiming, defaults.spellAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnStaves", custom.staffAiming, defaults.staffAiming);
+			SetOrDeleteValue(ini, a_section, "bLearnScrolls", custom.scrollAiming, defaults.scrollAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnBows", custom.bowAiming, defaults.bowAiming);
 			SetOrDeleteValue(ini, a_section, "bLearnCrossbows", custom.crossbowAiming, defaults.crossbowAiming);
 
@@ -71,23 +85,23 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bStavesUseHighestMagicSkill", custom.stavesUseHighestMagicSkill, defaults.stavesUseHighestMagicSkill);
 			SetOrDeleteValue(ini, a_section, "bUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill);
 			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsUseHighestMagicSkill", custom.concentrationSpellsUseHighestMagicSkill, defaults.concentrationSpellsUseHighestMagicSkill);
+			SetOrDeleteValue(ini, a_section, "bScrollsUseEnchantingSkill", custom.scrollsUseEnchantingSkill, defaults.scrollsUseEnchantingSkill);
+			SetOrDeleteValue(ini, a_section, "bScrollsUseHighestMagicSkill", custom.scrollsUseHighestMagicSkill, defaults.scrollsUseHighestMagicSkill);
 
 			SetOrDeleteValue(ini, a_section, "bLearnConcentrationSpells", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming);
 			SetOrDeleteValue(ini, a_section, "bScaleRangeWithSkill", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling);
 			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMinRangeMultiplier", custom.concentrationSpellMinRangeMultiplier, defaults.concentrationSpellMinRangeMultiplier);
 			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMaxRangeMultiplier", custom.concentrationSpellMaxRangeMultiplier, defaults.concentrationSpellMaxRangeMultiplier);
 
-			SetOrDeleteValue(ini, a_section, "bScaleSpellChargeTimeWithSkill", custom.spellChargeTimeScaling, defaults.spellChargeTimeScaling);
-			SetOrDeleteValue(ini, a_section, "fSpellChargeSpeedMinMultiplier", custom.spellChargeSpeedMinMultiplier, defaults.spellChargeSpeedMinMultiplier);
-			SetOrDeleteValue(ini, a_section, "fSpellChargeSpeedMaxMultiplier", custom.spellChargeSpeedMaxMultiplier, defaults.spellChargeSpeedMaxMultiplier);
+			SaveChargeSpeed(ini, a_section, "Spell", custom.spellChargeSpeed, defaults.spellChargeSpeed);
 
-			SetOrDeleteValue(ini, a_section, "bScaleConcentrationSpellChargeTimeWithSkill", custom.concentrationSpellChargeTimeScaling, defaults.concentrationSpellChargeTimeScaling);
-			SetOrDeleteValue(ini, a_section, "fConcentrationSpellChargeSpeedMinMultiplier", custom.concentrationSpellChargeSpeedMinMultiplier, defaults.concentrationSpellChargeSpeedMinMultiplier);
-			SetOrDeleteValue(ini, a_section, "fConcentrationSpellChargeSpeedMaxMultiplier", custom.concentrationSpellChargeSpeedMaxMultiplier, defaults.concentrationSpellChargeSpeedMaxMultiplier);
+			SaveSpellOvercharge(ini, a_section, "Spell", custom.spellOvercharge, defaults.spellOvercharge);
+			SaveSpellOvercharge(ini, a_section, "Staff", custom.staffOvercharge, defaults.staffOvercharge);
+			SaveSpellOvercharge(ini, a_section, "Scroll", custom.scrollOvercharge, defaults.scrollOvercharge);
 
-			SetOrDeleteValue(ini, a_section, "bScaleStaffChargeTimeWithSkill", custom.staffChargeTimeScaling, defaults.staffChargeTimeScaling);
-			SetOrDeleteValue(ini, a_section, "fStaffChargeSpeedMinMultiplier", custom.staffChargeSpeedMinMultiplier, defaults.staffChargeSpeedMinMultiplier);
-			SetOrDeleteValue(ini, a_section, "fStaffChargeSpeedMaxMultiplier", custom.staffChargeSpeedMaxMultiplier, defaults.staffChargeSpeedMaxMultiplier);
+			SaveChargeSpeed(ini, a_section, "ConcentrationSpell", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed);
+			SaveChargeSpeed(ini, a_section, "Staff", custom.staffChargeSpeed, defaults.staffChargeSpeed);
+			SaveChargeSpeed(ini, a_section, "Scroll", custom.scrollChargeSpeed, defaults.scrollChargeSpeed);
 		}
 	}
 
@@ -133,6 +147,16 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogScrollsUseEnchantingSkill(std::string_view actor, bool scrollsUseEnchantingSkill, bool scrollsUseHighestMagicSkill) {
+		if (scrollsUseEnchantingSkill) {
+			logger::info("\t{}'s accuracy with scrolls is based on Enchanting skill", actor);
+		} else if (scrollsUseHighestMagicSkill) {
+			logger::info("\t{}'s accuracy with scrolls is based on the highest {}'s magic skill regardless of spell", actor, actor);
+		} else {
+			logger::info("\t{}'s accuracy with scrolls is based on {}'s skill in scroll's magic school", actor, actor);
+		}
+	}
+
 	inline void LogConcentrationSpellsUseHighestMagicSkill(std::string_view actor, bool concentrationSpellsUseHighestMagicSkill) {
 		if (concentrationSpellsUseHighestMagicSkill) {
 			logger::info("\t{}'s accuracy with concentration spells is based on the highest {}'s magic skill regardless of spell", actor, actor);
@@ -159,6 +183,14 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogSpellOvercharge(std::string_view actor, std::string_view categoryName, const Config::SpellOvercharge& overcharge) {
+		if (!overcharge.enabled) {
+			logger::info("\tOvercharging {} doesn't affect {}'s precision", categoryName, actor);
+		} else {
+			logger::info("\tOvercharging {} reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", categoryName, actor, overcharge.maxSpreadReduction * 100, overcharge.halfDuration);
+		}
+	}
+
 	inline void LogChargeSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
 		if (!enabled) {
 			logger::info("\t{} always charge/cast {} at vanilla speed", actor, categoryName);
@@ -179,8 +211,8 @@ namespace NLA::Options
 		CSimpleIniA           ini{};
 		ini.SetUnicode();
 		if (ini.LoadFile(options.string().c_str()) >= 0) {
-			NPC = NPCConfig(ini);
-			Player = PlayerConfig(ini);
+			NPC = NPCConfig::FromIni(ini);
+			Player = PlayerConfig::FromIni(ini);
 		} else {
 			logger::info(R"(Data\SKSE\Plugins\NPCsLearnToAim.ini not found. Default options will be used.)");
 			logger::info("");
@@ -195,6 +227,7 @@ namespace NLA::Options
 		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
+		logger::info("\tMages {} with scrolls", NPC.scrollAiming ? "will learn to aim" : "have perfect aim");
 		logger::info("\tMages {} with concentration spells", NPC.concentrationSpellsAiming ? "will learn to aim" : "have perfect aim");
 		if (NPC.headshots.bow) {
 			logger::info("\tSkilled archers may go for headshots ({:.0f}%-{:.0f}% chance)", NPC.headshots.bowMinChance * 100, NPC.headshots.bowMaxChance * 100);
@@ -213,6 +246,7 @@ namespace NLA::Options
 		LogSkillMultiplier("NPCs", "Spells", "Accuracy", NPC.accuracyMultipliers.spell);
 		LogSkillMultiplier("NPCs", "Concentration Spells", "Accuracy", NPC.accuracyMultipliers.concentrationSpell);
 		LogSkillMultiplier("NPCs", "Staves", "Accuracy", NPC.accuracyMultipliers.staff);
+		LogSkillMultiplier("NPCs", "Scrolls", "Accuracy", NPC.accuracyMultipliers.scroll);
 		LogBlindnessSkillMultiplier("NPCs", "accuracy", NPC.accuracyMultipliers.blindness);
 
 		logger::info("");
@@ -221,18 +255,24 @@ namespace NLA::Options
 		LogSkillMultiplier("NPCs", "Spells", "Precision", NPC.precisionMultipliers.spell);
 		LogSkillMultiplier("NPCs", "Concentration Spells", "Precision", NPC.precisionMultipliers.concentrationSpell);
 		LogSkillMultiplier("NPCs", "Staves", "Precision", NPC.precisionMultipliers.staff);
+		LogSkillMultiplier("NPCs", "Scrolls", "Precision", NPC.precisionMultipliers.scroll);
 		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
 
 		logger::info("");
 		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill, NPC.stavesUseHighestMagicSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill);
+		LogScrollsUseEnchantingSkill("NPCs", NPC.scrollsUseEnchantingSkill, NPC.scrollsUseHighestMagicSkill);
 		LogConcentrationSpellsUseHighestMagicSkill("NPCs", NPC.concentrationSpellsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("");
-		LogChargeSpeedMultiplier("NPCs", "spells", NPC.spellChargeTimeScaling, NPC.spellChargeSpeedMinMultiplier, NPC.spellChargeSpeedMaxMultiplier);
-		LogChargeSpeedMultiplier("NPCs", "concentration spells", NPC.concentrationSpellChargeTimeScaling, NPC.concentrationSpellChargeSpeedMinMultiplier, NPC.concentrationSpellChargeSpeedMaxMultiplier);
-		LogChargeSpeedMultiplier("NPCs", "staves", NPC.staffChargeTimeScaling, NPC.staffChargeSpeedMinMultiplier, NPC.staffChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "spells", NPC.spellChargeSpeed.enabled, NPC.spellChargeSpeed.minMultiplier, NPC.spellChargeSpeed.maxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "concentration spells", NPC.concentrationSpellChargeSpeed.enabled, NPC.concentrationSpellChargeSpeed.minMultiplier, NPC.concentrationSpellChargeSpeed.maxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "staves", NPC.staffChargeSpeed.enabled, NPC.staffChargeSpeed.minMultiplier, NPC.staffChargeSpeed.maxMultiplier);
+		LogChargeSpeedMultiplier("NPCs", "scrolls", NPC.scrollChargeSpeed.enabled, NPC.scrollChargeSpeed.minMultiplier, NPC.scrollChargeSpeed.maxMultiplier);
+		LogSpellOvercharge("NPCs", "spells", NPC.spellOvercharge);
+		LogSpellOvercharge("NPCs", "staves", NPC.staffOvercharge);
+		LogSpellOvercharge("NPCs", "scrolls", NPC.scrollOvercharge);
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -261,6 +301,7 @@ namespace NLA::Options
 		logger::info("\t{} with crossbows", Player.crossbowAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
+		logger::info("\t{} with scrolls", Player.scrollAiming ? "Will learn to aim" : "Has perfect aim");
 		logger::info("\t{} with concentration spells", Player.concentrationSpellsAiming ? "Will learn to aim" : "Has perfect aim");
 
 		logger::info("");
@@ -269,17 +310,23 @@ namespace NLA::Options
 		LogSkillMultiplier("Player", "Spells", "Precision", Player.precisionMultipliers.spell);
 		LogSkillMultiplier("Player", "Concentration Spells", "Precision", Player.precisionMultipliers.concentrationSpell);
 		LogSkillMultiplier("Player", "Staves", "Precision", Player.precisionMultipliers.staff);
+		LogSkillMultiplier("Player", "Scrolls", "Precision", Player.precisionMultipliers.scroll);
 
 		logger::info("");
 		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill, Player.stavesUseHighestMagicSkill);
 		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill);
+		LogScrollsUseEnchantingSkill("Player", Player.scrollsUseEnchantingSkill, Player.scrollsUseHighestMagicSkill);
 		LogConcentrationSpellsUseHighestMagicSkill("Player", Player.concentrationSpellsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
 
 		logger::info("");
-		LogChargeSpeedMultiplier("Player", "spells", Player.spellChargeTimeScaling, Player.spellChargeSpeedMinMultiplier, Player.spellChargeSpeedMaxMultiplier);
-		LogChargeSpeedMultiplier("Player", "concentration spells", Player.concentrationSpellChargeTimeScaling, Player.concentrationSpellChargeSpeedMinMultiplier, Player.concentrationSpellChargeSpeedMaxMultiplier);
-		LogChargeSpeedMultiplier("Player", "staves", Player.staffChargeTimeScaling, Player.staffChargeSpeedMinMultiplier, Player.staffChargeSpeedMaxMultiplier);
+		LogChargeSpeedMultiplier("Player", "spells", Player.spellChargeSpeed.enabled, Player.spellChargeSpeed.minMultiplier, Player.spellChargeSpeed.maxMultiplier);
+		LogChargeSpeedMultiplier("Player", "concentration spells", Player.concentrationSpellChargeSpeed.enabled, Player.concentrationSpellChargeSpeed.minMultiplier, Player.concentrationSpellChargeSpeed.maxMultiplier);
+		LogChargeSpeedMultiplier("Player", "staves", Player.staffChargeSpeed.enabled, Player.staffChargeSpeed.minMultiplier, Player.staffChargeSpeed.maxMultiplier);
+		LogChargeSpeedMultiplier("Player", "scrolls", Player.scrollChargeSpeed.enabled, Player.scrollChargeSpeed.minMultiplier, Player.scrollChargeSpeed.maxMultiplier);
+		LogSpellOvercharge("Player", "spells", Player.spellOvercharge);
+		LogSpellOvercharge("Player", "staves", Player.staffOvercharge);
+		LogSpellOvercharge("Player", "scrolls", Player.scrollOvercharge);
 
 		logger::info("{:*^40}", "");
 	}
@@ -319,56 +366,61 @@ namespace NLA::Options
 		return !a_actor->HasAnyKeywordByEditorID(excludeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(excludeKeywords));
 	}
 
-	Config::Config(CSimpleIniA& ini, const char* a_section, const Config& defaults) :
-		Config(defaults) {
-		enabled = ini.GetBoolValue(a_section, "bEnabled", enabled);
+	Config Config::FromIni(CSimpleIniA& ini, const char* a_section, const Config& defaults) {
+		Config result = defaults;
 
-		spellAiming = ini.GetBoolValue(a_section, "bLearnSpells", spellAiming);
-		staffAiming = ini.GetBoolValue(a_section, "bLearnStaves", staffAiming);
-		bowAiming = ini.GetBoolValue(a_section, "bLearnBows", bowAiming);
-		crossbowAiming = ini.GetBoolValue(a_section, "bLearnCrossbows", crossbowAiming);
+		result.enabled = ini.GetBoolValue(a_section, "bEnabled", result.enabled);
 
-		accuracyMultipliers = SkillMultiplier(ini, a_section, "Accuracy", defaults.accuracyMultipliers);
-		precisionMultipliers = SkillMultiplier(ini, a_section, "Precision", defaults.precisionMultipliers);
+		result.spellAiming = ini.GetBoolValue(a_section, "bLearnSpells", result.spellAiming);
+		result.staffAiming = ini.GetBoolValue(a_section, "bLearnStaves", result.staffAiming);
+		result.scrollAiming = ini.GetBoolValue(a_section, "bLearnScrolls", result.scrollAiming);
+		result.bowAiming = ini.GetBoolValue(a_section, "bLearnBows", result.bowAiming);
+		result.crossbowAiming = ini.GetBoolValue(a_section, "bLearnCrossbows", result.crossbowAiming);
 
-		blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAim", blindnessAffectsAiming);
+		result.accuracyMultipliers = SkillMultiplier::FromIni(ini, a_section, "Accuracy", defaults.accuracyMultipliers);
+		result.precisionMultipliers = SkillMultiplier::FromIni(ini, a_section, "Precision", defaults.precisionMultipliers);
 
-		stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bUseEnchantingSkill", stavesUseEnchantingSkill);
-		stavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bStavesUseHighestMagicSkill", stavesUseHighestMagicSkill);
+		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAim", result.blindnessAffectsAiming);
 
-		spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bUseHighestMagicSkill", spellsUseHighestMagicSkill);
-		concentrationSpellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationSpellsUseHighestMagicSkill", concentrationSpellsUseHighestMagicSkill);
+		result.stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bUseEnchantingSkill", result.stavesUseEnchantingSkill);
+		result.stavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bStavesUseHighestMagicSkill", result.stavesUseHighestMagicSkill);
 
-		concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bScaleRangeWithSkill", concentrationSpellRangeScaling);
-		concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", concentrationSpellMinRangeMultiplier);
-		concentrationSpellMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", concentrationSpellMaxRangeMultiplier);
+		result.spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bUseHighestMagicSkill", result.spellsUseHighestMagicSkill);
+		result.concentrationSpellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationSpellsUseHighestMagicSkill", result.concentrationSpellsUseHighestMagicSkill);
+		result.scrollsUseEnchantingSkill = ini.GetBoolValue(a_section, "bScrollsUseEnchantingSkill", result.scrollsUseEnchantingSkill);
+		result.scrollsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bScrollsUseHighestMagicSkill", result.scrollsUseHighestMagicSkill);
 
-		spellChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleSpellChargeTimeWithSkill", spellChargeTimeScaling);
-		spellChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fSpellChargeSpeedMinMultiplier", spellChargeSpeedMinMultiplier);
-		spellChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fSpellChargeSpeedMaxMultiplier", spellChargeSpeedMaxMultiplier);
+		result.concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bScaleRangeWithSkill", result.concentrationSpellRangeScaling);
+		result.concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", result.concentrationSpellMinRangeMultiplier);
+		result.concentrationSpellMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", result.concentrationSpellMaxRangeMultiplier);
 
-		concentrationSpellChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleConcentrationSpellChargeTimeWithSkill", concentrationSpellChargeTimeScaling);
-		concentrationSpellChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellChargeSpeedMinMultiplier", concentrationSpellChargeSpeedMinMultiplier);
-		concentrationSpellChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellChargeSpeedMaxMultiplier", concentrationSpellChargeSpeedMaxMultiplier);
+		result.spellChargeSpeed = ChargeSpeed(ini, a_section, "Spell", result.spellChargeSpeed);
+		result.concentrationSpellChargeSpeed = ChargeSpeed(ini, a_section, "ConcentrationSpell", result.concentrationSpellChargeSpeed);
+		result.staffChargeSpeed = ChargeSpeed(ini, a_section, "Staff", result.staffChargeSpeed);
+		result.scrollChargeSpeed = ChargeSpeed(ini, a_section, "Scroll", result.scrollChargeSpeed);
 
-		staffChargeTimeScaling = ini.GetBoolValue(a_section, "bScaleStaffChargeTimeWithSkill", staffChargeTimeScaling);
-		staffChargeSpeedMinMultiplier = ini.GetDoubleValue(a_section, "fStaffChargeSpeedMinMultiplier", staffChargeSpeedMinMultiplier);
-		staffChargeSpeedMaxMultiplier = ini.GetDoubleValue(a_section, "fStaffChargeSpeedMaxMultiplier", staffChargeSpeedMaxMultiplier);
+		result.spellOvercharge = SpellOvercharge(ini, a_section, "Spell", result.spellOvercharge);
+		result.staffOvercharge = SpellOvercharge(ini, a_section, "Staff", result.staffOvercharge);
+		result.scrollOvercharge = SpellOvercharge(ini, a_section, "Scroll", result.scrollOvercharge);
+
+		return result;
 	}
 
-	PlayerConfig::PlayerConfig(CSimpleIniA& ini) :
-		Config(ini, "Player", PlayerConfig::defaultConfig) {
-		concentrationSpellsAiming = ini.GetBoolValue("Player", "bLearnConcentrationSpells", concentrationSpellsAiming);
+	PlayerConfig PlayerConfig::FromIni(CSimpleIniA& ini) {
+		PlayerConfig result{ Config::FromIni(ini, "Player", PlayerConfig::defaultConfig) };
+		result.concentrationSpellsAiming = ini.GetBoolValue("Player", "bLearnConcentrationSpells", result.concentrationSpellsAiming);
+		return result;
 	}
 
-	NPCConfig::NPCConfig(CSimpleIniA& ini) :
-		Config(ini, "NPC", NPCConfig::defaultConfig) {
-		concentrationSpellsAiming = ini.GetBoolValue("NPC", "bLearnConcentrationSpells", concentrationSpellsAiming);
+	NPCConfig NPCConfig::FromIni(CSimpleIniA& ini) {
+		NPCConfig result{ Config::FromIni(ini, "NPC", NPCConfig::defaultConfig) };
+		result.concentrationSpellsAiming = ini.GetBoolValue("NPC", "bLearnConcentrationSpells", result.concentrationSpellsAiming);
 
-		headshots = HeadshotSettings(ini, "NPC", headshots);
+		result.headshots = HeadshotSettings(ini, "NPC", NPCConfig::defaultConfig.headshots);
 
-		excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
-		includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
+		result.excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
+		result.includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
+		return result;
 	}
 
 	NPCConfig::HeadshotSettings::HeadshotSettings(CSimpleIniA& ini, const char* a_section, const HeadshotSettings& defaults) :
@@ -381,20 +433,39 @@ namespace NLA::Options
 		crossbowMaxChance = ini.GetDoubleValue(a_section, "fCrossbowMaxHeadshotChance", crossbowMaxChance);
 	}
 
-	Config::SkillMultiplier::SkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillMultiplier& defaults) :
-		SkillMultiplier(defaults) {
+	Config::SpellOvercharge::SpellOvercharge(CSimpleIniA& ini, const char* a_section, std::string_view name, const SpellOvercharge& defaults) :
+		SpellOvercharge(defaults) {
+		enabled = ini.GetBoolValue(a_section, fmt::format("b{}Overcharge", name).c_str(), enabled);
+		maxSpreadReduction = std::clamp(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}OverchargeMaxSpreadReduction", name).c_str(), maxSpreadReduction)), 0.0f, 1.0f);
+		halfDuration = (std::max)(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}OverchargeHalfDuration", name).c_str(), halfDuration)), 0.01f);
+	}
+
+	Config::ChargeSpeed::ChargeSpeed(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const ChargeSpeed& defaults) :
+		ChargeSpeed(defaults) {
+		enabled = ini.GetBoolValue(a_section, fmt::format("bScale{}ChargeTimeWithSkill", prefix).c_str(), enabled);
+		minMultiplier = ini.GetDoubleValue(a_section, fmt::format("f{}ChargeSpeedMinMultiplier", prefix).c_str(), minMultiplier);
+		maxMultiplier = ini.GetDoubleValue(a_section, fmt::format("f{}ChargeSpeedMaxMultiplier", prefix).c_str(), maxMultiplier);
+	}
+
+	Config::SkillMultiplier Config::SkillMultiplier::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillMultiplier& defaults) {
+		SkillMultiplier result = defaults;
+
 		std::string bowOption = fmt::format("fBow{}SkillMultiplier", prefix);
 		std::string crossbowOption = fmt::format("fCrossbow{}SkillMultiplier", prefix);
 		std::string spellOption = fmt::format("fSpell{}SkillMultiplier", prefix);
 		std::string concentrationSpellOption = fmt::format("fConcentrationSpell{}SkillMultiplier", prefix);
 		std::string staffOption = fmt::format("fStaff{}SkillMultiplier", prefix);
+		std::string scrollOption = fmt::format("fScroll{}SkillMultiplier", prefix);
 		std::string blindnessOption = fmt::format("fBlindness{}SkillMultiplier", prefix);
 
-		bow = ini.GetDoubleValue(a_section, bowOption.c_str(), bow);
-		crossbow = ini.GetDoubleValue(a_section, crossbowOption.c_str(), crossbow);
-		spell = ini.GetDoubleValue(a_section, spellOption.c_str(), spell);
-		concentrationSpell = ini.GetDoubleValue(a_section, concentrationSpellOption.c_str(), concentrationSpell);
-		staff = ini.GetDoubleValue(a_section, staffOption.c_str(), staff);
-		blindness = ini.GetDoubleValue(a_section, blindnessOption.c_str(), blindness);
+		result.bow = ini.GetDoubleValue(a_section, bowOption.c_str(), result.bow);
+		result.crossbow = ini.GetDoubleValue(a_section, crossbowOption.c_str(), result.crossbow);
+		result.spell = ini.GetDoubleValue(a_section, spellOption.c_str(), result.spell);
+		result.concentrationSpell = ini.GetDoubleValue(a_section, concentrationSpellOption.c_str(), result.concentrationSpell);
+		result.staff = ini.GetDoubleValue(a_section, staffOption.c_str(), result.staff);
+		result.scroll = ini.GetDoubleValue(a_section, scrollOption.c_str(), result.scroll);
+		result.blindness = ini.GetDoubleValue(a_section, blindnessOption.c_str(), result.blindness);
+
+		return result;
 	}
 }
