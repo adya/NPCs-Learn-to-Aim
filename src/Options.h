@@ -98,6 +98,9 @@ namespace NLA::Options
 		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
 		using DrawFatigue = FatigueOptions;
 
+		/// Controls how long a spell/staff/scroll can be held overcharged before fatigue starts to affect accuracy.
+		using CastFatigue = FatigueOptions;
+
 		/// Controls whether the mod works for given characters.
 		bool enabled = true;
 
@@ -153,6 +156,10 @@ namespace NLA::Options
 		Overcharge staffOvercharge;
 		Overcharge scrollOvercharge;
 
+		CastFatigue spellFatigue;
+		CastFatigue staffFatigue;
+		CastFatigue scrollFatigue;
+
 		/// Controls how fast a bow reaches full draw.
 		DrawSpeed bowDrawSpeed;
 
@@ -187,6 +194,18 @@ namespace NLA::Options
 				return spellOvercharge;
 			}
 		}
+
+		inline const CastFatigue& SpellFatigueFor(WeaponType type) const {
+			assert(type == kSpell || type == kStaff || type == kScroll);
+			switch (type) {
+			case kStaff:
+				return staffFatigue;
+			case kScroll:
+				return scrollFatigue;
+			default:
+				return spellFatigue;
+			}
+		}
 	};
 
 	struct PlayerConfig : Config
@@ -209,6 +228,9 @@ namespace NLA::Options
 			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.spellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.5f, 5.0f },
+			.staffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.5f, 5.0f },
+			.scrollFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.5f, 5.0f },
 			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 0.5f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.0f, 4.0f },
 		},
@@ -253,6 +275,9 @@ namespace NLA::Options
 			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.spellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.5f, 5.0f },
+			.staffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.5f, 5.0f },
+			.scrollFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.5f, 5.0f },
 			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 0.5f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.0f, 4.0f },
 		},

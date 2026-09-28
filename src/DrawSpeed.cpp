@@ -39,7 +39,7 @@ namespace NLA::Draw
 				fatigueThreshold = fatigueUsage.LerpSkillFactor(attacker);
 			}
 			const auto& options = Options::For(attacker);
-			const float scale = BowSpreadScale(heldDuration, options.bowSteadying, options.bowFatigue, fatigueThreshold);
+			const float scale = HoldSpreadScale(heldDuration, options.bowSteadying, options.bowFatigue, fatigueThreshold);
 			return (scale - 1.0f) * 100.0f;
 		}
 #endif

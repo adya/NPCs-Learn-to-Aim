@@ -102,16 +102,12 @@ namespace NLA
 			return camera && !camera->IsInFirstPerson();
 		}
 
-		float SpellOverchargeSpreadScale(float overchargeSeconds, const Options::Config& options, WeaponType type) {
-			const auto& overcharge = options.SpellOverchargeFor(type);
-			if (!overcharge.enabled || overchargeSeconds <= 0.0f)
-				return 1.0f;
-			// Half-life form: half of the max reduction is gained after halfDuration, 75% after twice that, and so on.
-			return 1.0f - overcharge.maxSpreadMultiplier * (1.0f - std::exp2(-overchargeSeconds / overcharge.halfDuration));
+		float FatigueThreshold(const SkillUsage& fatigueUsage, RE::Actor* attacker) {
+			return fatigueUsage ? fatigueUsage.LerpSkillFactor(attacker) : 0.0f;
 		}
 	}
 
-	float BowSpreadScale(float holdSeconds, const Options::Config::Steadying& steadying, const Options::Config::DrawFatigue& fatigue, float fatigueThresholdSeconds) {
+	float HoldSpreadScale(float holdSeconds, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue, float fatigueThresholdSeconds) {
 		if (holdSeconds <= 0.0f)
 			return 1.0f;
 
@@ -298,7 +294,9 @@ namespace NLA
 
 					if (!IsBeamProjectile(launchData.projectileBase)) {  // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
 						if (auto skillUsage = SkillUsage(launchData.spell, attacker, kPrecision); skillUsage) {
-							const float scale = SpellOverchargeSpreadScale(overcharge, Options::For(attacker), skillUsage.weaponType);
+							const auto& options = Options::For(attacker);
+							const float fatigueThreshold = FatigueThreshold(SkillUsage(launchData.spell, attacker, kFatigueThreshold), attacker);
+							const float scale = HoldSpreadScale(overcharge, options.SpellOverchargeFor(skillUsage.weaponType), options.SpellFatigueFor(skillUsage.weaponType), fatigueThreshold);
 #ifndef NDEBUG
 							if (overcharge > 0.0f) {
 								logger::info("ChargeTime: {} launched {} (source {}) after overcharging for {:.3f}s (spread x{:.3f})",
@@ -344,7 +342,7 @@ namespace NLA
 						if (auto fatigueUsage = SkillUsage(weapon, attacker, kFatigueThreshold); fatigueUsage) {
 							fatigueThreshold = fatigueUsage.LerpSkillFactor(attacker);
 						}
-						spreadScale = BowSpreadScale(holdDuration, Options::For(attacker).bowSteadying, Options::For(attacker).bowFatigue, fatigueThreshold);
+						spreadScale = HoldSpreadScale(holdDuration, Options::For(attacker).bowSteadying, Options::For(attacker).bowFatigue, fatigueThreshold);
 #ifndef NDEBUG
 						if (holdDuration > 0.0f) {
 							logger::info("FullDraw: {} released {} after holding full draw for {:.3f}s ({:+.0f}% spread)",
@@ -393,7 +391,8 @@ namespace NLA
 					const float overcharge = ChargeTime::PopSpellOverchargeDuration(player, projectile->GetProjectileRuntimeData().castingSource);
 					skillUsage = SkillUsage(spell, player, kPrecision);
 					if (skillUsage) {
-						spreadScale = SpellOverchargeSpreadScale(overcharge, Options::Player, skillUsage.weaponType);
+						const float fatigueThreshold = FatigueThreshold(SkillUsage(spell, player, kFatigueThreshold), player);
+						spreadScale = HoldSpreadScale(overcharge, Options::Player.SpellOverchargeFor(skillUsage.weaponType), Options::Player.SpellFatigueFor(skillUsage.weaponType), fatigueThreshold);
 					}
 				} else if (auto weapon = projectile->GetProjectileRuntimeData().weaponSource; weapon) {
 					skillUsage = SkillUsage(weapon, player, kPrecision);

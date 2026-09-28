@@ -170,6 +170,35 @@ namespace NLA
 			}
 			break;
 
+		case kFatigueThreshold:
+			switch (spell->GetSpellType()) {
+			case RE::MagicSystem::SpellType::kSpell:
+			case RE::MagicSystem::SpellType::kLeveledSpell:
+				weaponType = kSpell;
+				if (options.spellFatigue.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.spellFatigue.minThreshold, options.spellFatigue.maxThreshold };
+				}
+				break;
+			case RE::MagicSystem::SpellType::kStaffEnchantment:
+				weaponType = kStaff;
+				if (options.staffFatigue.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.staffFatigue.minThreshold, options.staffFatigue.maxThreshold };
+				}
+				break;
+			case RE::MagicSystem::SpellType::kScroll:
+				weaponType = kScroll;
+				if (options.scrollFatigue.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.scrollFatigue.minThreshold, options.scrollFatigue.maxThreshold };
+				}
+				break;
+			default:
+				break;
+			}
+			break;
+
 		case kRange:
 			if (isAimed && isConcentration && options.concentrationSpellRangeScaling) {
 				const auto spellType = spell->GetSpellType();

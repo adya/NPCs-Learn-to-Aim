@@ -107,6 +107,10 @@ namespace NLA::Options
 			SaveOvercharge(ini, a_section, "StaffOvercharge", custom.staffOvercharge, defaults.staffOvercharge);
 			SaveOvercharge(ini, a_section, "ScrollOvercharge", custom.scrollOvercharge, defaults.scrollOvercharge);
 
+			SaveChargeFatigue(ini, a_section, "SpellFatigue", custom.spellFatigue, defaults.spellFatigue);
+			SaveChargeFatigue(ini, a_section, "StaffFatigue", custom.staffFatigue, defaults.staffFatigue);
+			SaveChargeFatigue(ini, a_section, "ScrollFatigue", custom.scrollFatigue, defaults.scrollFatigue);
+
 			SaveSpeedOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed);
 			SaveSpeedOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed);
 			SaveSpeedOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed);
@@ -223,6 +227,16 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogCastFatigue(std::string_view actor, std::string_view categoryName, const Config::CastFatigue& fatigue) {
+		if (!fatigue.enabled) {
+			logger::info("\tOvercharging {} too long doesn't fatigue {}'s precision", categoryName, actor);
+		} else {
+			logger::info("\t{} can overcharge {} for {:.2f}s at 0 skill to {:.2f}s at 100 skill before fatigue sets in, "
+			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
+			             actor, categoryName, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
+		}
+	}
+
 	inline void LogChargeSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
 		if (!enabled) {
 			logger::info("\t{} always charge/cast {} at vanilla speed", actor, categoryName);
@@ -319,6 +333,9 @@ namespace NLA::Options
 		LogSpellOvercharge("NPCs", "spells", NPC.spellOvercharge);
 		LogSpellOvercharge("NPCs", "staves", NPC.staffOvercharge);
 		LogSpellOvercharge("NPCs", "scrolls", NPC.scrollOvercharge);
+		LogCastFatigue("NPCs", "spells", NPC.spellFatigue);
+		LogCastFatigue("NPCs", "staves", NPC.staffFatigue);
+		LogCastFatigue("NPCs", "scrolls", NPC.scrollFatigue);
 		LogBowSteadying("NPCs", NPC.bowSteadying);
 		LogBowFatigue("NPCs", NPC.bowFatigue);
 
@@ -377,6 +394,9 @@ namespace NLA::Options
 		LogSpellOvercharge("Player", "spells", Player.spellOvercharge);
 		LogSpellOvercharge("Player", "staves", Player.staffOvercharge);
 		LogSpellOvercharge("Player", "scrolls", Player.scrollOvercharge);
+		LogCastFatigue("Player", "spells", Player.spellFatigue);
+		LogCastFatigue("Player", "staves", Player.staffFatigue);
+		LogCastFatigue("Player", "scrolls", Player.scrollFatigue);
 		LogBowSteadying("Player", Player.bowSteadying);
 		LogBowFatigue("Player", Player.bowFatigue);
 
@@ -454,6 +474,10 @@ namespace NLA::Options
 		result.spellOvercharge = SpreadOptions::FromIni(ini, a_section, "SpellOvercharge", result.spellOvercharge);
 		result.staffOvercharge = SpreadOptions::FromIni(ini, a_section, "StaffOvercharge", result.staffOvercharge);
 		result.scrollOvercharge = SpreadOptions::FromIni(ini, a_section, "ScrollOvercharge", result.scrollOvercharge);
+
+		result.spellFatigue = FatigueOptions::FromIni(ini, a_section, "SpellFatigue", result.spellFatigue);
+		result.staffFatigue = FatigueOptions::FromIni(ini, a_section, "StaffFatigue", result.staffFatigue);
+		result.scrollFatigue = FatigueOptions::FromIni(ini, a_section, "ScrollFatigue", result.scrollFatigue);
 
 		result.bowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed);
 		result.crossbowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);

@@ -15,6 +15,6 @@ namespace NLA
 	}
 
 #ifndef NDEBUG // TODO: Remove after debugging
-	float BowSpreadScale(float holdSeconds, const Options::Config::Steadying& steadying, const Options::Config::DrawFatigue& fatigue, float fatigueThresholdSeconds);
+	float HoldSpreadScale(float holdSeconds, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue, float fatigueThresholdSeconds);
 #endif
 }

@@ -131,6 +131,19 @@ namespace NLA::Menu
 		constexpr OverchargeTooltips kStaffOverchargeTooltips{ kStaffOverchargeTooltip, kStaffOverchargeMaxReductionTooltip, kStaffOverchargeHalfDurationTooltip };
 		constexpr OverchargeTooltips kScrollOverchargeTooltips{ kScrollOverchargeTooltip, kScrollOverchargeMaxReductionTooltip, kScrollOverchargeHalfDurationTooltip };
 
+		constexpr const char* kSpellFatigueLabel = "Overcharge Fatigues Aim";
+		constexpr const char* kSpellFatigueTooltip = "When enabled, holding a spell overcharged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold scales with Magic skill.";
+		constexpr const char* kStaffFatigueTooltip = "When enabled, holding a staff overcharged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold scales with Magic skill.";
+		constexpr const char* kScrollFatigueTooltip = "When enabled, holding a scroll overcharged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold scales with Magic skill.";
+		constexpr const char* kFatigueMinThresholdHeader = "Min Threshold";
+		constexpr const char* kFatigueMaxThresholdHeader = "Max Threshold";
+		constexpr const char* kFatigueMinThresholdTooltip = "Seconds a spell/staff/scroll can be held overcharged at 0 skill before fatigue sets in.";
+		constexpr const char* kFatigueMaxThresholdTooltip = "Seconds a spell/staff/scroll can be held overcharged at 100 skill before fatigue sets in.";
+		constexpr const char* kMaxFatiguePenaltyHeader = "Max Fatigue";
+		constexpr const char* kFatigueHalfDurationHeader = "Half Duration";
+		constexpr const char* kMaxFatiguePenaltyTooltip = "The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from overcharging is negated before adding extra spread.";
+		constexpr const char* kFatigueHalfDurationTooltip = "Seconds past the fatigue threshold to regrow roughly half of the max fatigue penalty. Lower duration means the aim shakes apart faster once fatigue sets in.";
+
 		constexpr const char* kBlindnessLabel = "Blindness Affects Aim";
 		constexpr const char* kBlindnessTooltip = "When enabled, being blinded further affects aiming.";
 		constexpr const char* kBlindnessAccuracyTooltip = "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.";
@@ -468,6 +481,36 @@ namespace NLA::Menu
 			}
 		}
 
+		void RenderCastFatigueRows(Options::Config::CastFatigue& fatigue, const char* toggleTooltip) {
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kFatigueMinThresholdHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kFatigueMaxThresholdHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kSpellFatigueLabel, fatigue.enabled, toggleTooltip);
+			if (!fatigue.enabled) {
+				BeginDisabled();
+			}
+			SliderColumn("##FatigueMinThreshold", fatigue.minThreshold, kFatigueMinThresholdTooltip, 0.0f, 10.0f, "%.1fs");
+			SliderColumn("##FatigueMaxThreshold", fatigue.maxThreshold, kFatigueMaxThresholdTooltip, 0.0f, 10.0f, "%.1fs");
+
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kMaxFatiguePenaltyHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kFatigueHalfDurationHeader, false);
+
+			TableNextRow();
+			TableNextColumn();
+			PercentSliderColumn("##FatigueMaxPenalty", fatigue.maxSpreadMultiplier, kMaxFatiguePenaltyTooltip);
+			SliderColumn("##FatigueHalfDuration", fatigue.halfDuration, kFatigueHalfDurationTooltip, 0.1f, 5.0f, "%.1fs");
+			if (!fatigue.enabled) {
+				EndDisabled();
+			}
+		}
+
 		struct StaffOrScrollCategory
 		{
 			const char* pushID;
@@ -496,6 +539,9 @@ namespace NLA::Menu
 			Options::Config::Overcharge Options::Config::* overcharge;
 			const OverchargeTooltips*                           overchargeTooltips;
 
+			Options::Config::CastFatigue Options::Config::* fatigue;
+			const char*                                         fatigueToggleTooltip;
+
 			const char* resetButtonLabel;
 		};
 
@@ -507,6 +553,7 @@ namespace NLA::Menu
 			kStaffUseHighestMagicSkillTooltip, &Options::Config::stavesUseHighestMagicSkill,
 			kScaleStaffChargeTimeWithSkillTooltip, "##StaffMinChargeSpeedMultiplier", "##StaffMaxChargeSpeedMultiplier", &Options::Config::staffChargeSpeed,
 			&Options::Config::staffOvercharge, &kStaffOverchargeTooltips,
+			&Options::Config::staffFatigue, kStaffFatigueTooltip,
 			kResetStavesButton
 		};
 
@@ -518,6 +565,7 @@ namespace NLA::Menu
 			kScrollUseHighestMagicSkillTooltip, &Options::Config::scrollsUseHighestMagicSkill,
 			kScaleScrollChargeTimeWithSkillTooltip, "##ScrollMinChargeSpeedMultiplier", "##ScrollMaxChargeSpeedMultiplier", &Options::Config::scrollChargeSpeed,
 			&Options::Config::scrollOvercharge, &kScrollOverchargeTooltips,
+			&Options::Config::scrollFatigue, kScrollFatigueTooltip,
 			kResetScrollsButton
 		};
 
@@ -548,6 +596,8 @@ namespace NLA::Menu
 
 			RenderSpellOverchargeRows(cfg.*category.overcharge, *category.overchargeTooltips);
 
+			RenderCastFatigueRows(cfg.*category.fatigue, category.fatigueToggleTooltip);
+
 			TableNextRow();
 			TableNextColumn();
 			if (Button(category.resetButtonLabel)) {
@@ -560,6 +610,7 @@ namespace NLA::Menu
 				cfg.*category.useHighestMagicSkill = defaults.*category.useHighestMagicSkill;
 				cfg.*category.chargeSpeed = defaults.*category.chargeSpeed;
 				cfg.*category.overcharge = defaults.*category.overcharge;
+				cfg.*category.fatigue = defaults.*category.fatigue;
 				Options::Save();
 			}
 			EmptyRow();
@@ -590,6 +641,8 @@ namespace NLA::Menu
 
 			RenderSpellOverchargeRows(cfg.spellOvercharge, kSpellOverchargeTooltips);
 
+			RenderCastFatigueRows(cfg.spellFatigue, kSpellFatigueTooltip);
+
 			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetSpellsButton)) {
@@ -601,6 +654,7 @@ namespace NLA::Menu
 				cfg.spellsUseHighestMagicSkill = defaults.spellsUseHighestMagicSkill;
 				cfg.spellChargeSpeed = defaults.spellChargeSpeed;
 				cfg.spellOvercharge = defaults.spellOvercharge;
+				cfg.spellFatigue = defaults.spellFatigue;
 				Options::Save();
 			}
 			EmptyRow();
