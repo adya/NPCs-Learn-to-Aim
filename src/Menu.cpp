@@ -1,5 +1,4 @@
 #include "Menu.h"
-#include "AimDebug.h"
 #include "CLIBUtil/string.hpp"
 #include "Options.h"
 #include <cmath>
@@ -32,13 +31,33 @@ namespace NLA::Menu
 		constexpr const char* kBowTooltip = "When enabled, Archery skill will affect aiming with bows.";
 		constexpr const char* kBowAccuracyTooltip = "How much Archery skill contributes to Accuracy with bows. The higher this multiplier is the easier it is to aim.";
 		constexpr const char* kBowPrecisionTooltip = "How much Archery skill contributes to Precision with bows. The higher this multiplier is the easier it is to hit the target.";
+		constexpr const char* kScaleBowDrawSpeedWithSkillTooltip = "When enabled, Archery skill also affects how fast a bow reaches full draw. (the higher the skill the faster the draw)";
 		constexpr const char* kResetBowsButton = "Reset Bows to Default";
+
+		constexpr const char* kBowSteadyingLabel = "Full Draw Steadies Aim";
+		constexpr const char* kBowSteadyingTooltip = "When enabled, holding a bow at full draw tightens its spread, with diminishing returns.";
+		constexpr const char* kBowSteadyingMaxReductionTooltip = "The most spread that holding a full draw can remove, approached the longer it's held.";
+		constexpr const char* kBowSteadyingHalfDurationTooltip = "Duration of holding a full draw to get roughly half of the max spread reduction. Lower means the aim steadies faster.";
+
+		constexpr const char* kBowFatigueLabel = "Full Draw Fatigues Aim";
+		constexpr const char* kBowFatigueTooltip = "When enabled, holding a bow at full draw for too long tires the archer's arm, growing spread back the longer it's held past their fatigue threshold. That threshold scales with Archery skill.";
+		constexpr const char* kBowFatigueMinThresholdHeader = "Min Threshold";
+		constexpr const char* kBowFatigueMaxThresholdHeader = "Max Threshold";
+		constexpr const char* kBowFatigueMinThresholdTooltip = "Seconds a full draw can be held at 0 Archery skill before fatigue sets in.";
+		constexpr const char* kBowFatigueMaxThresholdTooltip = "Seconds a full draw can be held at 100 Archery skill before fatigue sets in.";
+		constexpr const char* kBowMaxFatiguePenaltyHeader = "Max Fatigue";
+		constexpr const char* kBowFatigueHalfDurationHeader = "Half Duration";
+		constexpr const char* kBowMaxFatiguePenaltyTooltip = "The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from steadied aim is negated before adding extra spread.";
+		constexpr const char* kBowFatigueHalfDurationTooltip = "Seconds past the fatigue threshold to regrow roughly half of the max fatigue penalty. Lower duration means the aim shakes apart faster once fatigue sets in.";
 
 		constexpr const char* kCrossbowLabel = "Learn Crossbows";
 		constexpr const char* kCrossbowTooltip = "When enabled, Archery skill will affect aiming with crossbows.";
 		constexpr const char* kCrossbowAccuracyTooltip = "How much Archery skill contributes to Accuracy with crossbows. The higher this multiplier is the easier it is to aim.";
 		constexpr const char* kCrossbowPrecisionTooltip = "How much Archery skill contributes to Precision with crossbows. The higher this multiplier is the easier it is to hit the target.";
+		constexpr const char* kScaleCrossbowDrawSpeedWithSkillTooltip = "When enabled, Archery skill also affects how fast a crossbow is reloaded. (the higher the skill the faster the reload)";
 		constexpr const char* kResetCrossbowsButton = "Reset Crossbows to Default";
+
+		constexpr const char* kScaleDrawSpeedWithSkillLabel = "Scale Draw Speed With Skill";
 
 		constexpr const char* kStaffLabel = "Learn Staves";
 		constexpr const char* kStaffTooltip = "When enabled, corresponding Magic skill will affect aiming with staves.";
@@ -138,9 +157,6 @@ namespace NLA::Menu
 
 		constexpr const char* kReloadSettingsButton = "Reload Settings";
 		constexpr const char* kReloadSettingsTooltip = "Reload all settings from the INI file, discarding any unsaved in-memory changes.";
-
-		constexpr const char* kShowAimDebugLabel = "Show Aim Debug Overlay";
-		constexpr const char* kShowAimDebugTooltip = "Draws a marker at the point each NPC is currently aiming at (yellow), or red if it's a headshot. For debugging only.";
 
 		constexpr const char* kEnableNPCLabel = "Enable for NPCs";
 		constexpr const char* kEnableNPCTooltip = "Master switch for NPCs. When disabled, NPCs have vanilla aiming and all settings below are ignored.";
@@ -255,6 +271,74 @@ namespace NLA::Menu
 			EndDisabled();
 		}
 
+		void RenderChargeSpeedRows(Options::Config::SpeedOptions& chargeSpeed, const char* label, const char* toggleTooltip, const char* minSliderID, const char* maxSliderID) {
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
+
+			TableNextRow();
+			ToggleColumn(label, chargeSpeed.enabled, toggleTooltip);
+			if (!chargeSpeed.enabled) {
+				BeginDisabled();
+			}
+			SliderColumn(minSliderID, chargeSpeed.minMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			SliderColumn(maxSliderID, chargeSpeed.maxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
+			if (!chargeSpeed.enabled) {
+				EndDisabled();
+			}
+		}
+
+		void RenderBowSteadyingRows(Options::Config::Steadying& steadying) {
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kSpellOverchargeMaxReductionHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kSpellOverchargeHalfDurationHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kBowSteadyingLabel, steadying.enabled, kBowSteadyingTooltip);
+			if (!steadying.enabled) {
+				BeginDisabled();
+			}
+			PercentSliderColumn("##BowSteadyingMaxReduction", steadying.maxSpreadMultiplier, kBowSteadyingMaxReductionTooltip);
+			SliderColumn("##BowSteadyingHalfDuration", steadying.halfDuration, kBowSteadyingHalfDurationTooltip, 0.1f, 5.0f, "%.1fs");
+			if (!steadying.enabled) {
+				EndDisabled();
+			}
+		}
+
+		void RenderBowFatigueRows(Options::Config::DrawFatigue& fatigue) {
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kBowFatigueMinThresholdHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kBowFatigueMaxThresholdHeader, false);
+
+			TableNextRow();
+			ToggleColumn(kBowFatigueLabel, fatigue.enabled, kBowFatigueTooltip);
+			if (!fatigue.enabled) {
+				BeginDisabled();
+			}
+			SliderColumn("##BowFatigueMinThreshold", fatigue.minThreshold, kBowFatigueMinThresholdTooltip, 0.0f, 10.0f, "%.1fs");
+			SliderColumn("##BowFatigueMaxThreshold", fatigue.maxThreshold, kBowFatigueMaxThresholdTooltip, 0.0f, 10.0f, "%.1fs");
+
+			TableNextRow();
+			TableSetColumnIndex(1);
+			CenteredHeaderCell(kBowMaxFatiguePenaltyHeader, false);
+			TableSetColumnIndex(2);
+			CenteredHeaderCell(kBowFatigueHalfDurationHeader, false);
+
+			TableNextRow();
+			TableNextColumn();
+			PercentSliderColumn("##BowFatigueMaxPenalty", fatigue.maxSpreadMultiplier, kBowMaxFatiguePenaltyTooltip);
+			SliderColumn("##BowFatigueHalfDuration", fatigue.halfDuration, kBowFatigueHalfDurationTooltip, 0.1f, 5.0f, "%.1fs");
+			if (!fatigue.enabled) {
+				EndDisabled();
+			}
+		}
+
 		void RenderBowRows(Options::Config& cfg, const Options::Config& defaults, bool hasAccuracy, Options::NPCConfig::HeadshotSettings* headshots = nullptr, const Options::NPCConfig::HeadshotSettings* headshotDefaults = nullptr) {
 			PushID("Bows");
 			TableNextRow();
@@ -285,6 +369,12 @@ namespace NLA::Menu
 				}
 			}
 
+			RenderChargeSpeedRows(cfg.bowDrawSpeed, kScaleDrawSpeedWithSkillLabel, kScaleBowDrawSpeedWithSkillTooltip, "##BowMinDrawSpeedMultiplier", "##BowMaxDrawSpeedMultiplier");
+
+			RenderBowSteadyingRows(cfg.bowSteadying);
+
+			RenderBowFatigueRows(cfg.bowFatigue);
+
 			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetBowsButton)) {
@@ -298,6 +388,9 @@ namespace NLA::Menu
 					headshots->bowMinChance = headshotDefaults->bowMinChance;
 					headshots->bowMaxChance = headshotDefaults->bowMaxChance;
 				}
+				cfg.bowDrawSpeed = defaults.bowDrawSpeed;
+				cfg.bowSteadying = defaults.bowSteadying;
+				cfg.bowFatigue = defaults.bowFatigue;
 				Options::Save();
 			}
 			EmptyRow();
@@ -334,6 +427,8 @@ namespace NLA::Menu
 				}
 			}
 
+			RenderChargeSpeedRows(cfg.crossbowDrawSpeed, kScaleDrawSpeedWithSkillLabel, kScaleCrossbowDrawSpeedWithSkillTooltip, "##CrossbowMinDrawSpeedMultiplier", "##CrossbowMaxDrawSpeedMultiplier");
+
 			TableNextRow();
 			TableNextColumn();
 			if (Button(kResetCrossbowsButton)) {
@@ -347,15 +442,14 @@ namespace NLA::Menu
 					headshots->crossbowMinChance = headshotDefaults->crossbowMinChance;
 					headshots->crossbowMaxChance = headshotDefaults->crossbowMaxChance;
 				}
+				cfg.crossbowDrawSpeed = defaults.crossbowDrawSpeed;
 				Options::Save();
 			}
 			EmptyRow();
 			PopID();
 		}
 
-		/// Renders the "Max Reduction" / "Half Duration" header and the overcharge toggle row with its two sliders.
-		/// Expects to be called inside a PushID scope of the section it belongs to.
-		void RenderSpellOverchargeRows(Options::Config::SpellOvercharge& overcharge, const OverchargeTooltips& tooltips) {
+		void RenderSpellOverchargeRows(Options::Config::Overcharge& overcharge, const OverchargeTooltips& tooltips) {
 			TableNextRow();
 			TableSetColumnIndex(1);
 			CenteredHeaderCell(kSpellOverchargeMaxReductionHeader, false);
@@ -367,36 +461,13 @@ namespace NLA::Menu
 			if (!overcharge.enabled) {
 				BeginDisabled();
 			}
-			PercentSliderColumn("##OverchargeMaxReduction", overcharge.maxSpreadReduction, tooltips.maxReduction);
+			PercentSliderColumn("##OverchargeMaxReduction", overcharge.maxSpreadMultiplier, tooltips.maxReduction);
 			SliderColumn("##OverchargeHalfDuration", overcharge.halfDuration, tooltips.halfDuration, 0.1f, 5.0f, "%.1fs");
 			if (!overcharge.enabled) {
 				EndDisabled();
 			}
 		}
 
-		/// Renders the "Min Speed" / "Max Speed" header and the charge-speed toggle row with its two sliders.
-		/// Expects to be called inside a PushID scope of the section it belongs to.
-		void RenderChargeSpeedRows(Options::Config::ChargeSpeed& chargeSpeed, const char* toggleTooltip, const char* minSliderID, const char* maxSliderID) {
-			TableNextRow();
-			TableSetColumnIndex(1);
-			CenteredHeaderCell(kMinChargeSpeedMultiplierHeader, false);
-			TableSetColumnIndex(2);
-			CenteredHeaderCell(kMaxChargeSpeedMultiplierHeader, false);
-
-			TableNextRow();
-			ToggleColumn(kScaleChargeTimeWithSkillLabel, chargeSpeed.enabled, toggleTooltip);
-			if (!chargeSpeed.enabled) {
-				BeginDisabled();
-			}
-			SliderColumn(minSliderID, chargeSpeed.minMultiplier, kMinChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			SliderColumn(maxSliderID, chargeSpeed.maxMultiplier, kMaxChargeSpeedMultiplierTooltip, 0.1f, 3.0f);
-			if (!chargeSpeed.enabled) {
-				EndDisabled();
-			}
-		}
-
-		/// Labels, tooltips, ImGui IDs and the Config fields that differ between staves and scrolls,
-		/// which otherwise render identical rows (enchanting/highest-magic-skill toggles, charge speed, overcharge).
 		struct StaffOrScrollCategory
 		{
 			const char* pushID;
@@ -420,9 +491,9 @@ namespace NLA::Menu
 			const char* chargeSpeedTooltip;
 			const char* minChargeSpeedID;
 			const char* maxChargeSpeedID;
-			Options::Config::ChargeSpeed Options::Config::* chargeSpeed;
+			Options::Config::SpeedOptions Options::Config::* chargeSpeed;
 
-			Options::Config::SpellOvercharge Options::Config::* overcharge;
+			Options::Config::Overcharge Options::Config::* overcharge;
 			const OverchargeTooltips*                           overchargeTooltips;
 
 			const char* resetButtonLabel;
@@ -473,7 +544,7 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
-			RenderChargeSpeedRows(cfg.*category.chargeSpeed, category.chargeSpeedTooltip, category.minChargeSpeedID, category.maxChargeSpeedID);
+			RenderChargeSpeedRows(cfg.*category.chargeSpeed, kScaleChargeTimeWithSkillLabel, category.chargeSpeedTooltip, category.minChargeSpeedID, category.maxChargeSpeedID);
 
 			RenderSpellOverchargeRows(cfg.*category.overcharge, *category.overchargeTooltips);
 
@@ -515,7 +586,7 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
-			RenderChargeSpeedRows(cfg.spellChargeSpeed, kScaleSpellChargeTimeWithSkillTooltip, "##SpellMinChargeSpeedMultiplier", "##SpellMaxChargeSpeedMultiplier");
+			RenderChargeSpeedRows(cfg.spellChargeSpeed, kScaleChargeTimeWithSkillLabel, kScaleSpellChargeTimeWithSkillTooltip, "##SpellMinChargeSpeedMultiplier", "##SpellMaxChargeSpeedMultiplier");
 
 			RenderSpellOverchargeRows(cfg.spellOvercharge, kSpellOverchargeTooltips);
 
@@ -575,7 +646,7 @@ namespace NLA::Menu
 				EndDisabled();
 			}
 
-			RenderChargeSpeedRows(cfg.concentrationSpellChargeSpeed, kScaleConcentrationSpellChargeTimeWithSkillTooltip, "##ConcentrationSpellMinChargeSpeedMultiplier", "##ConcentrationSpellMaxChargeSpeedMultiplier");
+			RenderChargeSpeedRows(cfg.concentrationSpellChargeSpeed, kScaleChargeTimeWithSkillLabel, kScaleConcentrationSpellChargeTimeWithSkillTooltip, "##ConcentrationSpellMinChargeSpeedMultiplier", "##ConcentrationSpellMaxChargeSpeedMultiplier");
 
 			TableNextRow();
 			TableNextColumn();
@@ -728,10 +799,6 @@ namespace NLA::Menu
 				logger::info("Settings reloaded via menu");
 			}
 			ShowTooltip(kReloadSettingsTooltip);
-
-			Spacing();
-			Checkbox(kShowAimDebugLabel, &AimDebug::enabled);
-			ShowTooltip(kShowAimDebugTooltip);
 		}
 	}
 

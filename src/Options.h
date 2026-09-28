@@ -11,7 +11,8 @@ namespace NLA
 
 		kChargeTime,
 		kRange,
-		kHeadshot
+		kHeadshot,
+		kFatigueThreshold
 	};
 
 	enum WeaponType : std::uint8_t
@@ -43,32 +44,59 @@ namespace NLA::Options
 			static SkillMultiplier FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillMultiplier& defaults);
 		};
 
-		/// Holding a fully charged spell steadies the caster's aim: the longer it's held, the smaller the spread.
-		struct SpellOvercharge
+		struct SpreadOptions
 		{
 			bool enabled = true;
 
-			/// The spread reduction (0-1) approached as overcharge time grows.
-			float maxSpreadReduction = 0.5f;
+			/// Max multiplier for the spread approached as hold time increases.
+			float maxSpreadMultiplier;
 
-			/// Seconds of overcharge to gain half of the max reduction.
-			/// Note, the reduction is not linear, so 2 * halfDuration does not give the full reduction.
-			float halfDuration = 1.0f;
+			/// Time needed to gain half of the max spread multiplier.
+			/// Note, the multiplier is not linear, so 2 * halfDuration does not give the full multiplier.
+			float halfDuration;
 
-			SpellOvercharge() = default;
-			SpellOvercharge(CSimpleIniA& ini, const char* section, std::string_view name, const SpellOvercharge& defaults);
+			static SpreadOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SpreadOptions& defaults);
 		};
 
-		/// Controls how fast a spell/staff/scroll charges/casts, and whether that scales with skill.
-		struct ChargeSpeed
+		/// Controls how much overcharging a spell/staff/scroll reduces spread.
+		using Overcharge = SpreadOptions;
+
+		/// Controls how much holding a bow at full draw reduces spread.
+		using Steadying = SpreadOptions;
+
+		struct SpeedOptions
 		{
-			bool  enabled = true;
+			bool enabled = true;
+
+			/// Speed multiplier at 0 skill.
 			float minMultiplier = 1.0f;
+
+			/// Speed multiplier at 100 skill.
 			float maxMultiplier = 1.5f;
 
-			ChargeSpeed() = default;
-			ChargeSpeed(CSimpleIniA& ini, const char* section, std::string_view prefix, const ChargeSpeed& defaults);
+			static SpeedOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SpeedOptions& defaults);
 		};
+
+		/// Controls how fast a spell/staff/scroll charges.
+		using ChargeSpeed = SpeedOptions;
+
+		/// Controls how fast a bow is drawn and crossbow is loaded.
+		using DrawSpeed = SpeedOptions;
+
+		struct FatigueOptions : SpreadOptions
+		{
+			/// Duration in seconds that must pass before fatigue sets in at 0 skill.
+			float minThreshold;
+
+			/// Duration in seconds that must pass before fatigue sets in at 100 skill.
+			float maxThreshold;
+
+			/// `prefix` is the full ini key prefix, verb included (e.g. "BowFatigue").
+			static FatigueOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const FatigueOptions& defaults);
+		};
+
+		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
+		using DrawFatigue = FatigueOptions;
 
 		/// Controls whether the mod works for given characters.
 		bool enabled = true;
@@ -121,9 +149,19 @@ namespace NLA::Options
 		ChargeSpeed staffChargeSpeed;
 		ChargeSpeed scrollChargeSpeed;
 
-		SpellOvercharge spellOvercharge;
-		SpellOvercharge staffOvercharge;
-		SpellOvercharge scrollOvercharge;
+		Overcharge spellOvercharge;
+		Overcharge staffOvercharge;
+		Overcharge scrollOvercharge;
+
+		/// Controls how fast a bow reaches full draw.
+		DrawSpeed bowDrawSpeed;
+
+		/// Controls how fast a crossbow is reloaded.
+		DrawSpeed crossbowDrawSpeed;
+
+		Steadying bowSteadying;
+
+		DrawFatigue bowFatigue;
 
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
@@ -138,7 +176,7 @@ namespace NLA::Options
 			}
 		}
 
-		inline const SpellOvercharge& SpellOverchargeFor(WeaponType type) const {
+		inline const Overcharge& SpellOverchargeFor(WeaponType type) const {
 			assert(type == kSpell || type == kStaff || type == kScroll);
 			switch (type) {
 			case kStaff:
@@ -168,6 +206,11 @@ namespace NLA::Options
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
 			.concentrationSpellsAiming = true,
+			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 0.5f },
+			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.0f, 4.0f },
 		},
 	};
 
@@ -183,8 +226,7 @@ namespace NLA::Options
 			float crossbowMinChance = 0.0f;
 			float crossbowMaxChance = 0.35f;
 
-			HeadshotSettings() = default;
-			HeadshotSettings(CSimpleIniA& ini, const char* section, const HeadshotSettings& defaults);
+			static HeadshotSettings FromIni(CSimpleIniA& ini, const char* section, const HeadshotSettings& defaults);
 		};
 		HeadshotSettings headshots{};
 
@@ -208,6 +250,11 @@ namespace NLA::Options
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
 			.concentrationSpellsAiming = true,
+			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 0.5f },
+			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.0f, 4.0f },
 		},
 		{},
 		{},

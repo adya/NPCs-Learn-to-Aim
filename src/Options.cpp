@@ -56,52 +56,65 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "fCrossbowMaxHeadshotChance", value.crossbowMaxChance, defaultValue.crossbowMaxChance);
 		}
 
-		void SaveSpellOvercharge(CSimpleIniA& ini, const char* a_section, std::string_view name, const Config::SpellOvercharge& value, const Config::SpellOvercharge& defaultValue) {
-			SetOrDeleteValue(ini, a_section, fmt::format("b{}Overcharge", name).c_str(), value.enabled, defaultValue.enabled);
-			SetOrDeleteValue(ini, a_section, fmt::format("f{}OverchargeMaxSpreadReduction", name).c_str(), value.maxSpreadReduction, defaultValue.maxSpreadReduction);
-			SetOrDeleteValue(ini, a_section, fmt::format("f{}OverchargeHalfDuration", name).c_str(), value.halfDuration, defaultValue.halfDuration);
+		void SaveOvercharge(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::Overcharge& value, const Config::Overcharge& defaultValue) {
+			SetOrDeleteValue(ini, a_section, fmt::format("b{}", prefix).c_str(), value.enabled, defaultValue.enabled);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxSpreadReduction", prefix).c_str(), value.maxSpreadMultiplier, defaultValue.maxSpreadMultiplier);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration);
 		}
 
-		void SaveChargeSpeed(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::ChargeSpeed& value, const Config::ChargeSpeed& defaultValue) {
-			SetOrDeleteValue(ini, a_section, fmt::format("bScale{}ChargeTimeWithSkill", prefix).c_str(), value.enabled, defaultValue.enabled);
-			SetOrDeleteValue(ini, a_section, fmt::format("f{}ChargeSpeedMinMultiplier", prefix).c_str(), value.minMultiplier, defaultValue.minMultiplier);
-			SetOrDeleteValue(ini, a_section, fmt::format("f{}ChargeSpeedMaxMultiplier", prefix).c_str(), value.maxMultiplier, defaultValue.maxMultiplier);
+		void SaveSpeedOptions(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SpeedOptions& value, const Config::SpeedOptions& defaultValue) {
+			SetOrDeleteValue(ini, a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), value.enabled, defaultValue.enabled);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}MinMultiplier", prefix).c_str(), value.minMultiplier, defaultValue.minMultiplier);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), value.maxMultiplier, defaultValue.maxMultiplier);
+		}
+
+		void SaveChargeFatigue(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::FatigueOptions& value, const Config::FatigueOptions& defaultValue) {
+			SetOrDeleteValue(ini, a_section, fmt::format("b{}", prefix).c_str(), value.enabled, defaultValue.enabled);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}MinThreshold", prefix).c_str(), value.minThreshold, defaultValue.minThreshold);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxThreshold", prefix).c_str(), value.maxThreshold, defaultValue.maxThreshold);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxPenalty", prefix).c_str(), value.maxSpreadMultiplier, defaultValue.maxSpreadMultiplier);
+			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration);
 		}
 
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults) {
 			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled);
 
-			SetOrDeleteValue(ini, a_section, "bLearnSpells", custom.spellAiming, defaults.spellAiming);
-			SetOrDeleteValue(ini, a_section, "bLearnStaves", custom.staffAiming, defaults.staffAiming);
-			SetOrDeleteValue(ini, a_section, "bLearnScrolls", custom.scrollAiming, defaults.scrollAiming);
-			SetOrDeleteValue(ini, a_section, "bLearnBows", custom.bowAiming, defaults.bowAiming);
-			SetOrDeleteValue(ini, a_section, "bLearnCrossbows", custom.crossbowAiming, defaults.crossbowAiming);
+			SetOrDeleteValue(ini, a_section, "bSpellAiming", custom.spellAiming, defaults.spellAiming);
+			SetOrDeleteValue(ini, a_section, "bStaffAiming", custom.staffAiming, defaults.staffAiming);
+			SetOrDeleteValue(ini, a_section, "bScrollAiming", custom.scrollAiming, defaults.scrollAiming);
+			SetOrDeleteValue(ini, a_section, "bBowAiming", custom.bowAiming, defaults.bowAiming);
+			SetOrDeleteValue(ini, a_section, "bCrossbowAiming", custom.crossbowAiming, defaults.crossbowAiming);
 
 			SaveSkillMultiplier(ini, a_section, "Accuracy", custom.accuracyMultipliers, defaults.accuracyMultipliers);
 			SaveSkillMultiplier(ini, a_section, "Precision", custom.precisionMultipliers, defaults.precisionMultipliers);
 
-			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAim", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming);
-			SetOrDeleteValue(ini, a_section, "bUseEnchantingSkill", custom.stavesUseEnchantingSkill, defaults.stavesUseEnchantingSkill);
+			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAiming", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming);
+			SetOrDeleteValue(ini, a_section, "bStavesUseEnchantingSkill", custom.stavesUseEnchantingSkill, defaults.stavesUseEnchantingSkill);
 			SetOrDeleteValue(ini, a_section, "bStavesUseHighestMagicSkill", custom.stavesUseHighestMagicSkill, defaults.stavesUseHighestMagicSkill);
-			SetOrDeleteValue(ini, a_section, "bUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill);
+			SetOrDeleteValue(ini, a_section, "bSpellsUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill);
 			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsUseHighestMagicSkill", custom.concentrationSpellsUseHighestMagicSkill, defaults.concentrationSpellsUseHighestMagicSkill);
 			SetOrDeleteValue(ini, a_section, "bScrollsUseEnchantingSkill", custom.scrollsUseEnchantingSkill, defaults.scrollsUseEnchantingSkill);
 			SetOrDeleteValue(ini, a_section, "bScrollsUseHighestMagicSkill", custom.scrollsUseHighestMagicSkill, defaults.scrollsUseHighestMagicSkill);
 
-			SetOrDeleteValue(ini, a_section, "bLearnConcentrationSpells", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming);
-			SetOrDeleteValue(ini, a_section, "bScaleRangeWithSkill", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling);
+			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsAiming", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming);
+			SetOrDeleteValue(ini, a_section, "bConcentrationSpellRangeScaling", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling);
 			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMinRangeMultiplier", custom.concentrationSpellMinRangeMultiplier, defaults.concentrationSpellMinRangeMultiplier);
 			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMaxRangeMultiplier", custom.concentrationSpellMaxRangeMultiplier, defaults.concentrationSpellMaxRangeMultiplier);
 
-			SaveChargeSpeed(ini, a_section, "Spell", custom.spellChargeSpeed, defaults.spellChargeSpeed);
+			SaveSpeedOptions(ini, a_section, "SpellChargeSpeed", custom.spellChargeSpeed, defaults.spellChargeSpeed);
 
-			SaveSpellOvercharge(ini, a_section, "Spell", custom.spellOvercharge, defaults.spellOvercharge);
-			SaveSpellOvercharge(ini, a_section, "Staff", custom.staffOvercharge, defaults.staffOvercharge);
-			SaveSpellOvercharge(ini, a_section, "Scroll", custom.scrollOvercharge, defaults.scrollOvercharge);
+			SaveOvercharge(ini, a_section, "SpellOvercharge", custom.spellOvercharge, defaults.spellOvercharge);
+			SaveOvercharge(ini, a_section, "StaffOvercharge", custom.staffOvercharge, defaults.staffOvercharge);
+			SaveOvercharge(ini, a_section, "ScrollOvercharge", custom.scrollOvercharge, defaults.scrollOvercharge);
 
-			SaveChargeSpeed(ini, a_section, "ConcentrationSpell", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed);
-			SaveChargeSpeed(ini, a_section, "Staff", custom.staffChargeSpeed, defaults.staffChargeSpeed);
-			SaveChargeSpeed(ini, a_section, "Scroll", custom.scrollChargeSpeed, defaults.scrollChargeSpeed);
+			SaveSpeedOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed);
+			SaveSpeedOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed);
+			SaveSpeedOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed);
+
+			SaveSpeedOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed);
+			SaveSpeedOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed);
+			SaveOvercharge(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying);
+			SaveChargeFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue);
 		}
 	}
 
@@ -183,11 +196,30 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogSpellOvercharge(std::string_view actor, std::string_view categoryName, const Config::SpellOvercharge& overcharge) {
+	inline void LogSpellOvercharge(std::string_view actor, std::string_view categoryName, const Config::Overcharge& overcharge) {
 		if (!overcharge.enabled) {
 			logger::info("\tOvercharging {} doesn't affect {}'s precision", categoryName, actor);
 		} else {
-			logger::info("\tOvercharging {} reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", categoryName, actor, overcharge.maxSpreadReduction * 100, overcharge.halfDuration);
+			logger::info("\tOvercharging {} reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", categoryName, actor, overcharge.maxSpreadMultiplier * 100, overcharge.halfDuration);
+		}
+	}
+
+	inline void LogBowSteadying(std::string_view actor, const Config::Steadying& steadying) {
+		if (!steadying.enabled) {
+			logger::info("\tHolding a bow at full draw doesn't affect {}'s precision", actor);
+		} else {
+			logger::info("\tHolding a bow at full draw reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)",
+			             actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
+		}
+	}
+
+	inline void LogBowFatigue(std::string_view actor, const Config::DrawFatigue& fatigue) {
+		if (!fatigue.enabled) {
+			logger::info("\tHolding a bow too long doesn't fatigue {}'s aim", actor);
+		} else {
+			logger::info("\t{} can hold a full draw for {:.2f}s at 0 skill to {:.2f}s at 100 skill before fatigue sets in, "
+			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
+			             actor, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
 		}
 	}
 
@@ -200,6 +232,18 @@ namespace NLA::Options
 			logger::info("\t{} charge/cast {} up to {}, scaling with skill", actor, categoryName, SpeedPercentPhrase(maxMult));
 		} else {
 			logger::info("\t{} charge/cast {} {} at 0 skill, {} at 100 skill", actor, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
+		}
+	}
+
+	inline void LogDrawSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
+		if (!enabled) {
+			logger::info("\t{} always draw {} at vanilla speed", actor, categoryName);
+		} else if (minMult == maxMult) {
+			logger::info("\t{} draw {} {}, regardless of skill", actor, categoryName, SpeedPercentPhrase(minMult));
+		} else if (minMult == 1.0f) {
+			logger::info("\t{} draw {} up to {}, scaling with skill", actor, categoryName, SpeedPercentPhrase(maxMult));
+		} else {
+			logger::info("\t{} draw {} {} at 0 skill, {} at 100 skill", actor, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
 		}
 	}
 
@@ -270,9 +314,13 @@ namespace NLA::Options
 		LogChargeSpeedMultiplier("NPCs", "concentration spells", NPC.concentrationSpellChargeSpeed.enabled, NPC.concentrationSpellChargeSpeed.minMultiplier, NPC.concentrationSpellChargeSpeed.maxMultiplier);
 		LogChargeSpeedMultiplier("NPCs", "staves", NPC.staffChargeSpeed.enabled, NPC.staffChargeSpeed.minMultiplier, NPC.staffChargeSpeed.maxMultiplier);
 		LogChargeSpeedMultiplier("NPCs", "scrolls", NPC.scrollChargeSpeed.enabled, NPC.scrollChargeSpeed.minMultiplier, NPC.scrollChargeSpeed.maxMultiplier);
+		LogDrawSpeedMultiplier("NPCs", "bows", NPC.bowDrawSpeed.enabled, NPC.bowDrawSpeed.minMultiplier, NPC.bowDrawSpeed.maxMultiplier);
+		LogDrawSpeedMultiplier("NPCs", "crossbows", NPC.crossbowDrawSpeed.enabled, NPC.crossbowDrawSpeed.minMultiplier, NPC.crossbowDrawSpeed.maxMultiplier);
 		LogSpellOvercharge("NPCs", "spells", NPC.spellOvercharge);
 		LogSpellOvercharge("NPCs", "staves", NPC.staffOvercharge);
 		LogSpellOvercharge("NPCs", "scrolls", NPC.scrollOvercharge);
+		LogBowSteadying("NPCs", NPC.bowSteadying);
+		LogBowFatigue("NPCs", NPC.bowFatigue);
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -324,9 +372,13 @@ namespace NLA::Options
 		LogChargeSpeedMultiplier("Player", "concentration spells", Player.concentrationSpellChargeSpeed.enabled, Player.concentrationSpellChargeSpeed.minMultiplier, Player.concentrationSpellChargeSpeed.maxMultiplier);
 		LogChargeSpeedMultiplier("Player", "staves", Player.staffChargeSpeed.enabled, Player.staffChargeSpeed.minMultiplier, Player.staffChargeSpeed.maxMultiplier);
 		LogChargeSpeedMultiplier("Player", "scrolls", Player.scrollChargeSpeed.enabled, Player.scrollChargeSpeed.minMultiplier, Player.scrollChargeSpeed.maxMultiplier);
+		LogDrawSpeedMultiplier("Player", "bows", Player.bowDrawSpeed.enabled, Player.bowDrawSpeed.minMultiplier, Player.bowDrawSpeed.maxMultiplier);
+		LogDrawSpeedMultiplier("Player", "crossbows", Player.crossbowDrawSpeed.enabled, Player.crossbowDrawSpeed.minMultiplier, Player.crossbowDrawSpeed.maxMultiplier);
 		LogSpellOvercharge("Player", "spells", Player.spellOvercharge);
 		LogSpellOvercharge("Player", "staves", Player.staffOvercharge);
 		LogSpellOvercharge("Player", "scrolls", Player.scrollOvercharge);
+		LogBowSteadying("Player", Player.bowSteadying);
+		LogBowFatigue("Player", Player.bowFatigue);
 
 		logger::info("{:*^40}", "");
 	}
@@ -371,80 +423,98 @@ namespace NLA::Options
 
 		result.enabled = ini.GetBoolValue(a_section, "bEnabled", result.enabled);
 
-		result.spellAiming = ini.GetBoolValue(a_section, "bLearnSpells", result.spellAiming);
-		result.staffAiming = ini.GetBoolValue(a_section, "bLearnStaves", result.staffAiming);
-		result.scrollAiming = ini.GetBoolValue(a_section, "bLearnScrolls", result.scrollAiming);
-		result.bowAiming = ini.GetBoolValue(a_section, "bLearnBows", result.bowAiming);
-		result.crossbowAiming = ini.GetBoolValue(a_section, "bLearnCrossbows", result.crossbowAiming);
+		result.spellAiming = ini.GetBoolValue(a_section, "bSpellAiming", result.spellAiming);
+		result.staffAiming = ini.GetBoolValue(a_section, "bStaffAiming", result.staffAiming);
+		result.scrollAiming = ini.GetBoolValue(a_section, "bScrollAiming", result.scrollAiming);
+		result.bowAiming = ini.GetBoolValue(a_section, "bBowAiming", result.bowAiming);
+		result.crossbowAiming = ini.GetBoolValue(a_section, "bCrossbowAiming", result.crossbowAiming);
 
 		result.accuracyMultipliers = SkillMultiplier::FromIni(ini, a_section, "Accuracy", defaults.accuracyMultipliers);
 		result.precisionMultipliers = SkillMultiplier::FromIni(ini, a_section, "Precision", defaults.precisionMultipliers);
 
-		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAim", result.blindnessAffectsAiming);
+		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAiming", result.blindnessAffectsAiming);
 
-		result.stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bUseEnchantingSkill", result.stavesUseEnchantingSkill);
+		result.stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", result.stavesUseEnchantingSkill);
 		result.stavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bStavesUseHighestMagicSkill", result.stavesUseHighestMagicSkill);
 
-		result.spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bUseHighestMagicSkill", result.spellsUseHighestMagicSkill);
+		result.spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bSpellsUseHighestMagicSkill", result.spellsUseHighestMagicSkill);
 		result.concentrationSpellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationSpellsUseHighestMagicSkill", result.concentrationSpellsUseHighestMagicSkill);
 		result.scrollsUseEnchantingSkill = ini.GetBoolValue(a_section, "bScrollsUseEnchantingSkill", result.scrollsUseEnchantingSkill);
 		result.scrollsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bScrollsUseHighestMagicSkill", result.scrollsUseHighestMagicSkill);
 
-		result.concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bScaleRangeWithSkill", result.concentrationSpellRangeScaling);
+		result.concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bConcentrationSpellRangeScaling", result.concentrationSpellRangeScaling);
 		result.concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", result.concentrationSpellMinRangeMultiplier);
 		result.concentrationSpellMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", result.concentrationSpellMaxRangeMultiplier);
 
-		result.spellChargeSpeed = ChargeSpeed(ini, a_section, "Spell", result.spellChargeSpeed);
-		result.concentrationSpellChargeSpeed = ChargeSpeed(ini, a_section, "ConcentrationSpell", result.concentrationSpellChargeSpeed);
-		result.staffChargeSpeed = ChargeSpeed(ini, a_section, "Staff", result.staffChargeSpeed);
-		result.scrollChargeSpeed = ChargeSpeed(ini, a_section, "Scroll", result.scrollChargeSpeed);
+		result.spellChargeSpeed = SpeedOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed);
+		result.concentrationSpellChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed);
+		result.staffChargeSpeed = SpeedOptions::FromIni(ini, a_section, "StaffChargeSpeed", result.staffChargeSpeed);
+		result.scrollChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed);
 
-		result.spellOvercharge = SpellOvercharge(ini, a_section, "Spell", result.spellOvercharge);
-		result.staffOvercharge = SpellOvercharge(ini, a_section, "Staff", result.staffOvercharge);
-		result.scrollOvercharge = SpellOvercharge(ini, a_section, "Scroll", result.scrollOvercharge);
+		result.spellOvercharge = SpreadOptions::FromIni(ini, a_section, "SpellOvercharge", result.spellOvercharge);
+		result.staffOvercharge = SpreadOptions::FromIni(ini, a_section, "StaffOvercharge", result.staffOvercharge);
+		result.scrollOvercharge = SpreadOptions::FromIni(ini, a_section, "ScrollOvercharge", result.scrollOvercharge);
+
+		result.bowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed);
+		result.crossbowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);
+		result.bowSteadying = SpreadOptions::FromIni(ini, a_section, "BowSteadying", result.bowSteadying);
+		result.bowFatigue = FatigueOptions::FromIni(ini, a_section, "BowFatigue", result.bowFatigue);
 
 		return result;
 	}
 
 	PlayerConfig PlayerConfig::FromIni(CSimpleIniA& ini) {
 		PlayerConfig result{ Config::FromIni(ini, "Player", PlayerConfig::defaultConfig) };
-		result.concentrationSpellsAiming = ini.GetBoolValue("Player", "bLearnConcentrationSpells", result.concentrationSpellsAiming);
+		result.concentrationSpellsAiming = ini.GetBoolValue("Player", "bConcentrationSpellsAiming", result.concentrationSpellsAiming);
 		return result;
 	}
 
 	NPCConfig NPCConfig::FromIni(CSimpleIniA& ini) {
 		NPCConfig result{ Config::FromIni(ini, "NPC", NPCConfig::defaultConfig) };
-		result.concentrationSpellsAiming = ini.GetBoolValue("NPC", "bLearnConcentrationSpells", result.concentrationSpellsAiming);
+		result.concentrationSpellsAiming = ini.GetBoolValue("NPC", "bConcentrationSpellsAiming", result.concentrationSpellsAiming);
 
-		result.headshots = HeadshotSettings(ini, "NPC", NPCConfig::defaultConfig.headshots);
+		result.headshots = HeadshotSettings::FromIni(ini, "NPC", NPCConfig::defaultConfig.headshots);
 
 		result.excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
 		result.includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC")), ",");
 		return result;
 	}
 
-	NPCConfig::HeadshotSettings::HeadshotSettings(CSimpleIniA& ini, const char* a_section, const HeadshotSettings& defaults) :
-		HeadshotSettings(defaults) {
-		bow = ini.GetBoolValue(a_section, "bBowHeadshots", bow);
-		bowMinChance = ini.GetDoubleValue(a_section, "fBowMinHeadshotChance", bowMinChance);
-		bowMaxChance = ini.GetDoubleValue(a_section, "fBowMaxHeadshotChance", bowMaxChance);
-		crossbow = ini.GetBoolValue(a_section, "bCrossbowHeadshots", crossbow);
-		crossbowMinChance = ini.GetDoubleValue(a_section, "fCrossbowMinHeadshotChance", crossbowMinChance);
-		crossbowMaxChance = ini.GetDoubleValue(a_section, "fCrossbowMaxHeadshotChance", crossbowMaxChance);
+	NPCConfig::HeadshotSettings NPCConfig::HeadshotSettings::FromIni(CSimpleIniA& ini, const char* a_section, const HeadshotSettings& defaults) {
+		HeadshotSettings result = defaults;
+		result.bow = ini.GetBoolValue(a_section, "bBowHeadshots", result.bow);
+		result.bowMinChance = ini.GetDoubleValue(a_section, "fBowMinHeadshotChance", result.bowMinChance);
+		result.bowMaxChance = ini.GetDoubleValue(a_section, "fBowMaxHeadshotChance", result.bowMaxChance);
+		result.crossbow = ini.GetBoolValue(a_section, "bCrossbowHeadshots", result.crossbow);
+		result.crossbowMinChance = ini.GetDoubleValue(a_section, "fCrossbowMinHeadshotChance", result.crossbowMinChance);
+		result.crossbowMaxChance = ini.GetDoubleValue(a_section, "fCrossbowMaxHeadshotChance", result.crossbowMaxChance);
+		return result;
 	}
 
-	Config::SpellOvercharge::SpellOvercharge(CSimpleIniA& ini, const char* a_section, std::string_view name, const SpellOvercharge& defaults) :
-		SpellOvercharge(defaults) {
-		enabled = ini.GetBoolValue(a_section, fmt::format("b{}Overcharge", name).c_str(), enabled);
-		maxSpreadReduction = std::clamp(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}OverchargeMaxSpreadReduction", name).c_str(), maxSpreadReduction)), 0.0f, 1.0f);
-		halfDuration = (std::max)(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}OverchargeHalfDuration", name).c_str(), halfDuration)), 0.01f);
+	Config::SpeedOptions Config::SpeedOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SpeedOptions& defaults) {
+		SpeedOptions result = defaults;
+		result.enabled = ini.GetBoolValue(a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), result.enabled);
+		result.minMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MinMultiplier", prefix).c_str(), result.minMultiplier));
+		result.maxMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), result.maxMultiplier));
+		return result;
 	}
 
-	Config::ChargeSpeed::ChargeSpeed(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const ChargeSpeed& defaults) :
-		ChargeSpeed(defaults) {
-		enabled = ini.GetBoolValue(a_section, fmt::format("bScale{}ChargeTimeWithSkill", prefix).c_str(), enabled);
-		minMultiplier = ini.GetDoubleValue(a_section, fmt::format("f{}ChargeSpeedMinMultiplier", prefix).c_str(), minMultiplier);
-		maxMultiplier = ini.GetDoubleValue(a_section, fmt::format("f{}ChargeSpeedMaxMultiplier", prefix).c_str(), maxMultiplier);
+	Config::SpreadOptions Config::SpreadOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SpreadOptions& defaults) {
+		SpreadOptions result = defaults;
+		result.enabled = ini.GetBoolValue(a_section, fmt::format("b{}", prefix).c_str(), result.enabled);
+		result.maxSpreadMultiplier = std::clamp(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxSpreadReduction", prefix).c_str(), result.maxSpreadMultiplier)), 0.0f, 1.0f);
+		result.halfDuration = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}HalfDuration", prefix).c_str(), result.halfDuration)), 0.01f);
+		return result;
+	}
+
+	Config::FatigueOptions Config::FatigueOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const FatigueOptions& defaults) {
+		FatigueOptions result = defaults;
+		result.enabled = ini.GetBoolValue(a_section, fmt::format("b{}", prefix).c_str(), result.enabled);
+		result.minThreshold = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MinThreshold", prefix).c_str(), result.minThreshold)), 0.0f);
+		result.maxThreshold = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxThreshold", prefix).c_str(), result.maxThreshold)), 0.0f);
+		result.maxSpreadMultiplier = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxPenalty", prefix).c_str(), result.maxSpreadMultiplier)), 0.0f);
+		result.halfDuration = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}HalfDuration", prefix).c_str(), result.halfDuration)), 0.01f);
+		return result;
 	}
 
 	Config::SkillMultiplier Config::SkillMultiplier::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillMultiplier& defaults) {

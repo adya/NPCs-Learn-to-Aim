@@ -3,6 +3,7 @@
 #include "RE/C/CombatProjectileAimController.h"
 #include "ConcentrationSpells.h"
 #include "ChargeTime.h"
+#include "DrawSpeed.h"
 
 namespace NLA
 {
@@ -13,5 +14,6 @@ namespace NLA
 		Precision::Install();
 		ConcentrationSpells::Install();
 		ChargeTime::Install();
+		Draw::Install();
 	}
 }

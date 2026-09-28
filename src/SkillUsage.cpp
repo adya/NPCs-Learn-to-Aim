@@ -10,6 +10,30 @@ namespace NLA
 		const auto& options = Options::For(attacker);
 
 		switch (context) {
+		case kChargeTime:
+			if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
+				weaponType = kCrossbow;
+				if (options.crossbowDrawSpeed.enabled) {
+					skill = RE::ActorValue::kArchery;
+					multiplier = Range{ options.crossbowDrawSpeed.minMultiplier, options.crossbowDrawSpeed.maxMultiplier };
+				}
+			} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
+				weaponType = kBow;
+				if (options.bowDrawSpeed.enabled) {
+					skill = RE::ActorValue::kArchery;
+					multiplier = Range{ options.bowDrawSpeed.minMultiplier, options.bowDrawSpeed.maxMultiplier };
+				}
+			}
+			break;
+		case kFatigueThreshold:
+			if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
+				weaponType = kBow;
+				if (options.bowFatigue.enabled) {
+					skill = RE::ActorValue::kArchery;
+					multiplier = Range{ options.bowFatigue.minThreshold, options.bowFatigue.maxThreshold };
+				}
+			}
+			break;
 		case kHeadshot:
 			{
 				// Headshots are an NPC-only feature.
@@ -207,7 +231,7 @@ namespace NLA
 		if (!actor || this->skill == RE::ActorValue::kNone)
 			return 1.0f;
 		const auto skill = EffectiveSkill(actor);
-		return (std::min)((std::max)((100.0f - skill) * 0.01f, 0.0f), 1.0f);
+		return std::min(std::max((100.0f - skill) * 0.01f, 0.0f), 1.0f);
 	}
 #endif
 

@@ -1,5 +1,6 @@
 #include "Aiming.h"
 #include "ChargeTime.h"
+#include "DrawSpeed.h"
 #include "Hooking.h"
 #include "Options.h"
 #include "RE/C/CombatProjectileAimController.h"
@@ -106,8 +107,29 @@ namespace NLA
 			if (!overcharge.enabled || overchargeSeconds <= 0.0f)
 				return 1.0f;
 			// Half-life form: half of the max reduction is gained after halfDuration, 75% after twice that, and so on.
-			return 1.0f - overcharge.maxSpreadReduction * (1.0f - std::exp2(-overchargeSeconds / overcharge.halfDuration));
+			return 1.0f - overcharge.maxSpreadMultiplier * (1.0f - std::exp2(-overchargeSeconds / overcharge.halfDuration));
 		}
+	}
+
+	float BowSpreadScale(float holdSeconds, const Options::Config::Steadying& steadying, const Options::Config::DrawFatigue& fatigue, float fatigueThresholdSeconds) {
+		if (holdSeconds <= 0.0f)
+			return 1.0f;
+
+		const float steadyingSeconds = fatigue.enabled ? std::min(holdSeconds, fatigueThresholdSeconds) : holdSeconds;
+
+		float steadied = 1.0f;
+		if (steadying.enabled) {
+			steadied = 1.0f - steadying.maxSpreadMultiplier * (1.0f - std::exp2(-steadyingSeconds / steadying.halfDuration));
+		}
+
+		if (!fatigue.enabled)
+			return steadied;
+
+		const float fatigueSeconds = std::max(0.0f, holdSeconds - fatigueThresholdSeconds);
+		const float fatigueProgress = 1.0f - std::exp2(-fatigueSeconds / fatigue.halfDuration);
+
+		const float fatigueTarget = 1.0f + fatigue.maxSpreadMultiplier;
+		return steadied + (fatigueTarget - steadied) * fatigueProgress;
 	}
 
 	void AddRandomSpread(float* angleX, float* angleZ, RE::Actor* attacker, const SkillUsage& skillUsage, float spreadScale = 1.0f) {
@@ -312,14 +334,33 @@ namespace NLA
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
-				
+
 				// PlayerAutoAim will handle 3rd person aim.
 				if (!IsHandledByPlayerAutoAim(attacker)) {
+					float spreadScale = 1.0f;
+					if (auto* weapon = launchData.weaponSource; weapon && weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
+						const float holdDuration = Draw::PopBowFullDrawDuration(attacker);
+						float       fatigueThreshold = 0.0f;
+						if (auto fatigueUsage = SkillUsage(weapon, attacker, kFatigueThreshold); fatigueUsage) {
+							fatigueThreshold = fatigueUsage.LerpSkillFactor(attacker);
+						}
+						spreadScale = BowSpreadScale(holdDuration, Options::For(attacker).bowSteadying, Options::For(attacker).bowFatigue, fatigueThreshold);
+#ifndef NDEBUG
+						if (holdDuration > 0.0f) {
+							logger::info("FullDraw: {} released {} after holding full draw for {:.3f}s ({:+.0f}% spread)",
+							             attacker ? attacker->GetName() : "?",
+							             weapon->GetName(),
+							             holdDuration,
+							             (spreadScale - 1.0f) * 100.0f);
+						}
+#endif
+					}
+
 					if (auto skillUsage = SkillUsage(launchData.weaponSource, attacker, kPrecision); skillUsage) {
-						AddRandomSpread(launchData, skillUsage);
+						AddRandomSpread(launchData, skillUsage, spreadScale);
 					}
 				}
-				
+
 				HeadshotDecision::ClearForAttacker(attacker);
 
 				func(projectile, launchData);
@@ -340,6 +381,10 @@ namespace NLA
 				func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);
 
 				if (!projectile)
+					return;
+
+				// In 1st person we ignore the auto-aiming as it seems to only correct aim in 3rd person.
+				if (!IsHandledByPlayerAutoAim(player))
 					return;
 
 				SkillUsage skillUsage{};

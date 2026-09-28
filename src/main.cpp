@@ -1,9 +1,9 @@
 #include "ChargeTime.h"
+#include "DrawSpeed.h"
 #include "Hooks.h"
 #include "Menu.h"
 #include "Options.h"
 
-// ReSharper disable once CppParameterMayBeConstPtrOrRef
 void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 	switch (a_message->type) {
 	case SKSE::MessagingInterface::kPostLoad:
@@ -14,6 +14,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 	case SKSE::MessagingInterface::kPreLoadGame:
 	case SKSE::MessagingInterface::kNewGame:
 		NLA::ChargeTime::Reset();
+		NLA::Draw::Reset();
 		break;
 	default:
 		break;
