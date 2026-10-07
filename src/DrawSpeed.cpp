@@ -1,13 +1,9 @@
 #include "DrawSpeed.h"
-#ifndef NDEBUG
-#	include "Aiming.h"
-#endif
 #include "Hooking.h"
 #include "Options.h"
 #include "SkillUsage.h"
 
 #include <unordered_map>
-#include <utility>
 
 namespace NLA::Draw
 {
@@ -16,9 +12,7 @@ namespace NLA::Draw
 		bool IsFullyDrawn(RE::ATTACK_STATE_ENUM state) {
 			return state == RE::ATTACK_STATE_ENUM::kBowDrawn;
 		}
-#ifndef NDEBUG
-		constexpr float kFullDrawLogInterval = 0.25f;
-#endif
+
 		struct Entry
 		{
 			RE::ATTACK_STATE_ENUM lastState{ RE::ATTACK_STATE_ENUM::kNone };
@@ -26,69 +20,16 @@ namespace NLA::Draw
 			std::uint32_t drawTimestamp{ 0 };
 
 			float fullDrawDuration{ 0.0f };
-
-#ifndef NDEBUG
-			float lastLoggedHeld{ 0.0f };
-#endif
 		};
-
-#ifndef NDEBUG
-		float PercentSpreadChange(RE::Actor* attacker, RE::TESObjectWEAP* weapon, float heldDuration) {
-			float fatigueThreshold = 0.0f;
-			if (auto fatigueUsage = SkillUsage(weapon, attacker, kFatigueThreshold); fatigueUsage) {
-				fatigueThreshold = fatigueUsage.LerpSkillFactor(attacker);
-			}
-			const auto& options = Options::For(attacker);
-			const float scale = HoldSpreadScale(heldDuration, options.bowSteadying, options.bowFatigue, fatigueThreshold);
-			return (scale - 1.0f) * 100.0f;
-		}
-#endif
 
 		RE::BSSpinLock                        entriesLock;
 		std::unordered_map<RE::FormID, Entry> entries;
-	}
 
-	struct PollChannelUpdateImpl_GetWeaponSpeed
-	{
-		static inline constexpr REL::RelocationID  relocation{ 41694, 42779 };
-		static inline constexpr REL::VariantOffset offset{ 0x29, 0x29, 0x29 };
-		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 8B 44 24 50" };
-
-		static inline void post_hook() { logger::info("Installed bow/crossbow draw/reload speed skill scaling"); }
-
-		static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
-			float vanillaSpeed = func(owner, weapon, leftHand);
-
-			auto attacker = owner ? &REL::RelocateMemberIfNewer<RE::Actor>(SKSE::RUNTIME_SSE_1_6_629, owner, -0xB0, -0xB8) : nullptr;
-			if (!attacker || !weapon)
-				return vanillaSpeed;
-
-			const auto weaponType = weapon->GetWeaponType();
-			if (weaponType != RE::WEAPON_TYPE::kBow && weaponType != RE::WEAPON_TYPE::kCrossbow)
-				return vanillaSpeed;
-
-			const bool stateChanged = TrackHoldDuration(attacker, weapon);
-
-			auto skillUsage = SkillUsage(weapon, attacker, kChargeTime);
-			if (!skillUsage)
-				return vanillaSpeed;
-
-			const float multiplier = skillUsage.LerpSkillFactor(attacker);
-#ifndef NDEBUG
-			if (stateChanged) {
-				logger::debug("DrawSpeed: {} draws {} at x{:.3f} speed ({:.3f} -> {:.3f})",
-				              attacker->GetName(),
-				              weapon->GetName(),
-				              multiplier,
-				              vanillaSpeed,
-				              vanillaSpeed * multiplier);
-			}
-#endif
-			return vanillaSpeed * multiplier;
+		RE::Actor* ActorFromWeaponSpeedOwner(RE::ActorValueOwner* owner) {
+			return owner ? &REL::RelocateMemberIfNewer<RE::Actor>(SKSE::RUNTIME_SSE_1_6_629, owner, -0xB0, -0xB8) : nullptr;
 		}
 
-		/// Returns true if the actor's attack state changed since the last call.
-		static bool TrackHoldDuration(RE::Actor* attacker, RE::TESObjectWEAP* weapon) {
+		void TrackHoldDuration(RE::Actor* attacker) {
 			const auto state = attacker->AsActorState()->GetAttackState();
 			const auto formID = attacker->GetFormID();
 			const auto nowMs = RE::GetDurationOfApplicationRunTime();
@@ -96,20 +37,10 @@ namespace NLA::Draw
 			RE::BSSpinLockGuard lock{ entriesLock };
 			auto&               entry = entries[formID];
 
-			const bool changed = entry.lastState != state;
-			if (changed) {
+			if (entry.lastState != state) {
 				if (IsFullyDrawn(entry.lastState)) {
 					entry.fullDrawDuration = (nowMs - entry.drawTimestamp) / 1000.0f;
 					entry.drawTimestamp = 0;
-#ifndef NDEBUG
-					entry.lastLoggedHeld = 0.0f;
-					logger::debug("FullDraw: {} left full draw after holding it for {:.3f}s ({:+.0f}% spread) (state {} -> {})",
-					              attacker->GetName(),
-					              entry.fullDrawDuration,
-					              PercentSpreadChange(attacker, weapon, entry.fullDrawDuration),
-					              std::to_underlying(entry.lastState),
-					              std::to_underlying(state));
-#endif
 				}
 				if (IsFullyDrawn(state)) {
 					entry.drawTimestamp = nowMs;
@@ -117,37 +48,25 @@ namespace NLA::Draw
 				entry.lastState = state;
 			}
 
-			if (IsFullyDrawn(state)) {
-				const float heldDuration = (nowMs - entry.drawTimestamp) / 1000.0f;
-#ifndef NDEBUG
-				if (heldDuration - entry.lastLoggedHeld >= kFullDrawLogInterval) {
-					entry.lastLoggedHeld = heldDuration;
-					logger::debug("FullDraw: {} holding {} at full draw for {:.2f}s ({:+.0f}% spread)",
-					              attacker->GetName(),
-					              weapon->GetName(),
-					              heldDuration,
-					              PercentSpreadChange(attacker, weapon, heldDuration));
-				}
-#endif
-			}
-
 			if (state == RE::ATTACK_STATE_ENUM::kNone && entry.fullDrawDuration == 0.0f) {
 				entries.erase(formID);
 			}
-
-			return changed;
 		}
-
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
-
-	void Install() {
-		stl::install_hook<PollChannelUpdateImpl_GetWeaponSpeed>();
 	}
 
-	void Reset() {
-		RE::BSSpinLockGuard lock{ entriesLock };
-		entries.clear();
+	float SpeedMultiplier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
+		if (!attacker || !weapon)
+			return 1.0f;
+
+		const auto weaponType = weapon->GetWeaponType();
+		if (weaponType != RE::WEAPON_TYPE::kBow && weaponType != RE::WEAPON_TYPE::kCrossbow)
+			return 1.0f;
+
+		auto skillUsage = SkillUsage(weapon, attacker, kChargeTime);
+		if (!skillUsage)
+			return 1.0f;
+
+		return skillUsage.LerpSkillFactor(attacker);
 	}
 
 	float PopBowFullDrawDuration(RE::Actor* actor) {
@@ -170,5 +89,86 @@ namespace NLA::Draw
 		}
 
 		return duration;
+	}
+}
+
+namespace NLA::Draw
+{
+	struct PollChannelUpdateImpl_GetWeaponSpeed
+	{
+		static inline constexpr REL::RelocationID  relocation{ 41694, 42779 };
+		static inline constexpr REL::VariantOffset offset{ 0x29, 0x29, 0x29 };
+		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 8B 44 24 50" };
+
+		static inline void post_hook() { logger::info("Installed draw speed skill scaling."); }
+
+		static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
+			float vanillaSpeed = func(owner, weapon, leftHand);
+
+			auto attacker = ActorFromWeaponSpeedOwner(owner);
+			if (!attacker || !weapon)
+				return vanillaSpeed;
+
+			const auto weaponType = weapon->GetWeaponType();
+			if (weaponType != RE::WEAPON_TYPE::kBow && weaponType != RE::WEAPON_TYPE::kCrossbow)
+				return vanillaSpeed;
+
+			TrackHoldDuration(attacker);
+
+			return vanillaSpeed * SpeedMultiplier(attacker, weapon);
+		}
+
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	/// Scales vanilla weapon speed by the bow/crossbow draw speed multiplier.
+	template <typename Call>
+	struct ScaledWeaponSpeed_Proxy
+	{
+		static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
+			float vanillaSpeed = Call::func(owner, weapon, leftHand);
+			return vanillaSpeed * SpeedMultiplier(ActorFromWeaponSpeedOwner(owner), weapon);
+		}
+	};
+
+	struct Projectile_Launch_GetWeaponSpeed
+	{
+		static inline constexpr REL::RelocationID  relocation{ 42928, 44108 };
+		static inline constexpr REL::VariantOffset offset{ 0x5F9, 0x5CB, 0x5F9 };
+		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 0F 28 C8 0F 28 C6 E8 ?? ?? ?? ?? F3 0F 11 83" };
+
+		static inline void post_hook() { logger::info("Installed scaled draw speed power check."); }
+
+		using Proxy = ScaledWeaponSpeed_Proxy<Projectile_Launch_GetWeaponSpeed>;
+		static inline REL::Relocation<decltype(Proxy::thunk)> func;
+	};
+
+	struct Actor_ProcessVATSAttack_GetWeaponSpeed
+	{
+		static inline constexpr REL::RelocationID  relocation{ 40230, 41233 };
+		static inline constexpr REL::VariantOffset offset{ 0x871, 0x947 };
+
+		// For VR there is no kill-cam, so we skip this hook.
+		static inline constexpr REL::Module::Runtime runtime{ REL::Module::Runtime::SE | REL::Module::Runtime::AE };
+
+		static inline constexpr VariantSignature<"E8 ?? ?? ?? ?? 0F 28 C8 0F 28 C6 E8 ?? ?? ?? ?? 48 8B 7C 24 58",
+		                                         "E8 ?? ?? ?? ?? 0F 28 C8 0F 28 C6 E8 ?? ?? ?? ?? 0F 2F 05 ?? ?? ?? ??">
+			signature;
+
+		static inline void post_hook() { logger::info("Installed scaled draw speed ranged kill-cam power check."); }
+
+		using Proxy = ScaledWeaponSpeed_Proxy<Actor_ProcessVATSAttack_GetWeaponSpeed>;
+		static inline REL::Relocation<decltype(Proxy::thunk)> func;
+	};
+
+	void Install() {
+		stl::install_hook<PollChannelUpdateImpl_GetWeaponSpeed>();
+		stl::install_hook<Projectile_Launch_GetWeaponSpeed>();
+		stl::install_hook<Actor_ProcessVATSAttack_GetWeaponSpeed>();
+	}
+
+	void Reset() {
+		RE::BSSpinLockGuard lock{ entriesLock };
+		entries.clear();
 	}
 }
