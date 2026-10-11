@@ -21,6 +21,7 @@ namespace NLA::ChargeTime
 			float overchargeDuration{ 0.0f };
 		};
 
+		RE::BSSpinLock                           entriesLock;
 		std::unordered_map<std::uint64_t, Entry> entries;
 
 		std::uint64_t MakeKey(RE::FormID formID, RE::MagicSystem::CastingSource source) {
@@ -40,6 +41,43 @@ namespace NLA::ChargeTime
 		}
 	}
 
+	float SpeedMultiplier(RE::Actor* actor, const RE::MagicItem* spell) {
+		if (auto skillUsage = SkillUsage(spell, actor, kChargeTime); skillUsage) {
+			return skillUsage.LerpSkillFactor(actor);
+		}
+		return 1.0f;
+	}
+
+	float PopSpellOverchargeDuration(RE::Actor* actor, RE::MagicSystem::CastingSource source) {
+		if (!actor) {
+			return 0.0f;
+		}
+
+		RE::BSSpinLockGuard lock{ entriesLock };
+
+		auto it = entries.find(MakeKey(actor->GetFormID(), source));
+		if (it == entries.end()) {
+			return 0.0f;
+		}
+
+		const float duration = it->second.overchargeDuration;
+		it->second.overchargeDuration = 0.0f;
+
+		if (it->second.lastState == RE::MagicCaster::State::kNone) {
+			entries.erase(it);
+		}
+
+		return duration;
+	}
+
+	void Reset() {
+		RE::BSSpinLockGuard lock{ entriesLock };
+		entries.clear();
+	}
+}
+
+namespace NLA::ChargeTime
+{
 	struct MagicCaster_Update
 	{
 		using Target = RE::ActorMagicCaster;
@@ -51,6 +89,8 @@ namespace NLA::ChargeTime
 				const auto state = caster->state.get();
 
 				if (caster->actor) {
+					RE::BSSpinLockGuard lock{ entriesLock };
+
 					const auto key = MakeKey(caster->actor->GetFormID(), caster->castingSource);
 					auto&      entry = entries[key];
 					const auto prev = entry.lastState;
@@ -59,15 +99,6 @@ namespace NLA::ChargeTime
 						if (IsReady(prev)) {
 							const float duration = entry.chargedDuration;
 							entry.chargedDuration = 0.0f;
-
-							logger::debug("ChargeTime: {} {} {} (source {}, state {} -> {}) after overcharging for {:.3f}s",
-							              caster->actor->GetName(),
-							              IsInterrupted(state) ? "was interrupted casting" : "released",
-							              caster->currentSpell ? caster->currentSpell->GetName() : "?",
-							              std::to_underlying(caster->castingSource),
-							              std::to_underlying(prev),
-							              std::to_underlying(state),
-							              duration);
 
 							if (IsInterrupted(state)) {
 								entry.overchargeDuration = 0.0f;
@@ -91,9 +122,7 @@ namespace NLA::ChargeTime
 				}
 
 				if (IsCharging(state)) {
-					if (auto skillUsage = SkillUsage(caster->currentSpell, caster->actor, kChargeTime); skillUsage) {
-						delta *= skillUsage.LerpSkillFactor(caster->actor);
-					}
+					delta *= SpeedMultiplier(caster->actor, caster->currentSpell);
 				}
 			}
 
@@ -108,29 +137,5 @@ namespace NLA::ChargeTime
 
 	void Install() {
 		stl::install_hook<MagicCaster_Update>();
-	}
-
-	void Reset() {
-		entries.clear();
-	}
-
-	float PopSpellOverchargeDuration(RE::Actor* actor, RE::MagicSystem::CastingSource source) {
-		if (!actor) {
-			return 0.0f;
-		}
-
-		auto it = entries.find(MakeKey(actor->GetFormID(), source));
-		if (it == entries.end()) {
-			return 0.0f;
-		}
-
-		const float duration = it->second.overchargeDuration;
-		it->second.overchargeDuration = 0.0f;
-
-		if (it->second.lastState == RE::MagicCaster::State::kNone) {
-			entries.erase(it);
-		}
-
-		return duration;
 	}
 }

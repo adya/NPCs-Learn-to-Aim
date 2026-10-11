@@ -1,5 +1,5 @@
 #include "Hooks.h"
-#include "Aiming.h"
+#include "Aiming/Aiming.h"
 #include "RE/C/CombatProjectileAimController.h"
 #include "ConcentrationSpells.h"
 #include "ChargeTime.h"

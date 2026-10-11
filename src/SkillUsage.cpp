@@ -255,14 +255,6 @@ namespace NLA
 			break;
 		}
 	}
-#ifndef NDEBUG
-	float SkillUsage::OriginalSkillFactor(RE::Actor* actor) const {
-		if (!actor || this->skill == RE::ActorValue::kNone)
-			return 1.0f;
-		const auto skill = EffectiveSkill(actor);
-		return std::min(std::max((100.0f - skill) * 0.01f, 0.0f), 1.0f);
-	}
-#endif
 
 	float SkillUsage::SkillFactor(RE::Actor* actor) const {
 		if (!actor || this->skill == RE::ActorValue::kNone)

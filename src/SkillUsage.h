@@ -28,9 +28,7 @@ namespace NLA
 		operator bool() const {
 			return skill != RE::ActorValue::kNone;
 		}
-#ifndef NDEBUG
-		float OriginalSkillFactor(RE::Actor* actor) const;
-#endif
+
 		/// A multiplier that controls how much current skill affects accuracy and precision.
 		float SkillFactor(RE::Actor* actor) const;
 

@@ -90,6 +90,11 @@ namespace NLA::Draw
 
 		return duration;
 	}
+
+	void Reset() {
+		RE::BSSpinLockGuard lock{ entriesLock };
+		entries.clear();
+	}
 }
 
 namespace NLA::Draw
@@ -165,10 +170,5 @@ namespace NLA::Draw
 		stl::install_hook<PollChannelUpdateImpl_GetWeaponSpeed>();
 		stl::install_hook<Projectile_Launch_GetWeaponSpeed>();
 		stl::install_hook<Actor_ProcessVATSAttack_GetWeaponSpeed>();
-	}
-
-	void Reset() {
-		RE::BSSpinLockGuard lock{ entriesLock };
-		entries.clear();
 	}
 }
