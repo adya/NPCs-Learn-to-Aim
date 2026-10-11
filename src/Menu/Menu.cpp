@@ -22,7 +22,9 @@ namespace NLA::Menu
 			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Bows", actor), ActorPage<IsNPC, RenderBowsPage>);
 			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Crossbows", actor), ActorPage<IsNPC, RenderCrossbowsPage>);
 			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Spells", actor), ActorPage<IsNPC, RenderSpellsPage>);
+			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Concentration Spells", actor), ActorPage<IsNPC, RenderConcentrationSpellsPage>);
 			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Staves", actor), ActorPage<IsNPC, RenderStavesPage>);
+			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Concentration Staves", actor), ActorPage<IsNPC, RenderConcentrationStavesPage>);
 			SKSEMenuFramework::AddSectionItem(fmt::format("{}/Scrolls", actor), ActorPage<IsNPC, RenderScrollsPage>);
 		}
 	}

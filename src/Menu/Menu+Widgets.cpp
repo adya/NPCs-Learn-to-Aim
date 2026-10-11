@@ -149,13 +149,21 @@ namespace NLA::Menu
 		ShowTooltip(tooltip);
 	}
 
-	void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip) {
+	void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip, bool spanRow) {
 		TableNextColumn();
+		if (spanRow) {
+			// Lets the label run past the cell into the rest of the row, which must be left empty.
+			const ImVec2 cell = GetCursorScreenPos();
+			PushClipRect(cell, ImVec2(cell.x + 2 * kSliderWidth + GetStyle()->CellPadding.x * 2, cell.y + GetFrameHeightWithSpacing()), false);
+		}
 		if (Checkbox(label, &value)) {
 			if (value) {
 				other = false;
 			}
 			Options::Save();
+		}
+		if (spanRow) {
+			PopClipRect();
 		}
 		ShowTooltip(tooltip);
 	}

@@ -127,8 +127,19 @@ namespace NLA::Options
 		/// Mutually exclusive with stavesUseEnchantingSkill.
 		bool stavesUseHighestMagicSkill = false;
 
-		/// If true, the highest NPC's magic skill is used to aim spells (both fire-and-forget and concentration), instead of the spell's primary effect's school skill.
+		/// If true, concentration staves use the enchanting skill instead of the spell's primary effect's school skill.
+		/// Mutually exclusive with concentrationStavesUseHighestMagicSkill.
+		bool concentrationStavesUseEnchantingSkill = false;
+
+		/// If true, concentration staves use the highest NPC's magic skill instead of the spell's primary effect's school skill.
+		/// Mutually exclusive with concentrationStavesUseEnchantingSkill.
+		bool concentrationStavesUseHighestMagicSkill = false;
+
+		/// If true, the highest NPC's magic skill is used to aim fire-and-forget spells, instead of the spell's primary effect's school skill.
 		bool spellsUseHighestMagicSkill = false;
+
+		/// If true, the highest NPC's magic skill is used to aim concentration spells, instead of the spell's primary effect's school skill.
+		bool concentrationSpellsUseHighestMagicSkill = false;
 
 		/// If true, scrolls use the enchanting skill instead of the scroll spell's primary effect's school skill.
 		/// Mutually exclusive with scrollsUseHighestMagicSkill.

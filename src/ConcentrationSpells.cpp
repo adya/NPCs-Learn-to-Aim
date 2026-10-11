@@ -82,7 +82,7 @@ namespace NLA::ConcentrationSpells
 			float rangeMult = skillUsage.LerpSkillFactor(attacker);
 
 			runtimeData.range = base->data.range * rangeMult;
-			logger::debug("Scaling range from {} to {} (multiplier: {})", base->data.range, runtimeData.range, rangeMult);
+			//logger::debug("Scaling range from {} to {} (multiplier: {})", base->data.range, runtimeData.range, rangeMult);
 		}
 	}
 

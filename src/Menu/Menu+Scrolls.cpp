@@ -17,9 +17,9 @@ namespace NLA::Menu
 			},
 			SkillSourceRows{
 				.useEnchantingSkill = &Config::scrollsUseEnchantingSkill,
-				.useEnchantingSkillTooltip = "When enabled, scroll aiming is based on the Enchanting skill instead of the scroll spell's Magic school. Mutually exclusive with Use Highest Magic Skill.",
+				.useEnchantingSkillTooltip = "When enabled, all scroll options are based on the Enchanting skill instead of the scroll spell's Magic school. Mutually exclusive with Use Highest Magic Skill.",
 				.useHighestMagicSkill = &Config::scrollsUseHighestMagicSkill,
-				.useHighestMagicSkillTooltip = "When enabled, scroll aiming is based on the highest Magic skill, regardless of the scroll spell's Magic school. Mutually exclusive with Use Enchanting Skill." },
+				.useHighestMagicSkillTooltip = "When enabled, all scroll options are based on the highest Magic skill, regardless of the scroll spell's Magic school. Mutually exclusive with Use Enchanting Skill." },
 			SpeedRows{
 				&Config::scrollChargeSpeed,
 				kScaleChargeSpeedLabel,

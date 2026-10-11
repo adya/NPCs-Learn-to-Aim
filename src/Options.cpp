@@ -92,7 +92,10 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAiming", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bStavesUseEnchantingSkill", custom.stavesUseEnchantingSkill, defaults.stavesUseEnchantingSkill, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bStavesUseHighestMagicSkill", custom.stavesUseHighestMagicSkill, defaults.stavesUseHighestMagicSkill, writeDefaults);
+			SetOrDeleteValue(ini, a_section, "bConcentrationStavesUseEnchantingSkill", custom.concentrationStavesUseEnchantingSkill, defaults.concentrationStavesUseEnchantingSkill, writeDefaults);
+			SetOrDeleteValue(ini, a_section, "bConcentrationStavesUseHighestMagicSkill", custom.concentrationStavesUseHighestMagicSkill, defaults.concentrationStavesUseHighestMagicSkill, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bSpellsUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill, writeDefaults);
+			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsUseHighestMagicSkill", custom.concentrationSpellsUseHighestMagicSkill, defaults.concentrationSpellsUseHighestMagicSkill, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bScrollsUseEnchantingSkill", custom.scrollsUseEnchantingSkill, defaults.scrollsUseEnchantingSkill, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bScrollsUseHighestMagicSkill", custom.scrollsUseHighestMagicSkill, defaults.scrollsUseHighestMagicSkill, writeDefaults);
 
@@ -152,21 +155,21 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogStavesUseEnchantingSkill(std::string_view actor, bool stavesUseEnchantingSkill, bool stavesUseHighestMagicSkill) {
+	inline void LogStavesUseEnchantingSkill(std::string_view actor, std::string_view staves, bool stavesUseEnchantingSkill, bool stavesUseHighestMagicSkill) {
 		if (stavesUseEnchantingSkill) {
-			logger::info("\t{}'s accuracy with staves is based on Enchanting skill", actor);
+			logger::info("\t{}'s accuracy with {} is based on Enchanting skill", actor, staves);
 		} else if (stavesUseHighestMagicSkill) {
-			logger::info("\t{}'s accuracy with staves is based on the highest {}'s magic skill regardless of spell", actor, actor);
+			logger::info("\t{}'s accuracy with {} is based on the highest {}'s magic skill regardless of spell", actor, staves, actor);
 		} else {
-			logger::info("\t{}'s accuracy with staves is based on {}'s skill in spell's magic school", actor, actor);
+			logger::info("\t{}'s accuracy with {} is based on {}'s skill in spell's magic school", actor, staves, actor);
 		}
 	}
 
-	inline void LogSpellsUseHighestMagicSkill(std::string_view actor, bool spellsUseHighestMagicSkill) {
+	inline void LogSpellsUseHighestMagicSkill(std::string_view actor, std::string_view spells, bool spellsUseHighestMagicSkill) {
 		if (spellsUseHighestMagicSkill) {
-			logger::info("\t{}'s accuracy with spells (including concentration spells) is based on the highest {}'s magic skill regardless of spell", actor, actor);
+			logger::info("\t{}'s accuracy with {} is based on the highest {}'s magic skill regardless of spell", actor, spells, actor);
 		} else {
-			logger::info("\t{}'s accuracy with spells is based on {}'s skill in spell's magic school", actor, actor);
+			logger::info("\t{}'s accuracy with {} is based on {}'s skill in spell's magic school", actor, spells, actor);
 		}
 	}
 
@@ -326,8 +329,10 @@ namespace NLA::Options
 		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
 
 		logger::info("");
-		LogStavesUseEnchantingSkill("NPCs", NPC.stavesUseEnchantingSkill, NPC.stavesUseHighestMagicSkill);
-		LogSpellsUseHighestMagicSkill("NPCs", NPC.spellsUseHighestMagicSkill);
+		LogStavesUseEnchantingSkill("NPCs", "staves", NPC.stavesUseEnchantingSkill, NPC.stavesUseHighestMagicSkill);
+		LogStavesUseEnchantingSkill("NPCs", "concentration staves", NPC.concentrationStavesUseEnchantingSkill, NPC.concentrationStavesUseHighestMagicSkill);
+		LogSpellsUseHighestMagicSkill("NPCs", "spells", NPC.spellsUseHighestMagicSkill);
+		LogSpellsUseHighestMagicSkill("NPCs", "concentration spells", NPC.concentrationSpellsUseHighestMagicSkill);
 		LogScrollsUseEnchantingSkill("NPCs", NPC.scrollsUseEnchantingSkill, NPC.scrollsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
 		LogConcentrationStaffRangeMultiplier("NPCs", NPC.concentrationStaffRangeScaling, NPC.concentrationStaffMinRangeMultiplier, NPC.concentrationStaffMaxRangeMultiplier);
@@ -390,8 +395,10 @@ namespace NLA::Options
 		LogSkillMultiplier("Player", "Scrolls", "Precision", Player.precisionMultipliers.scroll);
 
 		logger::info("");
-		LogStavesUseEnchantingSkill("Player", Player.stavesUseEnchantingSkill, Player.stavesUseHighestMagicSkill);
-		LogSpellsUseHighestMagicSkill("Player", Player.spellsUseHighestMagicSkill);
+		LogStavesUseEnchantingSkill("Player", "staves", Player.stavesUseEnchantingSkill, Player.stavesUseHighestMagicSkill);
+		LogStavesUseEnchantingSkill("Player", "concentration staves", Player.concentrationStavesUseEnchantingSkill, Player.concentrationStavesUseHighestMagicSkill);
+		LogSpellsUseHighestMagicSkill("Player", "spells", Player.spellsUseHighestMagicSkill);
+		LogSpellsUseHighestMagicSkill("Player", "concentration spells", Player.concentrationSpellsUseHighestMagicSkill);
 		LogScrollsUseEnchantingSkill("Player", Player.scrollsUseEnchantingSkill, Player.scrollsUseHighestMagicSkill);
 		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
 		LogConcentrationStaffRangeMultiplier("Player", Player.concentrationStaffRangeScaling, Player.concentrationStaffMinRangeMultiplier, Player.concentrationStaffMaxRangeMultiplier);
@@ -499,8 +506,11 @@ namespace NLA::Options
 
 		result.stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", result.stavesUseEnchantingSkill);
 		result.stavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bStavesUseHighestMagicSkill", result.stavesUseHighestMagicSkill);
+		result.concentrationStavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bConcentrationStavesUseEnchantingSkill", result.concentrationStavesUseEnchantingSkill);
+		result.concentrationStavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationStavesUseHighestMagicSkill", result.concentrationStavesUseHighestMagicSkill);
 
 		result.spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bSpellsUseHighestMagicSkill", result.spellsUseHighestMagicSkill);
+		result.concentrationSpellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationSpellsUseHighestMagicSkill", result.concentrationSpellsUseHighestMagicSkill);
 		result.scrollsUseEnchantingSkill = ini.GetBoolValue(a_section, "bScrollsUseEnchantingSkill", result.scrollsUseEnchantingSkill);
 		result.scrollsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bScrollsUseHighestMagicSkill", result.scrollsUseHighestMagicSkill);
 

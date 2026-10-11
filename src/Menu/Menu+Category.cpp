@@ -23,6 +23,7 @@ namespace NLA::Menu
 		auto& headshots = Options::NPC.headshots;
 		auto& on = headshots.*enabled;
 
+		HeaderRow("Min Chance", "Max Chance");
 		TableNextRow();
 		ToggleColumn(label, on, tooltip);
 		DisabledIf off{ !on };
@@ -42,7 +43,7 @@ namespace NLA::Menu
 	}
 
 	void RangeRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
-		if (!sections.Section(nullptr)) {
+		if (!sections.Section(group)) {
 			return;
 		}
 		auto& cfg = ctx.cfg;
@@ -62,11 +63,10 @@ namespace NLA::Menu
 		ResetMember(ctx, max);
 	}
 
-	void UseHighestMagicSkillRow::Render(const PageContext& ctx, bool aiming, TableSections& sections) const {
-		if (!sections.Section(nullptr)) {
+	void UseHighestMagicSkillRow::Render(const PageContext& ctx, bool, TableSections& sections) const {
+		if (!sections.Section(kSkillSourceGroup)) {
 			return;
 		}
-		DisabledIf unused{ !aiming && !(sharedWith && ctx.cfg.*sharedWith) };
 		TableNextRow();
 		ToggleColumn(kUseHighestMagicSkillLabel, ctx.cfg.*enabled, tooltip);
 	}
@@ -75,19 +75,17 @@ namespace NLA::Menu
 		ResetMember(ctx, enabled);
 	}
 
-	void SkillSourceRows::Render(const PageContext& ctx, bool aiming, TableSections& sections) const {
-		if (!sections.Section(nullptr)) {
+	void SkillSourceRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
+		if (!sections.Section(kSkillSourceGroup)) {
 			return;
 		}
 		auto&      cfg = ctx.cfg;
 		auto&      useEnchanting = cfg.*useEnchantingSkill;
 		auto&      useHighest = cfg.*useHighestMagicSkill;
-		DisabledIf unused{ !aiming && !(sharedWith && cfg.*sharedWith) };
 
 		TableNextRow();
 		ExclusiveToggleColumn("Use Enchanting Skill", useEnchanting, useHighest, useEnchantingSkillTooltip);
-		TableNextRow();
-		ExclusiveToggleColumn(kUseHighestMagicSkillLabel, useHighest, useEnchanting, useHighestMagicSkillTooltip);
+		ExclusiveToggleColumn(kUseHighestMagicSkillLabel, useHighest, useEnchanting, useHighestMagicSkillTooltip, true);
 	}
 
 	void SkillSourceRows::Reset(const PageContext& ctx) const {

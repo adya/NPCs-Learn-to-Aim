@@ -31,7 +31,9 @@ namespace NLA::Menu
 	void RenderBowsPage(const PageContext& ctx);
 	void RenderCrossbowsPage(const PageContext& ctx);
 	void RenderSpellsPage(const PageContext& ctx);
+	void RenderConcentrationSpellsPage(const PageContext& ctx);
 	void RenderStavesPage(const PageContext& ctx);
+	void RenderConcentrationStavesPage(const PageContext& ctx);
 	void RenderScrollsPage(const PageContext& ctx);
 	void RenderActionsPage();
 
@@ -85,7 +87,8 @@ namespace NLA::Menu
 	bool ResetButton(const char* label);
 
 	void ToggleColumn(const char* label, bool& value, const char* tooltip);
-	void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip);
+	/// With `spanRow` the label may run into the following columns, which must stay empty.
+	void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip, bool spanRow = false);
 	void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.01f, float max = 10.0f, const char* format = "x%.2f");
 	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, float min, float max);
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip);
@@ -116,6 +119,9 @@ namespace NLA::Menu
 		const char*     minTooltip;
 		const char*     maxTooltip;
 
+		/// Separator title for the rows; null keeps them in the current group.
+		const char* group = nullptr;
+
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
 	};
@@ -124,9 +130,6 @@ namespace NLA::Menu
 	{
 		bool Config::* enabled;
 		const char*    tooltip;
-
-		/// Another aiming toggle that reads this setting, keeping it editable while either one is on.
-		bool Config::* sharedWith = nullptr;
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -139,9 +142,6 @@ namespace NLA::Menu
 		const char*    useEnchantingSkillTooltip;
 		bool Config::* useHighestMagicSkill;
 		const char*    useHighestMagicSkillTooltip;
-
-		/// Another aiming toggle that reads these settings, keeping them editable while either one is on.
-		bool Config::* sharedWith = nullptr;
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -208,7 +208,7 @@ namespace NLA::Menu
 	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator,
 		const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts);
 
-	/// Renders the category below `separator`. Parts that have a group of their own (speed, steadying, fatigue) start
+	/// Renders the category below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
 	/// a new section with their title; the rest stay in the section of the "Learn X" row.
 	template <class... Parts>
 	void RenderCategory(const Category<Parts...>& category, const PageContext& ctx, const char* separator = "Aiming") {
@@ -224,6 +224,8 @@ namespace NLA::Menu
 	inline constexpr const char* kOverchargeLabel = "Overcharge Steadies Aim";
 	inline constexpr const char* kDrawSpeedGroup = "Draw Speed";
 	inline constexpr const char* kChargeSpeedGroup = "Charge Speed";
+	inline constexpr const char* kRangeGroup = "Range";
+	inline constexpr const char* kSkillSourceGroup = "Skill Source";
 
 	/// Shared by spells, staves and scrolls; only the toggle's tooltip differs.
 	constexpr FatigueRows CastFatigue(Config::FatigueOptions Config::* options, const char* tooltip) {

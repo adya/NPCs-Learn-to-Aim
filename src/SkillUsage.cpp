@@ -102,17 +102,23 @@ namespace NLA
 		switch (spell->GetSpellType()) {
 		case RE::MagicSystem::SpellType::kSpell:
 		case RE::MagicSystem::SpellType::kLeveledSpell:
-			if (isConcentration || isFireAndForget) {
+			if (isConcentration) {
+				return options.concentrationSpellsUseHighestMagicSkill ? HighestMagicSkill(caster) : magicSkill;
+			} else if (isFireAndForget) {
 				return options.spellsUseHighestMagicSkill ? HighestMagicSkill(caster) : magicSkill;
 			}
 			return magicSkill;
 		case RE::MagicSystem::SpellType::kStaffEnchantment:
-			if (options.stavesUseEnchantingSkill) {
-				return RE::ActorValue::kEnchanting;
-			} else if (options.stavesUseHighestMagicSkill) {
-				return HighestMagicSkill(caster);
+			{
+				const bool useEnchanting = isConcentration ? options.concentrationStavesUseEnchantingSkill : options.stavesUseEnchantingSkill;
+				const bool useHighest = isConcentration ? options.concentrationStavesUseHighestMagicSkill : options.stavesUseHighestMagicSkill;
+				if (useEnchanting) {
+					return RE::ActorValue::kEnchanting;
+				} else if (useHighest) {
+					return HighestMagicSkill(caster);
+				}
+				return magicSkill;
 			}
-			return magicSkill;
 		case RE::MagicSystem::SpellType::kScroll:
 			if (options.scrollsUseEnchantingSkill) {
 				return RE::ActorValue::kEnchanting;
