@@ -102,9 +102,7 @@ namespace NLA
 		switch (spell->GetSpellType()) {
 		case RE::MagicSystem::SpellType::kSpell:
 		case RE::MagicSystem::SpellType::kLeveledSpell:
-			if (isConcentration) {
-				return options.concentrationSpellsUseHighestMagicSkill ? HighestMagicSkill(caster) : magicSkill;
-			} else if (isFireAndForget) {
+			if (isConcentration || isFireAndForget) {
 				return options.spellsUseHighestMagicSkill ? HighestMagicSkill(caster) : magicSkill;
 			}
 			return magicSkill;
@@ -153,7 +151,10 @@ namespace NLA
 				break;
 			case RE::MagicSystem::SpellType::kStaffEnchantment:
 				weaponType = kStaff;
-				if (options.staffChargeSpeed.enabled) {
+				if (isConcentration && options.concentrationStaffChargeSpeed.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.concentrationStaffChargeSpeed.minMultiplier, options.concentrationStaffChargeSpeed.maxMultiplier };
+				} else if (isFireAndForget && options.staffChargeSpeed.enabled) {
 					skill = MagicSkillFor(spell, attacker);
 					multiplier = Range{ options.staffChargeSpeed.minMultiplier, options.staffChargeSpeed.maxMultiplier };
 				}
@@ -200,12 +201,25 @@ namespace NLA
 			break;
 
 		case kRange:
-			if (isAimed && isConcentration && options.concentrationSpellRangeScaling) {
-				const auto spellType = spell->GetSpellType();
-				if (spellType == RE::MagicSystem::SpellType::kSpell || spellType == RE::MagicSystem::SpellType::kLeveledSpell) {
-					weaponType = kSpell;
-					skill = MagicSkillFor(spell, attacker);
-					multiplier = Range{ options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier };
+			if (isAimed && isConcentration) {
+				switch (spell->GetSpellType()) {
+				case RE::MagicSystem::SpellType::kSpell:
+				case RE::MagicSystem::SpellType::kLeveledSpell:
+					if (options.concentrationSpellRangeScaling) {
+						weaponType = kSpell;
+						skill = MagicSkillFor(spell, attacker);
+						multiplier = Range{ options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier };
+					}
+					break;
+				case RE::MagicSystem::SpellType::kStaffEnchantment:
+					if (options.concentrationStaffRangeScaling) {
+						weaponType = kStaff;
+						skill = MagicSkillFor(spell, attacker);
+						multiplier = Range{ options.concentrationStaffMinRangeMultiplier, options.concentrationStaffMaxRangeMultiplier };
+					}
+					break;
+				default:
+					break;
 				}
 			}
 			break;
@@ -230,7 +244,10 @@ namespace NLA
 				break;
 			case RE::MagicSystem::SpellType::kStaffEnchantment:
 				weaponType = kStaff;
-				if (options.staffAiming) {
+				if (isConcentration && options.concentrationStaffAiming) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = options.MultiplierFor(context).concentrationStaff;
+				} else if (isFireAndForget && options.staffAiming) {
 					skill = MagicSkillFor(spell, attacker);
 					multiplier = options.MultiplierFor(context).staff;
 				}

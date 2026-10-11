@@ -37,6 +37,7 @@ namespace NLA::Options
 			float spell;
 			float concentrationSpell;
 			float staff;
+			float concentrationStaff;
 			float scroll;
 
 			float blindness;
@@ -106,6 +107,8 @@ namespace NLA::Options
 
 		bool spellAiming = true;
 		bool staffAiming = true;
+		bool concentrationSpellsAiming = true;
+		bool concentrationStaffAiming = true;
 		bool scrollAiming = true;
 		bool bowAiming = true;
 		bool crossbowAiming = true;
@@ -124,11 +127,8 @@ namespace NLA::Options
 		/// Mutually exclusive with stavesUseEnchantingSkill.
 		bool stavesUseHighestMagicSkill = false;
 
-		/// If true, the highest NPC's magic skill is used to aim fire-and-forget spells, instead of the spell's primary effect's school skill.
+		/// If true, the highest NPC's magic skill is used to aim spells (both fire-and-forget and concentration), instead of the spell's primary effect's school skill.
 		bool spellsUseHighestMagicSkill = false;
-
-		/// If true, the highest NPC's magic skill is used to aim concentration spells, instead of the spell's primary effect's school skill.
-		bool concentrationSpellsUseHighestMagicSkill = false;
 
 		/// If true, scrolls use the enchanting skill instead of the scroll spell's primary effect's school skill.
 		/// Mutually exclusive with scrollsUseHighestMagicSkill.
@@ -138,18 +138,19 @@ namespace NLA::Options
 		/// Mutually exclusive with scrollsUseEnchantingSkill.
 		bool scrollsUseHighestMagicSkill = false;
 
-		/// If true, concentration spells require continuous accuracy, where the beam/flow will wander around the target.
-		bool concentrationSpellsAiming = true;
-
 		/// If true, concentration spells would reach farther as the skill in corresponding school increases.
 		bool concentrationSpellRangeScaling = true;
-
 		float concentrationSpellMinRangeMultiplier = 1.2f;
 		float concentrationSpellMaxRangeMultiplier = 2.5f;
+
+		bool  concentrationStaffRangeScaling = true;
+		float concentrationStaffMinRangeMultiplier = 1.2f;
+		float concentrationStaffMaxRangeMultiplier = 2.5f;
 
 		ChargeSpeed spellChargeSpeed;
 		ChargeSpeed concentrationSpellChargeSpeed;
 		ChargeSpeed staffChargeSpeed;
+		ChargeSpeed concentrationStaffChargeSpeed;
 		ChargeSpeed scrollChargeSpeed;
 
 		Overcharge spellOvercharge;
@@ -218,13 +219,13 @@ namespace NLA::Options
 		Config{
 			.spellAiming = true,
 			.staffAiming = true,
+			.concentrationSpellsAiming = true,
 			.bowAiming = true,
 			.crossbowAiming = true,
-			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 1.0f, .spell = 1.0f, .concentrationSpell = 1.0f, .staff = 1.0f, .scroll = 1.0f, .blindness = 1.0f },
-			.precisionMultipliers = { .bow = 1.4f, .crossbow = 7.0f, .spell = 1.25f, .concentrationSpell = 1.25f, .staff = 1.55f, .scroll = 1.25f, .blindness = 0.0f },
+			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 1.0f, .spell = 1.0f, .concentrationSpell = 1.0f, .staff = 1.0f, .concentrationStaff = 1.0f, .scroll = 1.0f, .blindness = 1.0f },
+			.precisionMultipliers = { .bow = 1.4f, .crossbow = 7.0f, .spell = 1.25f, .concentrationSpell = 1.25f, .staff = 1.55f, .concentrationStaff = 1.55f, .scroll = 1.25f, .blindness = 0.0f },
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
-			.concentrationSpellsAiming = true,
 			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
@@ -265,13 +266,13 @@ namespace NLA::Options
 		Config{
 			.spellAiming = true,
 			.staffAiming = true,
+			.concentrationSpellsAiming = true,
 			.bowAiming = true,
 			.crossbowAiming = true,
-			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 0.85f, .spell = 1.15f, .concentrationSpell = 1.15f, .staff = 0.85f, .scroll = 1.15f, .blindness = 0.2f },
-			.precisionMultipliers = { .bow = 1.0f, .crossbow = 7.0f, .spell = 0.85f, .concentrationSpell = 0.85f, .staff = 1.15f, .scroll = 0.85f, .blindness = 1.5f },
+			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 0.85f, .spell = 1.15f, .concentrationSpell = 1.15f, .staff = 0.85f, .concentrationStaff = 0.85f, .scroll = 1.15f, .blindness = 0.2f },
+			.precisionMultipliers = { .bow = 1.0f, .crossbow = 7.0f, .spell = 0.85f, .concentrationSpell = 0.85f, .staff = 1.15f, .concentrationStaff = 1.15f, .scroll = 0.85f, .blindness = 1.5f },
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
-			.concentrationSpellsAiming = true,
 			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
@@ -299,6 +300,12 @@ namespace NLA::Options
 	}
 	void Load();
 	void Save();
+
+	/// Writes all options at their current values to the INI file.
+	void Export();
+
+	void ResetNPC();
+	void ResetPlayer();
 
 	/// An incremental identifier that can be used to track when Options are reloaded.
 	inline unsigned int currentID = 0;

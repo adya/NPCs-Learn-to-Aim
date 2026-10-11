@@ -1,7 +1,7 @@
 #include "ChargeTime.h"
 #include "DrawSpeed.h"
 #include "Hooks.h"
-#include "Menu.h"
+#include "Menu/Menu.h"
 #include "Options.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
