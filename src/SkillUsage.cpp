@@ -73,8 +73,9 @@ namespace NLA
 					}
 				}
 
-				if (options.blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
-					std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness);
+				if (options.blindnessAffectsAiming) {
+					const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
+					std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness) * blindness;
 				}
 				break;
 			}
@@ -269,8 +270,9 @@ namespace NLA
 				break;
 			}
 
-			if (options.blindnessAffectsAiming && attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness) > 0) {
-				std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness);
+			if (options.blindnessAffectsAiming) {
+				const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
+				std::get<float>(multiplier) -= (1 - options.MultiplierFor(context).blindness) * blindness;
 			}
 			break;
 
