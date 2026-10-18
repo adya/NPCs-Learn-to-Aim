@@ -230,7 +230,7 @@ namespace NLA::Options
 		if (!fatigue.enabled) {
 			logger::info("\tHolding a bow too long doesn't fatigue {}'s aim", actor);
 		} else {
-			logger::info("\t{} can hold a full draw for {:.2f}s at 0 skill to {:.2f}s at 100 skill before fatigue sets in, "
+			logger::info("\t{} can hold a full draw for {:.2f}s at 0 max Stamina to {:.2f}s at 100 max Stamina before fatigue sets in, "
 			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
 			             actor, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
 		}
@@ -240,7 +240,7 @@ namespace NLA::Options
 		if (!fatigue.enabled) {
 			logger::info("\tOvercharging {} too long doesn't fatigue {}'s precision", categoryName, actor);
 		} else {
-			logger::info("\t{} can overcharge {} for {:.2f}s at 0 skill to {:.2f}s at 100 skill before fatigue sets in, "
+			logger::info("\t{} can overcharge {} for {:.2f}s at 0 max Magicka to {:.2f}s at 100 max Magicka before fatigue sets in, "
 			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
 			             actor, categoryName, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
 		}

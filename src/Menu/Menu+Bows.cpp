@@ -34,10 +34,10 @@ namespace NLA::Menu
 			FatigueRows{
 				&Config::bowFatigue,
 				"Full Draw Fatigues Aim",
-				"When enabled, holding a bow at full draw for too long tires the archer's arm, growing spread back the longer it's held past their fatigue threshold. That threshold scales with Archery skill.",
-				"Seconds a full draw can be held at 0 Archery skill before fatigue sets in.",
-				"Seconds a full draw can be held at 100 Archery skill before fatigue sets in.",
-				"The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from steadied aim is negated before adding extra spread." },
+				"When enabled, holding a bow at full draw for too long tires the archer's arm, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the archer's max Stamina.",
+				"Seconds a full draw can be held before fatigue sets in for an archer with no Stamina. A higher max Stamina extends it.",
+				"Seconds a full draw can be held before fatigue sets in for an archer with 100 max Stamina. Max Stamina above that extends it further, with diminishing returns.",
+				"The most spread that fatigue can add. Note, that in fatigued state, the bonus from steadied aim is negated before adding extra spread." },
 		};
 	}
 

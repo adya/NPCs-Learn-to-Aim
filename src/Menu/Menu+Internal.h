@@ -233,8 +233,8 @@ namespace NLA::Menu
 			options,
 			"Overcharge Fatigues Aim",
 			tooltip,
-			"Seconds a spell/staff/scroll can be held overcharged at 0 skill before fatigue sets in.",
-			"Seconds a spell/staff/scroll can be held overcharged at 100 skill before fatigue sets in.",
+			"Seconds a spell/staff/scroll can be held overcharged before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",
+			"Seconds a spell/staff/scroll can be held overcharged before fatigue sets in for a caster with 100 max Magicka. Max Magicka above that extends it further, with diminishing returns.",
 			"The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from overcharging is negated before adding extra spread."
 		};
 	}

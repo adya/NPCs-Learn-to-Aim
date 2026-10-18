@@ -20,10 +20,6 @@ namespace NLA
 			return camera && !camera->IsInFirstPerson();
 		}
 
-		float FatigueThreshold(const SkillUsage& fatigueUsage, RE::Actor* attacker) {
-			return fatigueUsage ? fatigueUsage.LerpSkillFactor(attacker) : 0.0f;
-		}
-
 		struct SteadyingModifier
 		{
 			float holdSeconds{ 0.0f };
@@ -45,16 +41,17 @@ namespace NLA
 				SteadyingModifier(holdSeconds,
 					Options::For(attacker).bowSteadying,
 					Options::For(attacker).bowFatigue,
-					FatigueThreshold(SkillUsage(weapon, attacker, kFatigueThreshold), attacker)) {}
+					SkillUsage(weapon, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
 
 			SteadyingModifier(RE::Actor* attacker, const RE::MagicItem* spell, WeaponType type, float overchargeSeconds) :
 				SteadyingModifier(overchargeSeconds,
 					Options::For(attacker).SpellOverchargeFor(type),
 					Options::For(attacker).SpellFatigueFor(type),
-					FatigueThreshold(SkillUsage(spell, attacker, kFatigueThreshold), attacker)) {}
+					SkillUsage(spell, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
 
 		private:
-			SteadyingModifier(float holdSeconds, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue, float fatigueThreshold) : holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigueThreshold) {
+			SteadyingModifier(float holdSeconds, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue, float fatigueThreshold) :
+				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigueThreshold) {
 				if (holdSeconds <= 0.0f)
 					return;
 

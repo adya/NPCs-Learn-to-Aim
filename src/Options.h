@@ -86,10 +86,10 @@ namespace NLA::Options
 
 		struct FatigueOptions : SpreadOptions
 		{
-			/// Duration in seconds that must pass before fatigue sets in at 0 skill.
+			/// Duration in seconds that must pass before fatigue sets in for an actor with 0 max Stamina (bows) or Magicka (spells).
 			float minThreshold;
 
-			/// Duration in seconds that must pass before fatigue sets in at 100 skill.
+			/// Duration in seconds that must pass before fatigue sets in for an actor with 100 max Stamina (bows) or Magicka (spells).
 			float maxThreshold;
 
 			/// `prefix` is the full ini key prefix, verb included (e.g. "BowFatigue").

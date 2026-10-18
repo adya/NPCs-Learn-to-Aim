@@ -302,6 +302,20 @@ namespace NLA
 		return range->min + (range->max - range->min) * progress;
 	}
 
+	float SkillUsage::FatigueThreshold(RE::Actor* actor) const {
+		const Range* range = std::get_if<Range>(&multiplier);
+		if (!actor || !range)
+			return 0.0f;
+
+		constexpr float baseline = 100.0f;
+		constexpr float exponent = 0.7f;
+
+		const auto  attribute = weaponType == kBow ? RE::ActorValue::kStamina : RE::ActorValue::kMagicka;
+		const float ratio = std::max(actor->GetActorValueMax(attribute), 0.0f) / baseline;
+
+		return range->min + (range->max - range->min) * std::pow(ratio, exponent);
+	}
+
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {
 		constexpr float toRadians = std::numbers::pi / 180.0f;
 		return SkillFactor(actor) * Settings::fBowNPCSpreadAngle() * toRadians;
