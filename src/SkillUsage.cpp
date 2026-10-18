@@ -183,14 +183,20 @@ namespace NLA
 			case RE::MagicSystem::SpellType::kSpell:
 			case RE::MagicSystem::SpellType::kLeveledSpell:
 				weaponType = kSpell;
-				if (options.spellFatigue.enabled) {
+				if (isConcentration && options.concentrationSpellFatigue.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.concentrationSpellFatigue.minThreshold, options.concentrationSpellFatigue.maxThreshold };
+				} else if (isFireAndForget && options.spellFatigue.enabled) {
 					skill = MagicSkillFor(spell, attacker);
 					multiplier = Range{ options.spellFatigue.minThreshold, options.spellFatigue.maxThreshold };
 				}
 				break;
 			case RE::MagicSystem::SpellType::kStaffEnchantment:
 				weaponType = kStaff;
-				if (options.staffFatigue.enabled) {
+				if (isConcentration && options.concentrationStaffFatigue.enabled) {
+					skill = MagicSkillFor(spell, attacker);
+					multiplier = Range{ options.concentrationStaffFatigue.minThreshold, options.concentrationStaffFatigue.maxThreshold };
+				} else if (isFireAndForget && options.staffFatigue.enabled) {
 					skill = MagicSkillFor(spell, attacker);
 					multiplier = Range{ options.staffFatigue.minThreshold, options.staffFatigue.maxThreshold };
 				}

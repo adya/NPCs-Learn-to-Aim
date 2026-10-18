@@ -1,4 +1,5 @@
 #include "ConcentrationSpells.h"
+#include "ChargeTime.h"
 #include "Hooking.h"
 #include "Options.h"
 #include "SkillUsage.h"
@@ -56,17 +57,37 @@ namespace NLA::ConcentrationSpells
 	};
 	std::unordered_map<RE::FormID, WanderAnimation> WanderAnimation::active{};
 
-	RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Actor* attacker, const SkillUsage& skillUsage) {
+	/// Spread scale from casting the concentration spell continuously for longer than the caster's fatigue threshold.
+	float FatigueScale(RE::Projectile* projectile, RE::Actor* attacker) {
+		auto& runtimeData = projectile->GetProjectileRuntimeData();
+
+		auto fatigueUsage = SkillUsage(runtimeData.spell, attacker, kFatigueThreshold);
+		if (!fatigueUsage)
+			return 1.0f;
+
+		const auto& fatigue = Options::For(attacker).ConcentrationFatigueFor(fatigueUsage.weaponType);
+
+		const float threshold = fatigueUsage.FatigueThreshold(attacker);
+
+		const float fatigueSeconds = std::max(0.0f, ChargeTime::ConcentrationDuration(attacker, runtimeData.castingSource) - threshold);
+		const float fatigueProgress = 1.0f - std::exp2(-fatigueSeconds / fatigue.halfDuration);
+
+		return 1.0f + fatigue.maxSpreadMultiplier * fatigueProgress;
+	}
+
+	RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Actor* attacker, const SkillUsage& skillUsage, float scale) {
 		auto& anim = WanderAnimation::active[attacker->formID];
 		anim.Advance(attacker, skillUsage);
 
+		const RE::NiPoint2 offset = anim.current * scale;
+
 		RE::NiPoint3 euler{};
 		rotation->ToEulerAnglesXYZ(euler);
-		euler.x += anim.current.x;
-		euler.z += anim.current.y;
+		euler.x += offset.x;
+		euler.z += offset.y;
 		rotation->SetEulerAnglesXYZ(euler);
 
-		return anim.current;
+		return offset;
 	}
 
 	void ApplyRangeScaling(RE::Projectile* projectile, RE::Actor* attacker) {
@@ -115,7 +136,7 @@ namespace NLA::ConcentrationSpells
 					if (auto attacker = GetAttacker(projectile); attacker) {
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
-							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage);
+							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage, FatigueScale(projectile, attacker));
 							LocalContext::current = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);

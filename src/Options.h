@@ -167,6 +167,10 @@ namespace NLA::Options
 		FatigueOptions staffFatigue;
 		FatigueOptions scrollFatigue;
 
+		/// Controls how long a concentration spell/staff can be cast continuously before fatigue starts to affect accuracy.
+		FatigueOptions concentrationSpellFatigue;
+		FatigueOptions concentrationStaffFatigue;
+
 		/// Controls how fast a bow reaches full draw.
 		DrawSpeed bowDrawSpeed;
 
@@ -214,6 +218,11 @@ namespace NLA::Options
 				return spellFatigue;
 			}
 		}
+
+		inline const FatigueOptions& ConcentrationFatigueFor(WeaponType type) const {
+			assert(type == kSpell || type == kStaff);
+			return type == kStaff ? concentrationStaffFatigue : concentrationSpellFatigue;
+		}
 	};
 
 	struct PlayerConfig : Config
@@ -239,6 +248,8 @@ namespace NLA::Options
 			.spellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.staffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.scrollFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
+			.concentrationSpellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 3.0f }, 2.0f, 6.0f },
+			.concentrationStaffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 3.0f }, 2.0f, 6.0f },
 			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 1.0f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
 		},
@@ -286,6 +297,8 @@ namespace NLA::Options
 			.spellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.staffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.scrollFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
+			.concentrationSpellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 3.0f }, 2.0f, 6.0f },
+			.concentrationStaffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 3.0f }, 2.0f, 6.0f },
 			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 0.5f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
 		},

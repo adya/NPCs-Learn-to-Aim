@@ -10,4 +10,7 @@ namespace NLA::ChargeTime
 	float SpeedMultiplier(RE::Actor*, const RE::MagicItem*);
 
 	float PopSpellOverchargeDuration(RE::Actor*, RE::MagicSystem::CastingSource);
+
+	/// Time in seconds that the actor has been continuously casting a concentration spell from the given casting source.
+	float ConcentrationDuration(RE::Actor*, RE::MagicSystem::CastingSource);
 }

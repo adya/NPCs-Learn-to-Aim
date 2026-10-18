@@ -181,6 +181,9 @@ namespace NLA::Menu
 		const char*                      maxThresholdTooltip;
 		const char*                      maxPenaltyTooltip;
 
+		/// Upper bound of the threshold sliders, in seconds.
+		float thresholdSliderMax = 10.0f;
+
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
 	};

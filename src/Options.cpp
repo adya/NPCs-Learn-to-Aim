@@ -118,6 +118,8 @@ namespace NLA::Options
 			SaveFatigue(ini, a_section, "SpellFatigue", custom.spellFatigue, defaults.spellFatigue, writeDefaults);
 			SaveFatigue(ini, a_section, "StaffFatigue", custom.staffFatigue, defaults.staffFatigue, writeDefaults);
 			SaveFatigue(ini, a_section, "ScrollFatigue", custom.scrollFatigue, defaults.scrollFatigue, writeDefaults);
+			SaveFatigue(ini, a_section, "ConcentrationSpellFatigue", custom.concentrationSpellFatigue, defaults.concentrationSpellFatigue, writeDefaults);
+			SaveFatigue(ini, a_section, "ConcentrationStaffFatigue", custom.concentrationStaffFatigue, defaults.concentrationStaffFatigue, writeDefaults);
 
 			SaveSpeedOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
 			SaveSpeedOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
@@ -246,6 +248,16 @@ namespace NLA::Options
 		}
 	}
 
+	inline void LogConcentrationFatigue(std::string_view actor, std::string_view categoryName, const Config::FatigueOptions& fatigue) {
+		if (!fatigue.enabled) {
+			logger::info("\tCasting {} for too long doesn't fatigue {}'s precision", categoryName, actor);
+		} else {
+			logger::info("\t{} can cast {} for {:.2f}s at 0 max Magicka to {:.2f}s at 100 max Magicka before fatigue sets in, "
+			             "growing spread by up to {:.0f}% (half of that after another {:.2f}s)",
+			             actor, categoryName, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
+		}
+	}
+
 	inline void LogChargeSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
 		if (!enabled) {
 			logger::info("\t{} always charge/cast {} at vanilla speed", actor, categoryName);
@@ -351,6 +363,8 @@ namespace NLA::Options
 		LogCastFatigue("NPCs", "spells", NPC.spellFatigue);
 		LogCastFatigue("NPCs", "staves", NPC.staffFatigue);
 		LogCastFatigue("NPCs", "scrolls", NPC.scrollFatigue);
+		LogConcentrationFatigue("NPCs", "concentration spells", NPC.concentrationSpellFatigue);
+		LogConcentrationFatigue("NPCs", "concentration staves", NPC.concentrationStaffFatigue);
 		LogBowSteadying("NPCs", NPC.bowSteadying);
 		LogBowFatigue("NPCs", NPC.bowFatigue);
 
@@ -417,6 +431,8 @@ namespace NLA::Options
 		LogCastFatigue("Player", "spells", Player.spellFatigue);
 		LogCastFatigue("Player", "staves", Player.staffFatigue);
 		LogCastFatigue("Player", "scrolls", Player.scrollFatigue);
+		LogConcentrationFatigue("Player", "concentration spells", Player.concentrationSpellFatigue);
+		LogConcentrationFatigue("Player", "concentration staves", Player.concentrationStaffFatigue);
 		LogBowSteadying("Player", Player.bowSteadying);
 		LogBowFatigue("Player", Player.bowFatigue);
 
@@ -536,6 +552,8 @@ namespace NLA::Options
 		result.spellFatigue = FatigueOptions::FromIni(ini, a_section, "SpellFatigue", result.spellFatigue);
 		result.staffFatigue = FatigueOptions::FromIni(ini, a_section, "StaffFatigue", result.staffFatigue);
 		result.scrollFatigue = FatigueOptions::FromIni(ini, a_section, "ScrollFatigue", result.scrollFatigue);
+		result.concentrationSpellFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationSpellFatigue", result.concentrationSpellFatigue);
+		result.concentrationStaffFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationStaffFatigue", result.concentrationStaffFatigue);
 
 		result.bowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed);
 		result.crossbowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);

@@ -140,8 +140,8 @@ namespace NLA::Menu
 		ToggleColumn(label, fatigue.enabled, tooltip);
 		{
 			DisabledIf off{ !fatigue.enabled };
-			SecondsSliderColumn("##MinThreshold", fatigue.minThreshold, minThresholdTooltip, 0.0f, 10.0f);
-			SecondsSliderColumn("##MaxThreshold", fatigue.maxThreshold, maxThresholdTooltip, 0.0f, 10.0f);
+			SecondsSliderColumn("##MinThreshold", fatigue.minThreshold, minThresholdTooltip, 0.0f, thresholdSliderMax);
+			SecondsSliderColumn("##MaxThreshold", fatigue.maxThreshold, maxThresholdTooltip, 0.0f, thresholdSliderMax);
 		}
 
 		HeaderRow("Max Fatigue", "Half Duration");

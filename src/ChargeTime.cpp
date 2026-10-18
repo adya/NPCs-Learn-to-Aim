@@ -19,6 +19,9 @@ namespace NLA::ChargeTime
 
 			/// Total time that spell was overcharged for a given actor and casting source.
 			float overchargeDuration{ 0.0f };
+
+			/// Time that a concentration spell has been continuously cast in given casting source for a given actor.
+			float concentrationDuration{ 0.0f };
 		};
 
 		RE::BSSpinLock                           entriesLock;
@@ -38,6 +41,19 @@ namespace NLA::ChargeTime
 
 		bool IsInterrupted(RE::MagicCaster::State state) {
 			return state == RE::MagicCaster::State::kUnk08 || state == RE::MagicCaster::State::kUnk09;
+		}
+
+		bool IsConcentration(const RE::MagicItem* spell) {
+			return spell && spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
+		}
+
+		/// Whether the caster is actively casting a concentration spell (past its charge-up and not yet released/interrupted).
+		bool IsConcentrating(const RE::ActorMagicCaster* caster, RE::MagicCaster::State state) {
+			return IsConcentration(caster->currentSpell) &&
+			       state != RE::MagicCaster::State::kNone &&
+			       state != RE::MagicCaster::State::kUnk01 &&
+			       !IsCharging(state) &&
+			       !IsInterrupted(state);
 		}
 	}
 
@@ -68,6 +84,17 @@ namespace NLA::ChargeTime
 		}
 
 		return duration;
+	}
+
+	float ConcentrationDuration(RE::Actor* actor, RE::MagicSystem::CastingSource source) {
+		if (!actor) {
+			return 0.0f;
+		}
+
+		RE::BSSpinLockGuard lock{ entriesLock };
+
+		auto it = entries.find(MakeKey(actor->GetFormID(), source));
+		return it != entries.end() ? it->second.concentrationDuration : 0.0f;
 	}
 
 	void Reset() {
@@ -114,6 +141,12 @@ namespace NLA::ChargeTime
 
 					if (IsReady(state)) {
 						entry.chargedDuration += delta;
+					}
+
+					if (IsConcentrating(caster, state)) {
+						entry.concentrationDuration += delta;
+					} else {
+						entry.concentrationDuration = 0.0f;
 					}
 
 					if (state == RE::MagicCaster::State::kNone && entry.overchargeDuration == 0.0f) {
