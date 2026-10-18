@@ -69,7 +69,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), value.maxMultiplier, defaultValue.maxMultiplier, writeDefaults);
 		}
 
-		void SaveChargeFatigue(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::FatigueOptions& value, const Config::FatigueOptions& defaultValue, bool writeDefaults = false) {
+		void SaveFatigue(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::FatigueOptions& value, const Config::FatigueOptions& defaultValue, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, fmt::format("b{}", prefix).c_str(), value.enabled, defaultValue.enabled, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MinThreshold", prefix).c_str(), value.minThreshold, defaultValue.minThreshold, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxThreshold", prefix).c_str(), value.maxThreshold, defaultValue.maxThreshold, writeDefaults);
@@ -115,9 +115,9 @@ namespace NLA::Options
 			SaveOvercharge(ini, a_section, "StaffOvercharge", custom.staffOvercharge, defaults.staffOvercharge, writeDefaults);
 			SaveOvercharge(ini, a_section, "ScrollOvercharge", custom.scrollOvercharge, defaults.scrollOvercharge, writeDefaults);
 
-			SaveChargeFatigue(ini, a_section, "SpellFatigue", custom.spellFatigue, defaults.spellFatigue, writeDefaults);
-			SaveChargeFatigue(ini, a_section, "StaffFatigue", custom.staffFatigue, defaults.staffFatigue, writeDefaults);
-			SaveChargeFatigue(ini, a_section, "ScrollFatigue", custom.scrollFatigue, defaults.scrollFatigue, writeDefaults);
+			SaveFatigue(ini, a_section, "SpellFatigue", custom.spellFatigue, defaults.spellFatigue, writeDefaults);
+			SaveFatigue(ini, a_section, "StaffFatigue", custom.staffFatigue, defaults.staffFatigue, writeDefaults);
+			SaveFatigue(ini, a_section, "ScrollFatigue", custom.scrollFatigue, defaults.scrollFatigue, writeDefaults);
 
 			SaveSpeedOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
 			SaveSpeedOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
@@ -127,7 +127,7 @@ namespace NLA::Options
 			SaveSpeedOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed, writeDefaults);
 			SaveSpeedOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
 			SaveOvercharge(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
-			SaveChargeFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
+			SaveFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
 		}
 	}
 
@@ -226,7 +226,7 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogBowFatigue(std::string_view actor, const Config::DrawFatigue& fatigue) {
+	inline void LogBowFatigue(std::string_view actor, const Config::FatigueOptions& fatigue) {
 		if (!fatigue.enabled) {
 			logger::info("\tHolding a bow too long doesn't fatigue {}'s aim", actor);
 		} else {
@@ -236,7 +236,7 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogCastFatigue(std::string_view actor, std::string_view categoryName, const Config::CastFatigue& fatigue) {
+	inline void LogCastFatigue(std::string_view actor, std::string_view categoryName, const Config::FatigueOptions& fatigue) {
 		if (!fatigue.enabled) {
 			logger::info("\tOvercharging {} too long doesn't fatigue {}'s precision", categoryName, actor);
 		} else {

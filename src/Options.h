@@ -96,12 +96,6 @@ namespace NLA::Options
 			static FatigueOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const FatigueOptions& defaults);
 		};
 
-		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
-		using DrawFatigue = FatigueOptions;
-
-		/// Controls how long a spell/staff/scroll can be held overcharged before fatigue starts to affect accuracy.
-		using CastFatigue = FatigueOptions;
-
 		/// Controls whether the mod works for given characters.
 		bool enabled = true;
 
@@ -168,9 +162,10 @@ namespace NLA::Options
 		Overcharge staffOvercharge;
 		Overcharge scrollOvercharge;
 
-		CastFatigue spellFatigue;
-		CastFatigue staffFatigue;
-		CastFatigue scrollFatigue;
+		/// Controls how long a spell/staff/scroll can be held overcharged before fatigue starts to affect accuracy.
+		FatigueOptions spellFatigue;
+		FatigueOptions staffFatigue;
+		FatigueOptions scrollFatigue;
 
 		/// Controls how fast a bow reaches full draw.
 		DrawSpeed bowDrawSpeed;
@@ -180,7 +175,8 @@ namespace NLA::Options
 
 		Steadying bowSteadying;
 
-		DrawFatigue bowFatigue;
+		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
+		FatigueOptions bowFatigue;
 
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
@@ -207,7 +203,7 @@ namespace NLA::Options
 			}
 		}
 
-		inline const CastFatigue& SpellFatigueFor(WeaponType type) const {
+		inline const FatigueOptions& SpellFatigueFor(WeaponType type) const {
 			assert(type == kSpell || type == kStaff || type == kScroll);
 			switch (type) {
 			case kStaff:
