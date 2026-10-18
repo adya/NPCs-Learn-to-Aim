@@ -296,7 +296,7 @@ namespace NLA
 			return range->min;
 
 		constexpr float rate = 0.025f;
-		const float     level = std::clamp(EffectiveSkill(actor), 0.0f, 100.0f);
+		const float     level = std::max(0.0f, EffectiveSkill(actor));
 		const float     progress = (1.0f - std::exp(-rate * level)) / (1.0f - std::exp(-rate * 100.0f));
 
 		return range->min + (range->max - range->min) * progress;
