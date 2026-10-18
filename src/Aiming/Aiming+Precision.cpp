@@ -9,10 +9,6 @@ namespace NLA
 {
 	namespace
 	{
-		bool IsBeamProjectile(const RE::BGSProjectile* base) {
-			return base && base->data.types.any(RE::BGSProjectileData::Type::kBeam);
-		}
-
 		bool IsHandledByPlayerAutoAim(const RE::Actor* attacker) {
 			if (!attacker || !attacker->IsPlayerRef())
 				return false;
@@ -205,11 +201,9 @@ namespace NLA
 				if (!IsHandledByPlayerAutoAim(attacker)) {
 					const float overcharge = ChargeTime::PopSpellOverchargeDuration(attacker, launchData.castingSource);
 
-					if (!IsBeamProjectile(launchData.projectileBase)) {  // A beam seems to be re-aimed from the caster every tick, so it's handled separately.
-						ShotModifier modifier(attacker, launchData.spell, overcharge);
-						modifier.Apply(&launchData.angleX, &launchData.angleZ);
-						LogShot(modifier);
-					}
+					ShotModifier modifier(attacker, launchData.spell, overcharge);
+					modifier.Apply(&launchData.angleX, &launchData.angleZ);
+					LogShot(modifier);
 				}
 
 				func(projectile, launchData);
