@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<SkillSourceRows, SpeedRows, SpreadRows, FatigueRows> kStaves{
+		constexpr Category<SpeedRows, SpreadRows, FatigueRows> kStaves{
 			{
 				.id = "Staves",
 				.label = kScaleAimLabel,
@@ -14,17 +14,14 @@ namespace NLA::Menu
 				.accuracyTooltip = "How much the skill contributes to Accuracy with staves. The higher this multiplier is the easier it is to aim.",
 				.precisionTooltip = "How much the skill contributes to Precision with staves. The higher this multiplier is the easier it is to hit the target.",
 				.resetLabel = "Reset Staves to Default",
+				.aimSkill = AimingSkill(&Config::staffSkills),
 			},
-			SkillSourceRows{
-				.useEnchantingSkill = &Config::stavesUseEnchantingSkill,
-				.useEnchantingSkillTooltip = "When enabled, all staff options are based on the Enchanting skill instead of the staff's spell's Magic school. Mutually exclusive with Use Highest Magic Skill.",
-				.useHighestMagicSkill = &Config::stavesUseHighestMagicSkill,
-				.useHighestMagicSkillTooltip = "When enabled, all staff options are based on the highest Magic skill, regardless of the staff's spell's Magic school. Mutually exclusive with Use Enchanting Skill." },
 			SpeedRows{
 				&Config::staffChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast staves charge/cast. (the higher the skill the faster the cast)",
-					kChargeSpeedGroup },
+					kChargeSpeedGroup,
+					ChargeSpeedSkill(&Config::staffSkills) },
 			SpreadRows{
 				&Config::staffSteadying,
 				kSteadyingLabel,

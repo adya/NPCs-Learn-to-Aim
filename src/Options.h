@@ -28,8 +28,29 @@ namespace NLA
 
 namespace NLA::Options
 {
+	/// The skill that scales a spell type's aiming, charge speed or range.
+	enum class SkillSource : std::uint8_t
+	{
+		/// The skill of the magic school of the spell's costliest effect.
+		kSpellSkill,
+		/// The highest of the actor's magic skills, regardless of the spell.
+		kHighest,
+		kEnchanting
+	};
+
 	struct Config
 	{
+		struct SkillSources
+		{
+			SkillSource aiming = SkillSource::kSpellSkill;
+			SkillSource chargeSpeed = SkillSource::kSpellSkill;
+
+			/// Only used by concentration spells and staves.
+			SkillSource range = SkillSource::kSpellSkill;
+
+			static SkillSources FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillSources& defaults);
+		};
+
 		struct SkillMultiplier
 		{
 			float bow;
@@ -114,35 +135,12 @@ namespace NLA::Options
 		/// If true, being blinded further affects aiming according to the blindness multipliers.
 		bool blindnessAffectsAiming = true;
 
-		/// If true, staves use the enchanting skill instead of the spell's primary effect's school skill.
-		/// Mutually exclusive with stavesUseHighestMagicSkill.
-		bool stavesUseEnchantingSkill = false;
-
-		/// If true, staves use the highest NPC's magic skill instead of the spell's primary effect's school skill.
-		/// Mutually exclusive with stavesUseEnchantingSkill.
-		bool stavesUseHighestMagicSkill = false;
-
-		/// If true, concentration staves use the enchanting skill instead of the spell's primary effect's school skill.
-		/// Mutually exclusive with concentrationStavesUseHighestMagicSkill.
-		bool concentrationStavesUseEnchantingSkill = false;
-
-		/// If true, concentration staves use the highest NPC's magic skill instead of the spell's primary effect's school skill.
-		/// Mutually exclusive with concentrationStavesUseEnchantingSkill.
-		bool concentrationStavesUseHighestMagicSkill = false;
-
-		/// If true, the highest NPC's magic skill is used to aim fire-and-forget spells, instead of the spell's primary effect's school skill.
-		bool spellsUseHighestMagicSkill = false;
-
-		/// If true, the highest NPC's magic skill is used to aim concentration spells, instead of the spell's primary effect's school skill.
-		bool concentrationSpellsUseHighestMagicSkill = false;
-
-		/// If true, scrolls use the enchanting skill instead of the scroll spell's primary effect's school skill.
-		/// Mutually exclusive with scrollsUseHighestMagicSkill.
-		bool scrollsUseEnchantingSkill = false;
-
-		/// If true, the highest NPC's magic skill is used to aim scrolls, instead of the scroll spell's primary effect's school skill.
-		/// Mutually exclusive with scrollsUseEnchantingSkill.
-		bool scrollsUseHighestMagicSkill = false;
+		/// Which skill drives aiming, charge speed and range for each spell type.
+		SkillSources spellSkills;
+		SkillSources concentrationSpellSkills;
+		SkillSources staffSkills;
+		SkillSources concentrationStaffSkills;
+		SkillSources scrollSkills;
 
 		/// If enabled, concentration spells reach farther as the skill increases.
 		RangeScaling concentrationSpellRange;
@@ -236,8 +234,6 @@ namespace NLA::Options
 			.crossbowAiming = true,
 			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 1.0f, .spell = 1.0f, .concentrationSpell = 1.0f, .staff = 1.0f, .concentrationStaff = 1.0f, .scroll = 1.0f, .blindness = 1.0f },
 			.precisionMultipliers = { .bow = 1.4f, .crossbow = 7.0f, .spell = 1.25f, .concentrationSpell = 1.25f, .staff = 1.55f, .concentrationStaff = 1.55f, .scroll = 1.25f, .blindness = 0.0f },
-			.stavesUseEnchantingSkill = false,
-			.spellsUseHighestMagicSkill = false,
 			.concentrationSpellRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
 			.concentrationStaffRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
 			.spellSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
@@ -287,8 +283,6 @@ namespace NLA::Options
 			.crossbowAiming = true,
 			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 0.85f, .spell = 1.15f, .concentrationSpell = 1.15f, .staff = 0.85f, .concentrationStaff = 0.85f, .scroll = 1.15f, .blindness = 0.2f },
 			.precisionMultipliers = { .bow = 1.0f, .crossbow = 7.0f, .spell = 0.85f, .concentrationSpell = 0.85f, .staff = 1.15f, .concentrationStaff = 1.15f, .scroll = 0.85f, .blindness = 1.5f },
-			.stavesUseEnchantingSkill = false,
-			.spellsUseHighestMagicSkill = false,
 			.concentrationSpellRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
 			.concentrationStaffRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
 			.spellSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },

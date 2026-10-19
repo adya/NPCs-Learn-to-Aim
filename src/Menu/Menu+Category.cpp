@@ -8,7 +8,19 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr const char* kUseHighestMagicSkillLabel = "Use Highest Magic Skill";
+		void RenderSkillSource(const PageContext& ctx, const SkillSourceRef& ref, const char* label, const char* what) {
+			if (!ref.sources) {
+				return;
+			}
+			const auto tooltip = fmt::format("The skill that affects {}. Spell's Magic Skill uses the skill of the spell's Magic school, Highest Magic Skill uses the highest of the Magic skills regardless of the spell, Enchanting uses the Enchanting skill.", what);
+			SkillSourceRow(label, (ctx.cfg.*ref.sources).*ref.field, tooltip.c_str());
+		}
+
+		void ResetSkillSource(const PageContext& ctx, const SkillSourceRef& ref) {
+			if (ref.sources) {
+				(ctx.cfg.*ref.sources).*ref.field = (ctx.defaults.*ref.sources).*ref.field;
+			}
+		}
 
 		template <typename T>
 		void ResetMember(const PageContext& ctx, T Config::* member) {
@@ -54,40 +66,12 @@ namespace NLA::Menu
 		DisabledIf off{ !range.enabled };
 		SliderColumn("##MinRange", range.minMultiplier, minTooltip, 0.5f, 5.0f);
 		SliderColumn("##MaxRange", range.maxMultiplier, maxTooltip, 0.5f, 5.0f);
+		RenderSkillSource(ctx, skill, "Range Skill", "how far the spell reaches");
 	}
 
 	void RangeRows::Reset(const PageContext& ctx) const {
 		ResetMember(ctx, options);
-	}
-
-	void UseHighestMagicSkillRow::Render(const PageContext& ctx, bool, TableSections& sections) const {
-		if (!sections.Section(kSkillSourceGroup)) {
-			return;
-		}
-		TableNextRow();
-		ToggleColumn(kUseHighestMagicSkillLabel, ctx.cfg.*enabled, tooltip);
-	}
-
-	void UseHighestMagicSkillRow::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, enabled);
-	}
-
-	void SkillSourceRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
-		if (!sections.Section(kSkillSourceGroup)) {
-			return;
-		}
-		auto&      cfg = ctx.cfg;
-		auto&      useEnchanting = cfg.*useEnchantingSkill;
-		auto&      useHighest = cfg.*useHighestMagicSkill;
-
-		TableNextRow();
-		ExclusiveToggleColumn("Use Enchanting Skill", useEnchanting, useHighest, useEnchantingSkillTooltip);
-		ExclusiveToggleColumn(kUseHighestMagicSkillLabel, useHighest, useEnchanting, useHighestMagicSkillTooltip, true);
-	}
-
-	void SkillSourceRows::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, useEnchantingSkill);
-		ResetMember(ctx, useHighestMagicSkill);
+		ResetSkillSource(ctx, skill);
 	}
 
 	void SpeedRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
@@ -102,10 +86,12 @@ namespace NLA::Menu
 		DisabledIf off{ !speed.enabled };
 		SliderColumn("##MinSpeed", speed.minMultiplier, "Speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.", 0.1f, 3.0f);
 		SliderColumn("##MaxSpeed", speed.maxMultiplier, "Speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.", 0.1f, 3.0f);
+		RenderSkillSource(ctx, skill, "Speed Skill", "how fast the spell charges/casts");
 	}
 
 	void SpeedRows::Reset(const PageContext& ctx) const {
 		ResetMember(ctx, options);
+		ResetSkillSource(ctx, skill);
 	}
 
 	void SpreadRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
@@ -171,6 +157,7 @@ namespace NLA::Menu
 					NotApplicableColumn();
 				}
 				SliderColumn("##Precision", cfg.precisionMultipliers.*category.multiplier, category.precisionTooltip);
+				RenderSkillSource(ctx, category.aimSkill, "Aiming Skill", "aiming");
 			}
 
 			renderParts(aiming, sections);
@@ -180,6 +167,7 @@ namespace NLA::Menu
 				ResetMember(ctx, category.aiming);
 				cfg.accuracyMultipliers.*category.multiplier = ctx.defaults.accuracyMultipliers.*category.multiplier;
 				cfg.precisionMultipliers.*category.multiplier = ctx.defaults.precisionMultipliers.*category.multiplier;
+				ResetSkillSource(ctx, category.aimSkill);
 				resetParts();
 				Options::Save();
 			}

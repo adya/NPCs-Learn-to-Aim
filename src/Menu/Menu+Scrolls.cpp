@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<SkillSourceRows, SpeedRows, SpreadRows, FatigueRows> kScrolls{
+		constexpr Category<SpeedRows, SpreadRows, FatigueRows> kScrolls{
 			{
 				.id = "Scrolls",
 				.label = kScaleAimLabel,
@@ -14,17 +14,14 @@ namespace NLA::Menu
 				.accuracyTooltip = "How much the skill contributes to Accuracy with scrolls. The higher this multiplier is the easier it is to aim.",
 				.precisionTooltip = "How much the skill contributes to Precision with scrolls. The higher this multiplier is the easier it is to hit the target.",
 				.resetLabel = "Reset Scrolls to Default",
+				.aimSkill = AimingSkill(&Config::scrollSkills),
 			},
-			SkillSourceRows{
-				.useEnchantingSkill = &Config::scrollsUseEnchantingSkill,
-				.useEnchantingSkillTooltip = "When enabled, all scroll options are based on the Enchanting skill instead of the scroll spell's Magic school. Mutually exclusive with Use Highest Magic Skill.",
-				.useHighestMagicSkill = &Config::scrollsUseHighestMagicSkill,
-				.useHighestMagicSkillTooltip = "When enabled, all scroll options are based on the highest Magic skill, regardless of the scroll spell's Magic school. Mutually exclusive with Use Enchanting Skill." },
 			SpeedRows{
 				&Config::scrollChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast scrolls charge/cast. (the higher the skill the faster the cast)",
-					kChargeSpeedGroup },
+					kChargeSpeedGroup,
+					ChargeSpeedSkill(&Config::scrollSkills) },
 			SpreadRows{
 				&Config::scrollSteadying,
 				kSteadyingLabel,

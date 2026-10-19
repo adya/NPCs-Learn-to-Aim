@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<UseHighestMagicSkillRow, SpeedRows, SpreadRows, FatigueRows> kSpells{
+		constexpr Category<SpeedRows, SpreadRows, FatigueRows> kSpells{
 			{
 				.id = "Spells",
 				.label = kScaleAimLabel,
@@ -14,15 +14,14 @@ namespace NLA::Menu
 				.accuracyTooltip = "How much the skill contributes to Accuracy with fire-and-forget spells. The higher this multiplier is the easier it is to aim.",
 				.precisionTooltip = "How much the skill contributes to Precision with fire-and-forget spells. The higher this multiplier is the easier it is to hit the target.",
 				.resetLabel = "Reset Spells to Default",
+				.aimSkill = AimingSkill(&Config::spellSkills),
 			},
-			UseHighestMagicSkillRow{
-				&Config::spellsUseHighestMagicSkill,
-				"When enabled, all fire-and-forget spell options are based on the highest Magic skill, regardless of the spell's Magic school." },
 			SpeedRows{
 				&Config::spellChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding Magic skill also affects how fast fire-and-forget spells charge/cast. (the higher the skill the faster the cast)",
-				kChargeSpeedGroup },
+				kChargeSpeedGroup,
+					ChargeSpeedSkill(&Config::spellSkills) },
 			SpreadRows{
 				&Config::spellSteadying,
 				kSteadyingLabel,

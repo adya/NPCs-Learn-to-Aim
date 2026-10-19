@@ -149,25 +149,6 @@ namespace NLA::Menu
 		ShowTooltip(tooltip);
 	}
 
-	void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip, bool spanRow) {
-		TableNextColumn();
-		if (spanRow) {
-			// Lets the label run past the cell into the rest of the row, which must be left empty.
-			const ImVec2 cell = GetCursorScreenPos();
-			PushClipRect(cell, ImVec2(cell.x + 2 * kSliderWidth + GetStyle()->CellPadding.x * 2, cell.y + GetFrameHeightWithSpacing()), false);
-		}
-		if (Checkbox(label, &value)) {
-			if (value) {
-				other = false;
-			}
-			Options::Save();
-		}
-		if (spanRow) {
-			PopClipRect();
-		}
-		ShowTooltip(tooltip);
-	}
-
 	void SliderColumn(const char* id, float& value, const char* tooltip, float min, float max, const char* format) {
 		TableNextColumn();
 		SetNextItemWidth(-1.0f);
@@ -179,6 +160,30 @@ namespace NLA::Menu
 
 	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, float min, float max) {
 		SliderColumn(id, value, tooltip, min, max, "%.1fs");
+	}
+
+	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip) {
+		TableNextRow();
+		TableNextColumn();
+		AlignTextToFramePadding();
+		TextUnformatted(label);
+		TableNextColumn();
+
+		// The drop-down spans both slider columns, which must stay empty in this row.
+		const ImVec2 cell = GetCursorScreenPos();
+		const float  width = 2 * kSliderWidth + GetStyle()->CellPadding.x * 2;
+		PushClipRect(cell, ImVec2(cell.x + width, cell.y + GetFrameHeightWithSpacing()), false);
+		SetNextItemWidth(width);
+
+		constexpr const char* kItems[] = { "Spell's Magic Skill", "Highest Magic Skill", "Enchanting" };
+
+		int current = static_cast<int>(value);
+		if (Combo(fmt::format("##{}", label).c_str(), &current, kItems, static_cast<int>(std::size(kItems)))) {
+			value = static_cast<Options::SkillSource>(current);
+			Options::Save();
+		}
+		ShowTooltip(tooltip);
+		PopClipRect();
 	}
 
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip) {

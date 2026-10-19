@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<SkillSourceRows, RangeRows, SpeedRows, FatigueRows> kConcentrationStaves{
+		constexpr Category<RangeRows, SpeedRows, FatigueRows> kConcentrationStaves{
 			{
 				.id = "ConcentrationStaves",
 				.label = kScaleAimLabel,
@@ -14,23 +14,21 @@ namespace NLA::Menu
 				.accuracyTooltip = "How much the skill contributes to Accuracy with concentration staves. The higher this multiplier is the easier it is to aim.",
 				.precisionTooltip = "How much the skill contributes to Precision with concentration staves. The higher this multiplier is the easier it is to hit the target.",
 				.resetLabel = "Reset Concentration Staves to Default",
+				.aimSkill = AimingSkill(&Config::concentrationStaffSkills),
 			},
-			SkillSourceRows{
-				.useEnchantingSkill = &Config::concentrationStavesUseEnchantingSkill,
-				.useEnchantingSkillTooltip = "When enabled, all concentration staff options are based on the Enchanting skill instead of the staff's spell's Magic school. Mutually exclusive with Use Highest Magic Skill.",
-				.useHighestMagicSkill = &Config::concentrationStavesUseHighestMagicSkill,
-				.useHighestMagicSkillTooltip = "When enabled, all concentration staff options are based on the highest Magic skill, regardless of the staff's spell's Magic school. Mutually exclusive with Use Enchanting Skill." },
 			RangeRows{
 				&Config::concentrationStaffRange,
 				"When enabled, corresponding skill also affects concentration staves range. (the higher the skill the farther mage can hit)",
 				"Concentration staff range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
 				"Concentration staff range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
-				kRangeGroup },
+				kRangeGroup,
+					RangeSkill(&Config::concentrationStaffSkills) },
 			SpeedRows{
 				&Config::concentrationStaffChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast concentration staves charge/cast. (the higher the skill the faster the cast)",
-				kChargeSpeedGroup },
+				kChargeSpeedGroup,
+					ChargeSpeedSkill(&Config::concentrationStaffSkills) },
 			FatigueRows{
 				&Config::concentrationStaffFatigue,
 				"Prolonged Cast Fatigues Aim",

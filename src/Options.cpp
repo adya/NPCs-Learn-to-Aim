@@ -77,6 +77,28 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration, writeDefaults);
 		}
 
+		constexpr std::array<const char*, 3> kSkillSourceNames{ "SpellSkill", "Highest", "Enchanting" };
+
+		const char* SkillSourceName(SkillSource source) {
+			return kSkillSourceNames[std::min<std::size_t>(static_cast<std::size_t>(source), kSkillSourceNames.size() - 1)];
+		}
+
+		void SaveSkillSource(CSimpleIniA& ini, const char* a_section, const std::string& key, SkillSource value, SkillSource defaultValue, bool writeDefaults) {
+			if (writeDefaults || value != defaultValue) {
+				ini.SetValue(a_section, key.c_str(), SkillSourceName(value));
+			} else {
+				ini.Delete(a_section, key.c_str(), true);
+			}
+		}
+
+		void SaveSkillSources(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SkillSources& value, const Config::SkillSources& defaultValue, bool writeDefaults = false) {
+			SaveSkillSource(ini, a_section, fmt::format("s{}AimingSkill", prefix), value.aiming, defaultValue.aiming, writeDefaults);
+			SaveSkillSource(ini, a_section, fmt::format("s{}ChargeSpeedSkill", prefix), value.chargeSpeed, defaultValue.chargeSpeed, writeDefaults);
+			if (prefix.starts_with("Concentration")) {
+				SaveSkillSource(ini, a_section, fmt::format("s{}RangeSkill", prefix), value.range, defaultValue.range, writeDefaults);
+			}
+		}
+
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled, writeDefaults);
 
@@ -90,14 +112,11 @@ namespace NLA::Options
 			SaveSkillMultiplier(ini, a_section, "Precision", custom.precisionMultipliers, defaults.precisionMultipliers, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAiming", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bStavesUseEnchantingSkill", custom.stavesUseEnchantingSkill, defaults.stavesUseEnchantingSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bStavesUseHighestMagicSkill", custom.stavesUseHighestMagicSkill, defaults.stavesUseHighestMagicSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationStavesUseEnchantingSkill", custom.concentrationStavesUseEnchantingSkill, defaults.concentrationStavesUseEnchantingSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationStavesUseHighestMagicSkill", custom.concentrationStavesUseHighestMagicSkill, defaults.concentrationStavesUseHighestMagicSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bSpellsUseHighestMagicSkill", custom.spellsUseHighestMagicSkill, defaults.spellsUseHighestMagicSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsUseHighestMagicSkill", custom.concentrationSpellsUseHighestMagicSkill, defaults.concentrationSpellsUseHighestMagicSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bScrollsUseEnchantingSkill", custom.scrollsUseEnchantingSkill, defaults.scrollsUseEnchantingSkill, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bScrollsUseHighestMagicSkill", custom.scrollsUseHighestMagicSkill, defaults.scrollsUseHighestMagicSkill, writeDefaults);
+			SaveSkillSources(ini, a_section, "Spell", custom.spellSkills, defaults.spellSkills, writeDefaults);
+			SaveSkillSources(ini, a_section, "ConcentrationSpell", custom.concentrationSpellSkills, defaults.concentrationSpellSkills, writeDefaults);
+			SaveSkillSources(ini, a_section, "Staff", custom.staffSkills, defaults.staffSkills, writeDefaults);
+			SaveSkillSources(ini, a_section, "ConcentrationStaff", custom.concentrationStaffSkills, defaults.concentrationStaffSkills, writeDefaults);
+			SaveSkillSources(ini, a_section, "Scroll", custom.scrollSkills, defaults.scrollSkills, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsAiming", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming, writeDefaults);
 			SaveScalingOptions(ini, a_section, "ConcentrationSpellRange", custom.concentrationSpellRange, defaults.concentrationSpellRange, writeDefaults);
@@ -153,31 +172,21 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogStavesUseEnchantingSkill(std::string_view actor, std::string_view staves, bool stavesUseEnchantingSkill, bool stavesUseHighestMagicSkill) {
-		if (stavesUseEnchantingSkill) {
-			logger::info("\t{}'s accuracy with {} is based on Enchanting skill", actor, staves);
-		} else if (stavesUseHighestMagicSkill) {
-			logger::info("\t{}'s accuracy with {} is based on the highest {}'s magic skill regardless of spell", actor, staves, actor);
-		} else {
-			logger::info("\t{}'s accuracy with {} is based on {}'s skill in spell's magic school", actor, staves, actor);
-		}
-	}
-
-	inline void LogSpellsUseHighestMagicSkill(std::string_view actor, std::string_view spells, bool spellsUseHighestMagicSkill) {
-		if (spellsUseHighestMagicSkill) {
-			logger::info("\t{}'s accuracy with {} is based on the highest {}'s magic skill regardless of spell", actor, spells, actor);
-		} else {
-			logger::info("\t{}'s accuracy with {} is based on {}'s skill in spell's magic school", actor, spells, actor);
-		}
-	}
-
-	inline void LogScrollsUseEnchantingSkill(std::string_view actor, bool scrollsUseEnchantingSkill, bool scrollsUseHighestMagicSkill) {
-		if (scrollsUseEnchantingSkill) {
-			logger::info("\t{}'s accuracy with scrolls is based on Enchanting skill", actor);
-		} else if (scrollsUseHighestMagicSkill) {
-			logger::info("\t{}'s accuracy with scrolls is based on the highest {}'s magic skill regardless of spell", actor, actor);
-		} else {
-			logger::info("\t{}'s accuracy with scrolls is based on {}'s skill in scroll's magic school", actor, actor);
+	inline void LogSkillSources(std::string_view actor, std::string_view name, const Config::SkillSources& sources, bool hasRange) {
+		const auto describe = [&](SkillSource source) -> std::string {
+			switch (source) {
+			case SkillSource::kEnchanting:
+				return "Enchanting skill";
+			case SkillSource::kHighest:
+				return fmt::format("the highest {}'s magic skill regardless of spell", actor);
+			default:
+				return "skill in spell's magic school";
+			}
+		};
+		logger::info("	{}'s aiming with {} is based on {}", actor, name, describe(sources.aiming));
+		logger::info("	{}'s charge speed with {} is based on {}", actor, name, describe(sources.chargeSpeed));
+		if (hasRange) {
+			logger::info("	{}'s range with {} is based on {}", actor, name, describe(sources.range));
 		}
 	}
 
@@ -337,11 +346,11 @@ namespace NLA::Options
 		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
 
 		logger::info("");
-		LogStavesUseEnchantingSkill("NPCs", "staves", NPC.stavesUseEnchantingSkill, NPC.stavesUseHighestMagicSkill);
-		LogStavesUseEnchantingSkill("NPCs", "concentration staves", NPC.concentrationStavesUseEnchantingSkill, NPC.concentrationStavesUseHighestMagicSkill);
-		LogSpellsUseHighestMagicSkill("NPCs", "spells", NPC.spellsUseHighestMagicSkill);
-		LogSpellsUseHighestMagicSkill("NPCs", "concentration spells", NPC.concentrationSpellsUseHighestMagicSkill);
-		LogScrollsUseEnchantingSkill("NPCs", NPC.scrollsUseEnchantingSkill, NPC.scrollsUseHighestMagicSkill);
+		LogSkillSources("NPCs", "spells", NPC.spellSkills, false);
+		LogSkillSources("NPCs", "concentration spells", NPC.concentrationSpellSkills, true);
+		LogSkillSources("NPCs", "staves", NPC.staffSkills, false);
+		LogSkillSources("NPCs", "concentration staves", NPC.concentrationStaffSkills, true);
+		LogSkillSources("NPCs", "scrolls", NPC.scrollSkills, false);
 		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRange.enabled, NPC.concentrationSpellRange.minMultiplier, NPC.concentrationSpellRange.maxMultiplier);
 		LogConcentrationStaffRangeMultiplier("NPCs", NPC.concentrationStaffRange.enabled, NPC.concentrationStaffRange.minMultiplier, NPC.concentrationStaffRange.maxMultiplier);
 
@@ -405,11 +414,11 @@ namespace NLA::Options
 		LogSkillMultiplier("Player", "Scrolls", "Precision", Player.precisionMultipliers.scroll);
 
 		logger::info("");
-		LogStavesUseEnchantingSkill("Player", "staves", Player.stavesUseEnchantingSkill, Player.stavesUseHighestMagicSkill);
-		LogStavesUseEnchantingSkill("Player", "concentration staves", Player.concentrationStavesUseEnchantingSkill, Player.concentrationStavesUseHighestMagicSkill);
-		LogSpellsUseHighestMagicSkill("Player", "spells", Player.spellsUseHighestMagicSkill);
-		LogSpellsUseHighestMagicSkill("Player", "concentration spells", Player.concentrationSpellsUseHighestMagicSkill);
-		LogScrollsUseEnchantingSkill("Player", Player.scrollsUseEnchantingSkill, Player.scrollsUseHighestMagicSkill);
+		LogSkillSources("Player", "spells", Player.spellSkills, false);
+		LogSkillSources("Player", "concentration spells", Player.concentrationSpellSkills, true);
+		LogSkillSources("Player", "staves", Player.staffSkills, false);
+		LogSkillSources("Player", "concentration staves", Player.concentrationStaffSkills, true);
+		LogSkillSources("Player", "scrolls", Player.scrollSkills, false);
 		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRange.enabled, Player.concentrationSpellRange.minMultiplier, Player.concentrationSpellRange.maxMultiplier);
 		LogConcentrationStaffRangeMultiplier("Player", Player.concentrationStaffRange.enabled, Player.concentrationStaffRange.minMultiplier, Player.concentrationStaffRange.maxMultiplier);
 
@@ -516,15 +525,12 @@ namespace NLA::Options
 
 		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAiming", result.blindnessAffectsAiming);
 
-		result.stavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bStavesUseEnchantingSkill", result.stavesUseEnchantingSkill);
-		result.stavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bStavesUseHighestMagicSkill", result.stavesUseHighestMagicSkill);
-		result.concentrationStavesUseEnchantingSkill = ini.GetBoolValue(a_section, "bConcentrationStavesUseEnchantingSkill", result.concentrationStavesUseEnchantingSkill);
-		result.concentrationStavesUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationStavesUseHighestMagicSkill", result.concentrationStavesUseHighestMagicSkill);
+		result.spellSkills = SkillSources::FromIni(ini, a_section, "Spell", result.spellSkills);
+		result.concentrationSpellSkills = SkillSources::FromIni(ini, a_section, "ConcentrationSpell", result.concentrationSpellSkills);
+		result.staffSkills = SkillSources::FromIni(ini, a_section, "Staff", result.staffSkills);
+		result.concentrationStaffSkills = SkillSources::FromIni(ini, a_section, "ConcentrationStaff", result.concentrationStaffSkills);
+		result.scrollSkills = SkillSources::FromIni(ini, a_section, "Scroll", result.scrollSkills);
 
-		result.spellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bSpellsUseHighestMagicSkill", result.spellsUseHighestMagicSkill);
-		result.concentrationSpellsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bConcentrationSpellsUseHighestMagicSkill", result.concentrationSpellsUseHighestMagicSkill);
-		result.scrollsUseEnchantingSkill = ini.GetBoolValue(a_section, "bScrollsUseEnchantingSkill", result.scrollsUseEnchantingSkill);
-		result.scrollsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bScrollsUseHighestMagicSkill", result.scrollsUseHighestMagicSkill);
 
 
 		result.concentrationSpellRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellRange", result.concentrationSpellRange);
@@ -581,6 +587,28 @@ namespace NLA::Options
 		result.crossbow = ini.GetBoolValue(a_section, "bCrossbowHeadshots", result.crossbow);
 		result.crossbowMinChance = ini.GetDoubleValue(a_section, "fCrossbowMinHeadshotChance", result.crossbowMinChance);
 		result.crossbowMaxChance = ini.GetDoubleValue(a_section, "fCrossbowMaxHeadshotChance", result.crossbowMaxChance);
+		return result;
+	}
+
+	Config::SkillSources Config::SkillSources::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillSources& defaults) {
+		const auto read = [&](const std::string& key, SkillSource fallback) {
+			const char* value = ini.GetValue(a_section, key.c_str(), nullptr);
+			if (!value) {
+				return fallback;
+			}
+			for (std::size_t i = 0; i < kSkillSourceNames.size(); ++i) {
+				if (clib_util::string::iequals(value, kSkillSourceNames[i])) {
+					return static_cast<SkillSource>(i);
+				}
+			}
+			logger::warn("Unknown skill source '{}' for {}, using the default", value, key);
+			return fallback;
+		};
+
+		SkillSources result = defaults;
+		result.aiming = read(fmt::format("s{}AimingSkill", prefix), result.aiming);
+		result.chargeSpeed = read(fmt::format("s{}ChargeSpeedSkill", prefix), result.chargeSpeed);
+		result.range = read(fmt::format("s{}RangeSkill", prefix), result.range);
 		return result;
 	}
 

@@ -87,15 +87,26 @@ namespace NLA::Menu
 	bool ResetButton(const char* label);
 
 	void ToggleColumn(const char* label, bool& value, const char* tooltip);
-	/// With `spanRow` the label may run into the following columns, which must stay empty.
-	void ExclusiveToggleColumn(const char* label, bool& value, bool& other, const char* tooltip, bool spanRow = false);
 	void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.01f, float max = 10.0f, const char* format = "x%.2f");
 	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, float min, float max);
+	/// A row with `label` and a drop-down to pick the skill.
+	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip);
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip);
 	void NotApplicableColumn();
 
 	// ---- Category parts ----
 	// Each part renders and resets its own rows. `aiming` is the state of the category's "Learn X" toggle.
+
+	/// Points at one of a spell type's skill sources; renders as a drop-down row inside the section it belongs to.
+	struct SkillSourceRef
+	{
+		Config::SkillSources Config::*               sources = nullptr;
+		Options::SkillSource Config::SkillSources::* field = nullptr;
+	};
+
+	constexpr SkillSourceRef AimingSkill(Config::SkillSources Config::* sources) { return { sources, &Config::SkillSources::aiming }; }
+	constexpr SkillSourceRef ChargeSpeedSkill(Config::SkillSources Config::* sources) { return { sources, &Config::SkillSources::chargeSpeed }; }
+	constexpr SkillSourceRef RangeSkill(Config::SkillSources Config::* sources) { return { sources, &Config::SkillSources::range }; }
 
 	struct HeadshotRows
 	{
@@ -120,26 +131,7 @@ namespace NLA::Menu
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
 
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
-	};
-
-	struct UseHighestMagicSkillRow
-	{
-		bool Config::* enabled;
-		const char*    tooltip;
-
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
-	};
-
-	/// Mutually exclusive Use Enchanting Skill / Use Highest Magic Skill toggles.
-	struct SkillSourceRows
-	{
-		bool Config::* useEnchantingSkill;
-		const char*    useEnchantingSkillTooltip;
-		bool Config::* useHighestMagicSkill;
-		const char*    useHighestMagicSkillTooltip;
+		SkillSourceRef skill{};
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -153,6 +145,8 @@ namespace NLA::Menu
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
+
+		SkillSourceRef skill{};
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -199,6 +193,7 @@ namespace NLA::Menu
 		const char*                      accuracyTooltip;
 		const char*                      precisionTooltip;
 		const char*                      resetLabel;
+		SkillSourceRef                   aimSkill{};
 	};
 
 	/// Parts are rendered below the "Learn X" row in the order they are listed.
@@ -226,7 +221,6 @@ namespace NLA::Menu
 	inline constexpr const char* kDrawSpeedGroup = "Draw Speed";
 	inline constexpr const char* kChargeSpeedGroup = "Charge Speed";
 	inline constexpr const char* kRangeGroup = "Range";
-	inline constexpr const char* kSkillSourceGroup = "Skill Source";
 
 	/// Shared by spells, staves and scrolls; only the toggle's tooltip differs.
 	constexpr FatigueRows CastFatigue(Config::FatigueOptions Config::* options, const char* tooltip) {

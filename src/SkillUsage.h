@@ -56,7 +56,5 @@ namespace NLA
 		RE::NiPoint2 RandomSpreadOffset(RE::Actor* actor) const;
 	};
 
-	RE::ActorValue HighestMagicSkill(RE::Actor* actor);
-
-	RE::ActorValue MagicSkillFor(const RE::MagicItem* spell, RE::Actor* caster);
+	RE::ActorValue MagicSkillFor(const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context);
 }

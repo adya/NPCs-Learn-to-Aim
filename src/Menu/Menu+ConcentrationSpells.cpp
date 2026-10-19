@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<UseHighestMagicSkillRow, RangeRows, SpeedRows, FatigueRows> kConcentrationSpells{
+		constexpr Category<RangeRows, SpeedRows, FatigueRows> kConcentrationSpells{
 			{
 				.id = "ConcentrationSpells",
 				.label = kScaleAimLabel,
@@ -14,21 +14,21 @@ namespace NLA::Menu
 				.accuracyTooltip = "How much the skill contributes to Accuracy with concentration spells. The higher this multiplier is the easier it is to aim.",
 				.precisionTooltip = "How much the skill contributes to Precision with concentration spells. The higher this multiplier is the easier it is to hit the target.",
 				.resetLabel = "Reset Concentration Spells to Default",
+				.aimSkill = AimingSkill(&Config::concentrationSpellSkills),
 			},
-			UseHighestMagicSkillRow{
-				&Config::concentrationSpellsUseHighestMagicSkill,
-				"When enabled, all concentration spell options are based on the highest Magic skill, regardless of the spell's Magic school." },
 			RangeRows{
 				&Config::concentrationSpellRange,
 				"When enabled, corresponding Magic skill also affects concentration spells range. (the higher the skill the farther mage can hit)",
 				"Concentration spell range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
 				"Concentration spell range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
-				kRangeGroup },
+				kRangeGroup,
+					RangeSkill(&Config::concentrationSpellSkills) },
 			SpeedRows{
 				&Config::concentrationSpellChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding Magic skill also affects how fast concentration spells charge/cast. (the higher the skill the faster the cast)",
-				kChargeSpeedGroup },
+				kChargeSpeedGroup,
+					ChargeSpeedSkill(&Config::concentrationSpellSkills) },
 			FatigueRows{
 				&Config::concentrationSpellFatigue,
 				"Prolonged Cast Fatigues Aim",
