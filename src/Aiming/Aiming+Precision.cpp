@@ -51,17 +51,17 @@ namespace NLA
 			/// Final spread scale, combining steadying and fatigue.
 			float scale{ 1.0f };
 
-			SteadyingModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon, WeaponType type, float holdSeconds) :
-				SteadyingModifier(attacker, holdSeconds, type,
-					Options::For(attacker).WeaponSteadyingFor(type),
-					Options::For(attacker).WeaponFatigueFor(type) ? *Options::For(attacker).WeaponFatigueFor(type) : kNoFatigue) {}
+			static SteadyingModifier ForWeapon(RE::Actor* attacker, WeaponType type, float holdSeconds) {
+				const auto& options = Options::For(attacker);
+				const auto* fatigue = options.WeaponFatigueFor(type);
+				return { attacker, holdSeconds, type, options.WeaponSteadyingFor(type), fatigue ? *fatigue : kNoFatigue };
+			}
 
-			SteadyingModifier(RE::Actor* attacker, const RE::MagicItem* spell, WeaponType type, float holdSeconds) :
-				SteadyingModifier(attacker, holdSeconds, type,
-					Options::For(attacker).SpellSteadyingFor(type),
-					Options::For(attacker).SpellFatigueFor(type)) {}
+			static SteadyingModifier ForSpell(RE::Actor* attacker, WeaponType type, float holdSeconds) {
+				const auto& options = Options::For(attacker);
+				return { attacker, holdSeconds, type, options.SpellSteadyingFor(type), options.SpellFatigueFor(type) };
+			}
 
-		private:
 			SteadyingModifier(RE::Actor* attacker, float holdSeconds, WeaponType type, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue) :
 				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigue.enabled ? Fatigue::Threshold(fatigue, attacker, type) : 0.0f) {
 				if (holdSeconds <= 0.0f)
@@ -105,14 +105,14 @@ namespace NLA
 			ShotModifier(RE::Actor* attacker, const RE::MagicItem* spell, float holdSeconds) :
 				attacker(attacker), source(spell), precision(spell, attacker, kPrecision) {
 				if (precision) {
-					steadying.emplace(attacker, spell, precision.weaponType, holdSeconds);
+					steadying = SteadyingModifier::ForSpell(attacker, precision.weaponType, holdSeconds);
 				}
 			}
 
 			ShotModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) :
 				attacker(attacker), source(weapon), precision(weapon, attacker, kPrecision) {
 				if (auto type = HoldableType(weapon); type) {
-					steadying.emplace(attacker, weapon, *type, Draw::PopFullDrawDuration(attacker));
+					steadying = SteadyingModifier::ForWeapon(attacker, *type, Draw::PopFullDrawDuration(attacker));
 				}
 			}
 
