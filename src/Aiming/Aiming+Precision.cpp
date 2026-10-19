@@ -16,6 +16,23 @@ namespace NLA
 			return camera && !camera->IsInFirstPerson();
 		}
 
+		/// Weapons that can be held ready before firing.
+		std::optional<WeaponType> HoldableType(const RE::TESObjectWEAP* weapon) {
+			if (!weapon)
+				return std::nullopt;
+			switch (weapon->GetWeaponType()) {
+			case RE::WEAPON_TYPE::kBow:
+				return kBow;
+			case RE::WEAPON_TYPE::kCrossbow:
+				return kCrossbow;
+			default:
+				return std::nullopt;
+			}
+		}
+
+		/// Used for weapons that never fatigue the shooter.
+		const Options::Config::FatigueOptions kNoFatigue{ { .enabled = false, .maxSpreadMultiplier = 0.0f, .halfDuration = 1.0f }, 0.0f, 0.0f };
+
 		struct SteadyingModifier
 		{
 			float holdSeconds{ 0.0f };
@@ -33,10 +50,10 @@ namespace NLA
 			/// Final spread scale, combining steadying and fatigue.
 			float scale{ 1.0f };
 
-			SteadyingModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon, float holdSeconds) :
+			SteadyingModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon, WeaponType type, float holdSeconds) :
 				SteadyingModifier(holdSeconds,
-					Options::For(attacker).bowSteadying,
-					Options::For(attacker).bowFatigue,
+					Options::For(attacker).WeaponSteadyingFor(type),
+					Options::For(attacker).WeaponFatigueFor(type) ? *Options::For(attacker).WeaponFatigueFor(type) : kNoFatigue,
 					SkillUsage(weapon, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
 
 			SteadyingModifier(RE::Actor* attacker, const RE::MagicItem* spell, WeaponType type, float holdSeconds) :
@@ -95,8 +112,8 @@ namespace NLA
 
 			ShotModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) :
 				attacker(attacker), source(weapon), precision(weapon, attacker, kPrecision) {
-				if (weapon && weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
-					steadying.emplace(attacker, weapon, Draw::PopBowFullDrawDuration(attacker));
+				if (auto type = HoldableType(weapon); type) {
+					steadying.emplace(attacker, weapon, *type, Draw::PopFullDrawDuration(attacker));
 				}
 			}
 
@@ -145,9 +162,13 @@ namespace NLA
 			const float speed = weapon ? Draw::SpeedMultiplier(attacker, weapon) : ChargeTime::SpeedMultiplier(attacker, spell);
 			logger::info("	{} speed: x{:.3f}", weapon ? "Draw" : "Charge", speed);
 
+			if (modifier.steadying && weapon && modifier.steadying->holdSeconds <= 0.0f) {
+				logger::info("	Held ready: no hold time counted ({})", weapon->IsCrossbow() ? "crossbow" : "bow");
+			}
+
 			if (modifier.steadying && modifier.steadying->holdSeconds > 0.0f) {
 				const auto& steadying = *modifier.steadying;
-				logger::info("	{}: {:.3f}s (steadying: x{:.3f})", weapon ? "Held at full draw" : "Held charged", steadying.holdSeconds, steadying.steadied);
+				logger::info("	{}: {:.3f}s (steadying: x{:.3f})", weapon ? (weapon->IsCrossbow() ? "Held loaded" : "Held at full draw") : "Held charged", steadying.holdSeconds, steadying.steadied);
 				if (steadying.fatigueEnabled) {
 					logger::info("	Fatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", steadying.fatigueThreshold, steadying.fatigueSeconds, steadying.fatigueProgress * 100.0f);
 				}

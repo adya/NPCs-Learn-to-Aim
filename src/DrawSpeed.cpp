@@ -29,6 +29,7 @@ namespace NLA::Draw
 			return owner ? &REL::RelocateMemberIfNewer<RE::Actor>(SKSE::RUNTIME_SSE_1_6_629, owner, -0xB0, -0xB8) : nullptr;
 		}
 
+		/// Tracks how long a bow or crossbow is held ready (fully drawn / loaded) before it is released.
 		void TrackHoldDuration(RE::Actor* attacker) {
 			const auto state = attacker->AsActorState()->GetAttackState();
 			const auto formID = attacker->GetFormID();
@@ -69,7 +70,7 @@ namespace NLA::Draw
 		return skillUsage.LerpSkillFactor(attacker);
 	}
 
-	float PopBowFullDrawDuration(RE::Actor* actor) {
+	float PopFullDrawDuration(RE::Actor* actor) {
 		if (!actor) {
 			return 0.0f;
 		}

@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<HeadshotRows, SpeedRows> kCrossbows{
+		constexpr Category<HeadshotRows, SpeedRows, SpreadRows> kCrossbows{
 			{
 				.id = "Crossbows",
 				.label = kScaleAimLabel,
@@ -25,6 +25,12 @@ namespace NLA::Menu
 				kScaleDrawSpeedLabel,
 				"When enabled, Archery skill also affects how fast a crossbow is reloaded. (the higher the skill the faster the reload)",
 					kDrawSpeedGroup },
+				SpreadRows{
+					&Config::crossbowSteadying,
+					"Holding a Loaded Crossbow Steadies Aim",
+					"When enabled, holding a loaded crossbow before firing tightens its spread, with diminishing returns. Crossbows never fatigue the shooter.",
+					"The most spread that holding a loaded crossbow can remove, approached the longer it's held.",
+					"Duration of holding a loaded crossbow to get roughly half of the max spread reduction. Lower means the aim steadies faster." },
 		};
 	}
 

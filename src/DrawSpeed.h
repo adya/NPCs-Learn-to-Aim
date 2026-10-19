@@ -9,6 +9,6 @@ namespace NLA::Draw
 	/// Draw speed multiplier for the given actor's skill.
 	float SpeedMultiplier(RE::Actor*, const RE::TESObjectWEAP*);
 
-	/// Consumes and resets the tracked duration a bow was held at full draw before its last release.
-	float PopBowFullDrawDuration(RE::Actor*);
+	/// Consumes and resets the tracked duration a bow or crossbow was held at full draw before its last release.
+	float PopFullDrawDuration(RE::Actor*);
 }

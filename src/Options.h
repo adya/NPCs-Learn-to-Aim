@@ -80,7 +80,7 @@ namespace NLA::Options
 			static SpreadOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SpreadOptions& defaults);
 		};
 
-		/// Controls how much holding a bow at full draw reduces spread.
+		/// Controls how much holding a bow at full draw, a crossbow loaded or a spell/staff/scroll charged reduces spread.
 		using Steadying = SpreadOptions;
 
 		/// A multiplier that grows with skill from `minMultiplier` to `maxMultiplier`.
@@ -176,6 +176,9 @@ namespace NLA::Options
 		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
 		FatigueOptions bowFatigue;
 
+		/// Controls how much holding a loaded crossbow reduces spread. Crossbows don't fatigue the shooter.
+		Steadying crossbowSteadying;
+
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
 		inline const SkillMultiplier& MultiplierFor(SkillUsageContext context) const {
@@ -213,6 +216,18 @@ namespace NLA::Options
 			}
 		}
 
+		/// Steadying while holding a drawn bow or loaded crossbow.
+		inline const Steadying& WeaponSteadyingFor(WeaponType type) const {
+			assert(type == kBow || type == kCrossbow);
+			return type == kCrossbow ? crossbowSteadying : bowSteadying;
+		}
+
+		/// Fatigue while holding a drawn bow or loaded crossbow; null for weapons that never fatigue the shooter.
+		inline const FatigueOptions* WeaponFatigueFor(WeaponType type) const {
+			assert(type == kBow || type == kCrossbow);
+			return type == kBow ? &bowFatigue : nullptr;
+		}
+
 		inline const FatigueOptions& ConcentrationFatigueFor(WeaponType type) const {
 			assert(type == kSpell || type == kStaff);
 			return type == kStaff ? concentrationStaffFatigue : concentrationSpellFatigue;
@@ -246,6 +261,7 @@ namespace NLA::Options
 			.concentrationStaffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 3.0f }, 2.0f, 6.0f },
 			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 1.0f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
+			.crossbowSteadying = { .maxSpreadMultiplier = 0.3f, .halfDuration = 3.0f },
 		},
 	};
 
@@ -295,6 +311,7 @@ namespace NLA::Options
 			.concentrationStaffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 3.0f }, 2.0f, 6.0f },
 			.bowSteadying = { .maxSpreadMultiplier = 0.4f, .halfDuration = 0.5f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
+			.crossbowSteadying = { .maxSpreadMultiplier = 0.3f, .halfDuration = 3.0f },
 		},
 		{},
 		{},

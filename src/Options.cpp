@@ -145,6 +145,7 @@ namespace NLA::Options
 			SaveScalingOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
 			SaveSteadying(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
 			SaveFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
+			SaveSteadying(ini, a_section, "CrossbowSteadying", custom.crossbowSteadying, defaults.crossbowSteadying, writeDefaults);
 		}
 	}
 
@@ -229,6 +230,15 @@ namespace NLA::Options
 			logger::info("\tHolding a bow at full draw doesn't affect {}'s precision", actor);
 		} else {
 			logger::info("\tHolding a bow at full draw reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)",
+			             actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
+		}
+	}
+
+	inline void LogCrossbowSteadying(std::string_view actor, const Config::Steadying& steadying) {
+		if (!steadying.enabled) {
+			logger::info("	Holding a loaded crossbow doesn't affect {}'s precision", actor);
+		} else {
+			logger::info("	Holding a loaded crossbow reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)",
 			             actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
 		}
 	}
@@ -372,6 +382,7 @@ namespace NLA::Options
 		LogConcentrationFatigue("NPCs", "concentration staves", NPC.concentrationStaffFatigue);
 		LogBowSteadying("NPCs", NPC.bowSteadying);
 		LogBowFatigue("NPCs", NPC.bowFatigue);
+		LogCrossbowSteadying("NPCs", NPC.crossbowSteadying);
 
 		logger::info("");
 		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
@@ -440,6 +451,7 @@ namespace NLA::Options
 		LogConcentrationFatigue("Player", "concentration staves", Player.concentrationStaffFatigue);
 		LogBowSteadying("Player", Player.bowSteadying);
 		LogBowFatigue("Player", Player.bowFatigue);
+		LogCrossbowSteadying("Player", Player.crossbowSteadying);
 
 		logger::info("{:*^40}", "");
 	}
@@ -558,6 +570,7 @@ namespace NLA::Options
 		result.crossbowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);
 		result.bowSteadying = SpreadOptions::FromIni(ini, a_section, "BowSteadying", result.bowSteadying);
 		result.bowFatigue = FatigueOptions::FromIni(ini, a_section, "BowFatigue", result.bowFatigue);
+		result.crossbowSteadying = SpreadOptions::FromIni(ini, a_section, "CrossbowSteadying", result.crossbowSteadying);
 
 		return result;
 	}
