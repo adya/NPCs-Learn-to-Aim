@@ -62,24 +62,28 @@ namespace NLA::Options
 		/// Controls how much holding a bow at full draw reduces spread.
 		using Steadying = SpreadOptions;
 
-		struct SpeedOptions
+		/// A multiplier that grows with skill from `minMultiplier` to `maxMultiplier`.
+		struct ScalingOptions
 		{
 			bool enabled = true;
 
-			/// Speed multiplier at 0 skill.
+			/// Multiplier at 0 skill.
 			float minMultiplier = 1.0f;
 
-			/// Speed multiplier at 100 skill.
+			/// Multiplier at 100 skill.
 			float maxMultiplier = 1.5f;
 
-			static SpeedOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SpeedOptions& defaults);
+			static ScalingOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const ScalingOptions& defaults);
 		};
 
 		/// Controls how fast a spell/staff/scroll charges.
-		using ChargeSpeed = SpeedOptions;
+		using ChargeSpeed = ScalingOptions;
 
 		/// Controls how fast a bow is drawn and crossbow is loaded.
-		using DrawSpeed = SpeedOptions;
+		using DrawSpeed = ScalingOptions;
+
+		/// Controls how far concentration spells/staves reach.
+		using RangeScaling = ScalingOptions;
 
 		struct FatigueOptions : SpreadOptions
 		{
@@ -140,14 +144,9 @@ namespace NLA::Options
 		/// Mutually exclusive with scrollsUseEnchantingSkill.
 		bool scrollsUseHighestMagicSkill = false;
 
-		/// If true, concentration spells would reach farther as the skill in corresponding school increases.
-		bool concentrationSpellRangeScaling = true;
-		float concentrationSpellMinRangeMultiplier = 1.2f;
-		float concentrationSpellMaxRangeMultiplier = 2.5f;
-
-		bool  concentrationStaffRangeScaling = true;
-		float concentrationStaffMinRangeMultiplier = 1.2f;
-		float concentrationStaffMaxRangeMultiplier = 2.5f;
+		/// If enabled, concentration spells reach farther as the skill increases.
+		RangeScaling concentrationSpellRange;
+		RangeScaling concentrationStaffRange;
 
 		ChargeSpeed spellChargeSpeed;
 		ChargeSpeed concentrationSpellChargeSpeed;
@@ -239,6 +238,8 @@ namespace NLA::Options
 			.precisionMultipliers = { .bow = 1.4f, .crossbow = 7.0f, .spell = 1.25f, .concentrationSpell = 1.25f, .staff = 1.55f, .concentrationStaff = 1.55f, .scroll = 1.25f, .blindness = 0.0f },
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
+			.concentrationSpellRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
+			.concentrationStaffRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
 			.spellSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.staffSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.scrollSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
@@ -288,6 +289,8 @@ namespace NLA::Options
 			.precisionMultipliers = { .bow = 1.0f, .crossbow = 7.0f, .spell = 0.85f, .concentrationSpell = 0.85f, .staff = 1.15f, .concentrationStaff = 1.15f, .scroll = 0.85f, .blindness = 1.5f },
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
+			.concentrationSpellRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
+			.concentrationStaffRange = { .minMultiplier = 1.2f, .maxMultiplier = 2.5f },
 			.spellSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.staffSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.scrollSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },

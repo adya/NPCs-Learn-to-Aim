@@ -19,7 +19,7 @@ namespace NLA::Menu
 				&Config::concentrationSpellsUseHighestMagicSkill,
 				"When enabled, all concentration spell options are based on the highest Magic skill, regardless of the spell's Magic school." },
 			RangeRows{
-				&Config::concentrationSpellRangeScaling, &Config::concentrationSpellMinRangeMultiplier, &Config::concentrationSpellMaxRangeMultiplier,
+				&Config::concentrationSpellRange,
 				"When enabled, corresponding Magic skill also affects concentration spells range. (the higher the skill the farther mage can hit)",
 				"Concentration spell range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
 				"Concentration spell range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",

@@ -46,21 +46,18 @@ namespace NLA::Menu
 		if (!sections.Section(group)) {
 			return;
 		}
-		auto& cfg = ctx.cfg;
-		auto& on = cfg.*enabled;
+		auto& range = ctx.cfg.*options;
 
 		HeaderRow("Min Range", "Max Range");
 		TableNextRow();
-		ToggleColumn("Scale Range With Skill", on, tooltip);
-		DisabledIf off{ !on };
-		SliderColumn("##MinRange", cfg.*min, minTooltip, 0.5f, 5.0f);
-		SliderColumn("##MaxRange", cfg.*max, maxTooltip, 0.5f, 5.0f);
+		ToggleColumn("Scale Range With Skill", range.enabled, tooltip);
+		DisabledIf off{ !range.enabled };
+		SliderColumn("##MinRange", range.minMultiplier, minTooltip, 0.5f, 5.0f);
+		SliderColumn("##MaxRange", range.maxMultiplier, maxTooltip, 0.5f, 5.0f);
 	}
 
 	void RangeRows::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, enabled);
-		ResetMember(ctx, min);
-		ResetMember(ctx, max);
+		ResetMember(ctx, options);
 	}
 
 	void UseHighestMagicSkillRow::Render(const PageContext& ctx, bool, TableSections& sections) const {

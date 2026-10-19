@@ -112,12 +112,10 @@ namespace NLA::Menu
 
 	struct RangeRows
 	{
-		bool Config::*  enabled;
-		float Config::* min;
-		float Config::* max;
-		const char*     tooltip;
-		const char*     minTooltip;
-		const char*     maxTooltip;
+		Config::ScalingOptions Config::* options;
+		const char*                      tooltip;
+		const char*                      minTooltip;
+		const char*                      maxTooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
@@ -149,9 +147,9 @@ namespace NLA::Menu
 
 	struct SpeedRows
 	{
-		Config::SpeedOptions Config::* options;
-		const char*                    label;
-		const char*                    tooltip;
+		Config::ScalingOptions Config::* options;
+		const char*                      label;
+		const char*                      tooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;

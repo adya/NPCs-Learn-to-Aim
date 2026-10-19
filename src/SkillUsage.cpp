@@ -218,17 +218,17 @@ namespace NLA
 				switch (spell->GetSpellType()) {
 				case RE::MagicSystem::SpellType::kSpell:
 				case RE::MagicSystem::SpellType::kLeveledSpell:
-					if (options.concentrationSpellRangeScaling) {
+					if (options.concentrationSpellRange.enabled) {
 						weaponType = kSpell;
 						skill = MagicSkillFor(spell, attacker);
-						multiplier = Range{ options.concentrationSpellMinRangeMultiplier, options.concentrationSpellMaxRangeMultiplier };
+						multiplier = Range{ options.concentrationSpellRange.minMultiplier, options.concentrationSpellRange.maxMultiplier };
 					}
 					break;
 				case RE::MagicSystem::SpellType::kStaffEnchantment:
-					if (options.concentrationStaffRangeScaling) {
+					if (options.concentrationStaffRange.enabled) {
 						weaponType = kStaff;
 						skill = MagicSkillFor(spell, attacker);
-						multiplier = Range{ options.concentrationStaffMinRangeMultiplier, options.concentrationStaffMaxRangeMultiplier };
+						multiplier = Range{ options.concentrationStaffRange.minMultiplier, options.concentrationStaffRange.maxMultiplier };
 					}
 					break;
 				default:

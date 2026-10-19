@@ -21,7 +21,7 @@ namespace NLA::Menu
 				.useHighestMagicSkill = &Config::concentrationStavesUseHighestMagicSkill,
 				.useHighestMagicSkillTooltip = "When enabled, all concentration staff options are based on the highest Magic skill, regardless of the staff's spell's Magic school. Mutually exclusive with Use Enchanting Skill." },
 			RangeRows{
-				&Config::concentrationStaffRangeScaling, &Config::concentrationStaffMinRangeMultiplier, &Config::concentrationStaffMaxRangeMultiplier,
+				&Config::concentrationStaffRange,
 				"When enabled, corresponding skill also affects concentration staves range. (the higher the skill the farther mage can hit)",
 				"Concentration staff range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
 				"Concentration staff range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",

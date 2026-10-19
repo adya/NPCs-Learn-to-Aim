@@ -63,7 +63,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration, writeDefaults);
 		}
 
-		void SaveSpeedOptions(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SpeedOptions& value, const Config::SpeedOptions& defaultValue, bool writeDefaults = false) {
+		void SaveScalingOptions(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::ScalingOptions& value, const Config::ScalingOptions& defaultValue, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), value.enabled, defaultValue.enabled, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MinMultiplier", prefix).c_str(), value.minMultiplier, defaultValue.minMultiplier, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), value.maxMultiplier, defaultValue.maxMultiplier, writeDefaults);
@@ -100,16 +100,12 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bScrollsUseHighestMagicSkill", custom.scrollsUseHighestMagicSkill, defaults.scrollsUseHighestMagicSkill, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsAiming", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationSpellRangeScaling", custom.concentrationSpellRangeScaling, defaults.concentrationSpellRangeScaling, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMinRangeMultiplier", custom.concentrationSpellMinRangeMultiplier, defaults.concentrationSpellMinRangeMultiplier, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "fConcentrationSpellMaxRangeMultiplier", custom.concentrationSpellMaxRangeMultiplier, defaults.concentrationSpellMaxRangeMultiplier, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ConcentrationSpellRange", custom.concentrationSpellRange, defaults.concentrationSpellRange, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ConcentrationStaffRange", custom.concentrationStaffRange, defaults.concentrationStaffRange, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bConcentrationStaffAiming", custom.concentrationStaffAiming, defaults.concentrationStaffAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationStaffRangeScaling", custom.concentrationStaffRangeScaling, defaults.concentrationStaffRangeScaling, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "fConcentrationStaffMinRangeMultiplier", custom.concentrationStaffMinRangeMultiplier, defaults.concentrationStaffMinRangeMultiplier, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "fConcentrationStaffMaxRangeMultiplier", custom.concentrationStaffMaxRangeMultiplier, defaults.concentrationStaffMaxRangeMultiplier, writeDefaults);
 
-			SaveSpeedOptions(ini, a_section, "SpellChargeSpeed", custom.spellChargeSpeed, defaults.spellChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "SpellChargeSpeed", custom.spellChargeSpeed, defaults.spellChargeSpeed, writeDefaults);
 
 			SaveSteadying(ini, a_section, "SpellSteadying", custom.spellSteadying, defaults.spellSteadying, writeDefaults);
 			SaveSteadying(ini, a_section, "StaffSteadying", custom.staffSteadying, defaults.staffSteadying, writeDefaults);
@@ -121,13 +117,13 @@ namespace NLA::Options
 			SaveFatigue(ini, a_section, "ConcentrationSpellFatigue", custom.concentrationSpellFatigue, defaults.concentrationSpellFatigue, writeDefaults);
 			SaveFatigue(ini, a_section, "ConcentrationStaffFatigue", custom.concentrationStaffFatigue, defaults.concentrationStaffFatigue, writeDefaults);
 
-			SaveSpeedOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
-			SaveSpeedOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
-			SaveSpeedOptions(ini, a_section, "ConcentrationStaffChargeSpeed", custom.concentrationStaffChargeSpeed, defaults.concentrationStaffChargeSpeed, writeDefaults);
-			SaveSpeedOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ConcentrationStaffChargeSpeed", custom.concentrationStaffChargeSpeed, defaults.concentrationStaffChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed, writeDefaults);
 
-			SaveSpeedOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed, writeDefaults);
-			SaveSpeedOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
 			SaveSteadying(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
 			SaveFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
 		}
@@ -346,8 +342,8 @@ namespace NLA::Options
 		LogSpellsUseHighestMagicSkill("NPCs", "spells", NPC.spellsUseHighestMagicSkill);
 		LogSpellsUseHighestMagicSkill("NPCs", "concentration spells", NPC.concentrationSpellsUseHighestMagicSkill);
 		LogScrollsUseEnchantingSkill("NPCs", NPC.scrollsUseEnchantingSkill, NPC.scrollsUseHighestMagicSkill);
-		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRangeScaling, NPC.concentrationSpellMinRangeMultiplier, NPC.concentrationSpellMaxRangeMultiplier);
-		LogConcentrationStaffRangeMultiplier("NPCs", NPC.concentrationStaffRangeScaling, NPC.concentrationStaffMinRangeMultiplier, NPC.concentrationStaffMaxRangeMultiplier);
+		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRange.enabled, NPC.concentrationSpellRange.minMultiplier, NPC.concentrationSpellRange.maxMultiplier);
+		LogConcentrationStaffRangeMultiplier("NPCs", NPC.concentrationStaffRange.enabled, NPC.concentrationStaffRange.minMultiplier, NPC.concentrationStaffRange.maxMultiplier);
 
 		logger::info("");
 		LogChargeSpeedMultiplier("NPCs", "spells", NPC.spellChargeSpeed.enabled, NPC.spellChargeSpeed.minMultiplier, NPC.spellChargeSpeed.maxMultiplier);
@@ -414,8 +410,8 @@ namespace NLA::Options
 		LogSpellsUseHighestMagicSkill("Player", "spells", Player.spellsUseHighestMagicSkill);
 		LogSpellsUseHighestMagicSkill("Player", "concentration spells", Player.concentrationSpellsUseHighestMagicSkill);
 		LogScrollsUseEnchantingSkill("Player", Player.scrollsUseEnchantingSkill, Player.scrollsUseHighestMagicSkill);
-		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRangeScaling, Player.concentrationSpellMinRangeMultiplier, Player.concentrationSpellMaxRangeMultiplier);
-		LogConcentrationStaffRangeMultiplier("Player", Player.concentrationStaffRangeScaling, Player.concentrationStaffMinRangeMultiplier, Player.concentrationStaffMaxRangeMultiplier);
+		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRange.enabled, Player.concentrationSpellRange.minMultiplier, Player.concentrationSpellRange.maxMultiplier);
+		LogConcentrationStaffRangeMultiplier("Player", Player.concentrationStaffRange.enabled, Player.concentrationStaffRange.minMultiplier, Player.concentrationStaffRange.maxMultiplier);
 
 		logger::info("");
 		LogChargeSpeedMultiplier("Player", "spells", Player.spellChargeSpeed.enabled, Player.spellChargeSpeed.minMultiplier, Player.spellChargeSpeed.maxMultiplier);
@@ -530,20 +526,17 @@ namespace NLA::Options
 		result.scrollsUseEnchantingSkill = ini.GetBoolValue(a_section, "bScrollsUseEnchantingSkill", result.scrollsUseEnchantingSkill);
 		result.scrollsUseHighestMagicSkill = ini.GetBoolValue(a_section, "bScrollsUseHighestMagicSkill", result.scrollsUseHighestMagicSkill);
 
-		result.concentrationSpellRangeScaling = ini.GetBoolValue(a_section, "bConcentrationSpellRangeScaling", result.concentrationSpellRangeScaling);
-		result.concentrationSpellMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMinRangeMultiplier", result.concentrationSpellMinRangeMultiplier);
-		result.concentrationSpellMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationSpellMaxRangeMultiplier", result.concentrationSpellMaxRangeMultiplier);
+
+		result.concentrationSpellRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellRange", result.concentrationSpellRange);
+		result.concentrationStaffRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffRange", result.concentrationStaffRange);
 
 		result.concentrationStaffAiming = ini.GetBoolValue(a_section, "bConcentrationStaffAiming", result.concentrationStaffAiming);
-		result.concentrationStaffRangeScaling = ini.GetBoolValue(a_section, "bConcentrationStaffRangeScaling", result.concentrationStaffRangeScaling);
-		result.concentrationStaffMinRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationStaffMinRangeMultiplier", result.concentrationStaffMinRangeMultiplier);
-		result.concentrationStaffMaxRangeMultiplier = ini.GetDoubleValue(a_section, "fConcentrationStaffMaxRangeMultiplier", result.concentrationStaffMaxRangeMultiplier);
 
-		result.spellChargeSpeed = SpeedOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed);
-		result.concentrationSpellChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed);
-		result.staffChargeSpeed = SpeedOptions::FromIni(ini, a_section, "StaffChargeSpeed", result.staffChargeSpeed);
-		result.concentrationStaffChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ConcentrationStaffChargeSpeed", result.concentrationStaffChargeSpeed);
-		result.scrollChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed);
+		result.spellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed);
+		result.concentrationSpellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed);
+		result.staffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "StaffChargeSpeed", result.staffChargeSpeed);
+		result.concentrationStaffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffChargeSpeed", result.concentrationStaffChargeSpeed);
+		result.scrollChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed);
 
 		result.spellSteadying = SpreadOptions::FromIni(ini, a_section, "SpellSteadying", result.spellSteadying);
 		result.staffSteadying = SpreadOptions::FromIni(ini, a_section, "StaffSteadying", result.staffSteadying);
@@ -555,8 +548,8 @@ namespace NLA::Options
 		result.concentrationSpellFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationSpellFatigue", result.concentrationSpellFatigue);
 		result.concentrationStaffFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationStaffFatigue", result.concentrationStaffFatigue);
 
-		result.bowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed);
-		result.crossbowDrawSpeed = SpeedOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);
+		result.bowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed);
+		result.crossbowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);
 		result.bowSteadying = SpreadOptions::FromIni(ini, a_section, "BowSteadying", result.bowSteadying);
 		result.bowFatigue = FatigueOptions::FromIni(ini, a_section, "BowFatigue", result.bowFatigue);
 
@@ -591,8 +584,8 @@ namespace NLA::Options
 		return result;
 	}
 
-	Config::SpeedOptions Config::SpeedOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SpeedOptions& defaults) {
-		SpeedOptions result = defaults;
+	Config::ScalingOptions Config::ScalingOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const ScalingOptions& defaults) {
+		ScalingOptions result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), result.enabled);
 		result.minMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MinMultiplier", prefix).c_str(), result.minMultiplier));
 		result.maxMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), result.maxMultiplier));
