@@ -17,8 +17,8 @@ namespace NLA::ChargeTime
 			/// Time that spell is held in charged state in given casting source (e.g. left/right hand) for a given actor.
 			float chargedDuration{ 0.0f };
 
-			/// Total time that spell was overcharged for a given actor and casting source.
-			float overchargeDuration{ 0.0f };
+			/// Total time that a fully charged spell was held for a given actor and casting source.
+			float holdDuration{ 0.0f };
 
 			/// Time that a concentration spell has been continuously cast in given casting source for a given actor.
 			float concentrationDuration{ 0.0f };
@@ -64,7 +64,7 @@ namespace NLA::ChargeTime
 		return 1.0f;
 	}
 
-	float PopSpellOverchargeDuration(RE::Actor* actor, RE::MagicSystem::CastingSource source) {
+	float PopSpellHoldDuration(RE::Actor* actor, RE::MagicSystem::CastingSource source) {
 		if (!actor) {
 			return 0.0f;
 		}
@@ -76,8 +76,8 @@ namespace NLA::ChargeTime
 			return 0.0f;
 		}
 
-		const float duration = it->second.overchargeDuration;
-		it->second.overchargeDuration = 0.0f;
+		const float duration = it->second.holdDuration;
+		it->second.holdDuration = 0.0f;
 
 		if (it->second.lastState == RE::MagicCaster::State::kNone) {
 			entries.erase(it);
@@ -128,12 +128,12 @@ namespace NLA::ChargeTime
 							entry.chargedDuration = 0.0f;
 
 							if (IsInterrupted(state)) {
-								entry.overchargeDuration = 0.0f;
+								entry.holdDuration = 0.0f;
 							} else {
-								entry.overchargeDuration = duration;
+								entry.holdDuration = duration;
 							}
 						} else if (IsCharging(state) || IsInterrupted(state)) {
-							entry.overchargeDuration = 0.0f;  // a new cast is starting or the previous one was cancelled.
+							entry.holdDuration = 0.0f;  // a new cast is starting or the previous one was cancelled.
 						}
 
 						entry.lastState = state;
@@ -149,7 +149,7 @@ namespace NLA::ChargeTime
 						entry.concentrationDuration = 0.0f;
 					}
 
-					if (state == RE::MagicCaster::State::kNone && entry.overchargeDuration == 0.0f) {
+					if (state == RE::MagicCaster::State::kNone && entry.holdDuration == 0.0f) {
 						entries.erase(key);
 					}
 				}

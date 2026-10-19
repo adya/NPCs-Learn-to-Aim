@@ -39,9 +39,9 @@ namespace NLA
 					Options::For(attacker).bowFatigue,
 					SkillUsage(weapon, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
 
-			SteadyingModifier(RE::Actor* attacker, const RE::MagicItem* spell, WeaponType type, float overchargeSeconds) :
-				SteadyingModifier(overchargeSeconds,
-					Options::For(attacker).SpellOverchargeFor(type),
+			SteadyingModifier(RE::Actor* attacker, const RE::MagicItem* spell, WeaponType type, float holdSeconds) :
+				SteadyingModifier(holdSeconds,
+					Options::For(attacker).SpellSteadyingFor(type),
 					Options::For(attacker).SpellFatigueFor(type),
 					SkillUsage(spell, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
 
@@ -86,10 +86,10 @@ namespace NLA
 
 			ShotModifier() = default;
 
-			ShotModifier(RE::Actor* attacker, const RE::MagicItem* spell, float overchargeSeconds) :
+			ShotModifier(RE::Actor* attacker, const RE::MagicItem* spell, float holdSeconds) :
 				attacker(attacker), source(spell), precision(spell, attacker, kPrecision) {
 				if (precision) {
-					steadying.emplace(attacker, spell, precision.weaponType, overchargeSeconds);
+					steadying.emplace(attacker, spell, precision.weaponType, holdSeconds);
 				}
 			}
 
@@ -147,7 +147,7 @@ namespace NLA
 
 			if (modifier.steadying && modifier.steadying->holdSeconds > 0.0f) {
 				const auto& steadying = *modifier.steadying;
-				logger::info("	{}: {:.3f}s (steadying: x{:.3f})", weapon ? "Held at full draw" : "Overcharged", steadying.holdSeconds, steadying.steadied);
+				logger::info("	{}: {:.3f}s (steadying: x{:.3f})", weapon ? "Held at full draw" : "Held charged", steadying.holdSeconds, steadying.steadied);
 				if (steadying.fatigueEnabled) {
 					logger::info("	Fatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", steadying.fatigueThreshold, steadying.fatigueSeconds, steadying.fatigueProgress * 100.0f);
 				}
@@ -199,9 +199,9 @@ namespace NLA
 
 				// PlayerAutoAim will handle 3rd person aim.
 				if (!IsHandledByPlayerAutoAim(attacker)) {
-					const float overcharge = ChargeTime::PopSpellOverchargeDuration(attacker, launchData.castingSource);
+					const float holdSeconds = ChargeTime::PopSpellHoldDuration(attacker, launchData.castingSource);
 
-					ShotModifier modifier(attacker, launchData.spell, overcharge);
+					ShotModifier modifier(attacker, launchData.spell, holdSeconds);
 					modifier.Apply(&launchData.angleX, &launchData.angleZ);
 					LogShot(modifier);
 				}
@@ -263,7 +263,7 @@ namespace NLA
 				const auto& runtimeData = projectile->GetProjectileRuntimeData();
 				ShotModifier modifier{};
 				if (auto spell = runtimeData.spell; spell) {
-					modifier = ShotModifier(player, spell, ChargeTime::PopSpellOverchargeDuration(player, runtimeData.castingSource));
+					modifier = ShotModifier(player, spell, ChargeTime::PopSpellHoldDuration(player, runtimeData.castingSource));
 				} else if (auto weapon = runtimeData.weaponSource; weapon) {
 					modifier = ShotModifier(player, weapon);
 				}

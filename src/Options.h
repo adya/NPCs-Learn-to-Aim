@@ -59,9 +59,6 @@ namespace NLA::Options
 			static SpreadOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SpreadOptions& defaults);
 		};
 
-		/// Controls how much overcharging a spell/staff/scroll reduces spread.
-		using Overcharge = SpreadOptions;
-
 		/// Controls how much holding a bow at full draw reduces spread.
 		using Steadying = SpreadOptions;
 
@@ -158,11 +155,11 @@ namespace NLA::Options
 		ChargeSpeed concentrationStaffChargeSpeed;
 		ChargeSpeed scrollChargeSpeed;
 
-		Overcharge spellOvercharge;
-		Overcharge staffOvercharge;
-		Overcharge scrollOvercharge;
+		Steadying spellSteadying;
+		Steadying staffSteadying;
+		Steadying scrollSteadying;
 
-		/// Controls how long a spell/staff/scroll can be held overcharged before fatigue starts to affect accuracy.
+		/// Controls how long a spell/staff/scroll can be held charged before fatigue starts to affect accuracy.
 		FatigueOptions spellFatigue;
 		FatigueOptions staffFatigue;
 		FatigueOptions scrollFatigue;
@@ -195,15 +192,15 @@ namespace NLA::Options
 			}
 		}
 
-		inline const Overcharge& SpellOverchargeFor(WeaponType type) const {
+		inline const Steadying& SpellSteadyingFor(WeaponType type) const {
 			assert(type == kSpell || type == kStaff || type == kScroll);
 			switch (type) {
 			case kStaff:
-				return staffOvercharge;
+				return staffSteadying;
 			case kScroll:
-				return scrollOvercharge;
+				return scrollSteadying;
 			default:
-				return spellOvercharge;
+				return spellSteadying;
 			}
 		}
 
@@ -242,9 +239,9 @@ namespace NLA::Options
 			.precisionMultipliers = { .bow = 1.4f, .crossbow = 7.0f, .spell = 1.25f, .concentrationSpell = 1.25f, .staff = 1.55f, .concentrationStaff = 1.55f, .scroll = 1.25f, .blindness = 0.0f },
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
-			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
-			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
-			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.spellSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.staffSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.scrollSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.spellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.staffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.scrollFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
@@ -291,9 +288,9 @@ namespace NLA::Options
 			.precisionMultipliers = { .bow = 1.0f, .crossbow = 7.0f, .spell = 0.85f, .concentrationSpell = 0.85f, .staff = 1.15f, .concentrationStaff = 1.15f, .scroll = 0.85f, .blindness = 1.5f },
 			.stavesUseEnchantingSkill = false,
 			.spellsUseHighestMagicSkill = false,
-			.spellOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
-			.staffOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
-			.scrollOvercharge = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.spellSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.staffSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
+			.scrollSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 1.0f },
 			.spellFatigue = { { .enabled = true, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.staffFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },
 			.scrollFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 1.0f, 4.0f },

@@ -224,7 +224,7 @@ namespace NLA::Menu
 	inline constexpr const char* kScaleAimLabel = "Scale Aim With Skill";
 	inline constexpr const char* kScaleDrawSpeedLabel = "Scale Draw Speed With Skill";
 	inline constexpr const char* kScaleChargeSpeedLabel = "Scale Charge Speed With Skill";
-	inline constexpr const char* kOverchargeLabel = "Overcharge Steadies Aim";
+	inline constexpr const char* kSteadyingLabel = "Holding Charge Steadies Aim";
 	inline constexpr const char* kDrawSpeedGroup = "Draw Speed";
 	inline constexpr const char* kChargeSpeedGroup = "Charge Speed";
 	inline constexpr const char* kRangeGroup = "Range";
@@ -234,11 +234,11 @@ namespace NLA::Menu
 	constexpr FatigueRows CastFatigue(Config::FatigueOptions Config::* options, const char* tooltip) {
 		return {
 			options,
-			"Overcharge Fatigues Aim",
+			"Holding Charge Fatigues Aim",
 			tooltip,
-			"Seconds a spell/staff/scroll can be held overcharged before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",
-			"Seconds a spell/staff/scroll can be held overcharged before fatigue sets in for a caster with 100 max Magicka. Max Magicka above that extends it further, with diminishing returns.",
-			"The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from overcharging is negated before adding extra spread."
+			"Seconds a spell/staff/scroll can be held charged before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",
+			"Seconds a spell/staff/scroll can be held charged before fatigue sets in for a caster with 100 max Magicka. Max Magicka above that extends it further, with diminishing returns.",
+			"The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from steadying is negated before adding extra spread."
 		};
 	}
 }

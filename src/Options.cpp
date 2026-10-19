@@ -57,7 +57,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "fCrossbowMaxHeadshotChance", value.crossbowMaxChance, defaultValue.crossbowMaxChance, writeDefaults);
 		}
 
-		void SaveOvercharge(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::Overcharge& value, const Config::Overcharge& defaultValue, bool writeDefaults = false) {
+		void SaveSteadying(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::Steadying& value, const Config::Steadying& defaultValue, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, fmt::format("b{}", prefix).c_str(), value.enabled, defaultValue.enabled, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxSpreadReduction", prefix).c_str(), value.maxSpreadMultiplier, defaultValue.maxSpreadMultiplier, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration, writeDefaults);
@@ -111,9 +111,9 @@ namespace NLA::Options
 
 			SaveSpeedOptions(ini, a_section, "SpellChargeSpeed", custom.spellChargeSpeed, defaults.spellChargeSpeed, writeDefaults);
 
-			SaveOvercharge(ini, a_section, "SpellOvercharge", custom.spellOvercharge, defaults.spellOvercharge, writeDefaults);
-			SaveOvercharge(ini, a_section, "StaffOvercharge", custom.staffOvercharge, defaults.staffOvercharge, writeDefaults);
-			SaveOvercharge(ini, a_section, "ScrollOvercharge", custom.scrollOvercharge, defaults.scrollOvercharge, writeDefaults);
+			SaveSteadying(ini, a_section, "SpellSteadying", custom.spellSteadying, defaults.spellSteadying, writeDefaults);
+			SaveSteadying(ini, a_section, "StaffSteadying", custom.staffSteadying, defaults.staffSteadying, writeDefaults);
+			SaveSteadying(ini, a_section, "ScrollSteadying", custom.scrollSteadying, defaults.scrollSteadying, writeDefaults);
 
 			SaveFatigue(ini, a_section, "SpellFatigue", custom.spellFatigue, defaults.spellFatigue, writeDefaults);
 			SaveFatigue(ini, a_section, "StaffFatigue", custom.staffFatigue, defaults.staffFatigue, writeDefaults);
@@ -128,7 +128,7 @@ namespace NLA::Options
 
 			SaveSpeedOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed, writeDefaults);
 			SaveSpeedOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
-			SaveOvercharge(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
+			SaveSteadying(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
 			SaveFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
 		}
 	}
@@ -211,11 +211,11 @@ namespace NLA::Options
 		}
 	}
 
-	inline void LogSpellOvercharge(std::string_view actor, std::string_view categoryName, const Config::Overcharge& overcharge) {
-		if (!overcharge.enabled) {
-			logger::info("\tOvercharging {} doesn't affect {}'s precision", categoryName, actor);
+	inline void LogSpellSteadying(std::string_view actor, std::string_view categoryName, const Config::Steadying& steadying) {
+		if (!steadying.enabled) {
+			logger::info("\tHolding {} charged doesn't affect {}'s precision", categoryName, actor);
 		} else {
-			logger::info("\tOvercharging {} reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", categoryName, actor, overcharge.maxSpreadMultiplier * 100, overcharge.halfDuration);
+			logger::info("\tHolding {} charged reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", categoryName, actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
 		}
 	}
 
@@ -240,9 +240,9 @@ namespace NLA::Options
 
 	inline void LogCastFatigue(std::string_view actor, std::string_view categoryName, const Config::FatigueOptions& fatigue) {
 		if (!fatigue.enabled) {
-			logger::info("\tOvercharging {} too long doesn't fatigue {}'s precision", categoryName, actor);
+			logger::info("\tHolding {} charged too long doesn't fatigue {}'s precision", categoryName, actor);
 		} else {
-			logger::info("\t{} can overcharge {} for {:.2f}s at 0 max Magicka to {:.2f}s at 100 max Magicka before fatigue sets in, "
+			logger::info("\t{} can hold {} charged for {:.2f}s at 0 max Magicka to {:.2f}s at 100 max Magicka before fatigue sets in, "
 			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
 			             actor, categoryName, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
 		}
@@ -357,9 +357,9 @@ namespace NLA::Options
 		LogChargeSpeedMultiplier("NPCs", "scrolls", NPC.scrollChargeSpeed.enabled, NPC.scrollChargeSpeed.minMultiplier, NPC.scrollChargeSpeed.maxMultiplier);
 		LogDrawSpeedMultiplier("NPCs", "bows", NPC.bowDrawSpeed.enabled, NPC.bowDrawSpeed.minMultiplier, NPC.bowDrawSpeed.maxMultiplier);
 		LogDrawSpeedMultiplier("NPCs", "crossbows", NPC.crossbowDrawSpeed.enabled, NPC.crossbowDrawSpeed.minMultiplier, NPC.crossbowDrawSpeed.maxMultiplier);
-		LogSpellOvercharge("NPCs", "spells", NPC.spellOvercharge);
-		LogSpellOvercharge("NPCs", "staves", NPC.staffOvercharge);
-		LogSpellOvercharge("NPCs", "scrolls", NPC.scrollOvercharge);
+		LogSpellSteadying("NPCs", "spells", NPC.spellSteadying);
+		LogSpellSteadying("NPCs", "staves", NPC.staffSteadying);
+		LogSpellSteadying("NPCs", "scrolls", NPC.scrollSteadying);
 		LogCastFatigue("NPCs", "spells", NPC.spellFatigue);
 		LogCastFatigue("NPCs", "staves", NPC.staffFatigue);
 		LogCastFatigue("NPCs", "scrolls", NPC.scrollFatigue);
@@ -425,9 +425,9 @@ namespace NLA::Options
 		LogChargeSpeedMultiplier("Player", "scrolls", Player.scrollChargeSpeed.enabled, Player.scrollChargeSpeed.minMultiplier, Player.scrollChargeSpeed.maxMultiplier);
 		LogDrawSpeedMultiplier("Player", "bows", Player.bowDrawSpeed.enabled, Player.bowDrawSpeed.minMultiplier, Player.bowDrawSpeed.maxMultiplier);
 		LogDrawSpeedMultiplier("Player", "crossbows", Player.crossbowDrawSpeed.enabled, Player.crossbowDrawSpeed.minMultiplier, Player.crossbowDrawSpeed.maxMultiplier);
-		LogSpellOvercharge("Player", "spells", Player.spellOvercharge);
-		LogSpellOvercharge("Player", "staves", Player.staffOvercharge);
-		LogSpellOvercharge("Player", "scrolls", Player.scrollOvercharge);
+		LogSpellSteadying("Player", "spells", Player.spellSteadying);
+		LogSpellSteadying("Player", "staves", Player.staffSteadying);
+		LogSpellSteadying("Player", "scrolls", Player.scrollSteadying);
 		LogCastFatigue("Player", "spells", Player.spellFatigue);
 		LogCastFatigue("Player", "staves", Player.staffFatigue);
 		LogCastFatigue("Player", "scrolls", Player.scrollFatigue);
@@ -545,9 +545,9 @@ namespace NLA::Options
 		result.concentrationStaffChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ConcentrationStaffChargeSpeed", result.concentrationStaffChargeSpeed);
 		result.scrollChargeSpeed = SpeedOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed);
 
-		result.spellOvercharge = SpreadOptions::FromIni(ini, a_section, "SpellOvercharge", result.spellOvercharge);
-		result.staffOvercharge = SpreadOptions::FromIni(ini, a_section, "StaffOvercharge", result.staffOvercharge);
-		result.scrollOvercharge = SpreadOptions::FromIni(ini, a_section, "ScrollOvercharge", result.scrollOvercharge);
+		result.spellSteadying = SpreadOptions::FromIni(ini, a_section, "SpellSteadying", result.spellSteadying);
+		result.staffSteadying = SpreadOptions::FromIni(ini, a_section, "StaffSteadying", result.staffSteadying);
+		result.scrollSteadying = SpreadOptions::FromIni(ini, a_section, "ScrollSteadying", result.scrollSteadying);
 
 		result.spellFatigue = FatigueOptions::FromIni(ini, a_section, "SpellFatigue", result.spellFatigue);
 		result.staffFatigue = FatigueOptions::FromIni(ini, a_section, "StaffFatigue", result.staffFatigue);

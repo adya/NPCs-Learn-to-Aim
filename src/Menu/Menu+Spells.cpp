@@ -24,12 +24,12 @@ namespace NLA::Menu
 				"When enabled, corresponding Magic skill also affects how fast fire-and-forget spells charge/cast. (the higher the skill the faster the cast)",
 				kChargeSpeedGroup },
 			SpreadRows{
-				&Config::spellOvercharge,
-				kOverchargeLabel,
+				&Config::spellSteadying,
+				kSteadyingLabel,
 				"When enabled, holding a fully charged spell before releasing it tightens its spread. The longer it's held, the steadier the shot, with diminishing returns.",
-				"The most spread that overcharging can remove, approached the longer the spell is held. 50% means the spread can at best be halved.",
+				"The most spread that holding can remove, approached the longer the spell is held. 50% means the spread can at best be halved.",
 				"Duration of holding a fully charged spell to get roughly half of the max spread reduction. Lower means the aim steadies faster. 1 sec with 50% reduction means that in 1 second spread will be reduced by 25%." },
-			CastFatigue(&Config::spellFatigue, "When enabled, holding a spell overcharged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the caster's max Magicka."),
+			CastFatigue(&Config::spellFatigue, "When enabled, holding a spell charged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the caster's max Magicka."),
 		};
 	}
 
