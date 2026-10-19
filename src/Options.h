@@ -11,8 +11,7 @@ namespace NLA
 
 		kChargeTime,
 		kRange,
-		kHeadshot,
-		kFatigueThreshold
+		kHeadshot
 	};
 
 	enum WeaponType : std::uint8_t

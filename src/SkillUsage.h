@@ -46,9 +46,6 @@ namespace NLA
 			return Skill(actor) * (sensitivity ? *sensitivity : 1.0f);
 		}
 
-		/// Seconds that the shot can be held before fatigue sets in. Grows with the actor's max Stamina (bows) or Magicka (spells), with diminishing returns.
-		float FatigueThreshold(RE::Actor* actor) const;
-
 		/// Maximum angular deviation (in radians) for the shot, based on the current skill.
 		float MaxSpread(RE::Actor* actor) const;
 

@@ -1,6 +1,7 @@
 #include "Aiming.h"
 #include "ChargeTime.h"
 #include "DrawSpeed.h"
+#include "Fatigue.h"
 #include "Hooking.h"
 #include "Options.h"
 #include "SkillUsage.h"
@@ -51,20 +52,18 @@ namespace NLA
 			float scale{ 1.0f };
 
 			SteadyingModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon, WeaponType type, float holdSeconds) :
-				SteadyingModifier(holdSeconds,
+				SteadyingModifier(attacker, holdSeconds, type,
 					Options::For(attacker).WeaponSteadyingFor(type),
-					Options::For(attacker).WeaponFatigueFor(type) ? *Options::For(attacker).WeaponFatigueFor(type) : kNoFatigue,
-					SkillUsage(weapon, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
+					Options::For(attacker).WeaponFatigueFor(type) ? *Options::For(attacker).WeaponFatigueFor(type) : kNoFatigue) {}
 
 			SteadyingModifier(RE::Actor* attacker, const RE::MagicItem* spell, WeaponType type, float holdSeconds) :
-				SteadyingModifier(holdSeconds,
+				SteadyingModifier(attacker, holdSeconds, type,
 					Options::For(attacker).SpellSteadyingFor(type),
-					Options::For(attacker).SpellFatigueFor(type),
-					SkillUsage(spell, attacker, kFatigueThreshold).FatigueThreshold(attacker)) {}
+					Options::For(attacker).SpellFatigueFor(type)) {}
 
 		private:
-			SteadyingModifier(float holdSeconds, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue, float fatigueThreshold) :
-				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigueThreshold) {
+			SteadyingModifier(RE::Actor* attacker, float holdSeconds, WeaponType type, const Options::Config::SpreadOptions& steadying, const Options::Config::FatigueOptions& fatigue) :
+				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigue.enabled ? Fatigue::Threshold(fatigue, attacker, type) : 0.0f) {
 				if (holdSeconds <= 0.0f)
 					return;
 

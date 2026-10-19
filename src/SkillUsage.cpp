@@ -25,15 +25,6 @@ namespace NLA
 				}
 			}
 			break;
-		case kFatigueThreshold:
-			if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
-				weaponType = kBow;
-				if (options.bowFatigue.enabled) {
-					skill = RE::ActorValue::kArchery;
-					multiplier = Range{ options.bowFatigue.minThreshold, options.bowFatigue.maxThreshold };
-				}
-			}
-			break;
 		case kHeadshot:
 			{
 				// Headshots are an NPC-only feature.
@@ -142,10 +133,13 @@ namespace NLA
 		default:
 			if (auto effect = spell->GetCostliestEffectItem(); effect) {
 				if (auto base = effect->baseEffect; base) {
-					return base->GetMagickSkill();
+					if (auto skill = base->GetMagickSkill(); skill != RE::ActorValue::kNone) {
+						return skill;
+					}
 				}
 			}
-			return RE::ActorValue::kNone;
+			// Spells without a magic school (e.g. some abilities or modded effects) still aim by the caster's best school.
+			return HighestMagicSkill(caster);
 		}
 	}
 
@@ -188,41 +182,6 @@ namespace NLA
 				if (options.scrollChargeSpeed.enabled) {
 					skill = MagicSkillFor(spell, attacker, context);
 					multiplier = Range{ options.scrollChargeSpeed.minMultiplier, options.scrollChargeSpeed.maxMultiplier };
-				}
-				break;
-			default:
-				break;
-			}
-			break;
-
-		case kFatigueThreshold:
-			switch (spell->GetSpellType()) {
-			case RE::MagicSystem::SpellType::kSpell:
-			case RE::MagicSystem::SpellType::kLeveledSpell:
-				weaponType = kSpell;
-				if (isConcentration && options.concentrationSpellFatigue.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.concentrationSpellFatigue.minThreshold, options.concentrationSpellFatigue.maxThreshold };
-				} else if (isFireAndForget && options.spellFatigue.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.spellFatigue.minThreshold, options.spellFatigue.maxThreshold };
-				}
-				break;
-			case RE::MagicSystem::SpellType::kStaffEnchantment:
-				weaponType = kStaff;
-				if (isConcentration && options.concentrationStaffFatigue.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.concentrationStaffFatigue.minThreshold, options.concentrationStaffFatigue.maxThreshold };
-				} else if (isFireAndForget && options.staffFatigue.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.staffFatigue.minThreshold, options.staffFatigue.maxThreshold };
-				}
-				break;
-			case RE::MagicSystem::SpellType::kScroll:
-				weaponType = kScroll;
-				if (options.scrollFatigue.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.scrollFatigue.minThreshold, options.scrollFatigue.maxThreshold };
 				}
 				break;
 			default:
@@ -325,20 +284,6 @@ namespace NLA
 		const float progress = (1.0f - std::exp(-saturation * std::pow(t, shape))) / (1.0f - std::exp(-saturation));
 
 		return range->min + (range->max - range->min) * progress;
-	}
-
-	float SkillUsage::FatigueThreshold(RE::Actor* actor) const {
-		const Range* range = std::get_if<Range>(&multiplier);
-		if (!actor || !range)
-			return 0.0f;
-
-		constexpr float baseline = 100.0f;
-		constexpr float exponent = 0.7f;
-
-		const auto  attribute = weaponType == kBow ? RE::ActorValue::kStamina : RE::ActorValue::kMagicka;
-		const float ratio = std::max(actor->GetActorValueMax(attribute), 0.0f) / baseline;
-
-		return range->min + (range->max - range->min) * std::pow(ratio, exponent);
 	}
 
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {

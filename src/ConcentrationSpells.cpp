@@ -1,5 +1,6 @@
 #include "ConcentrationSpells.h"
 #include "ChargeTime.h"
+#include "Fatigue.h"
 #include "Hooking.h"
 #include "Options.h"
 #include "SkillUsage.h"
@@ -58,21 +59,10 @@ namespace NLA::ConcentrationSpells
 	std::unordered_map<RE::FormID, WanderAnimation> WanderAnimation::active{};
 
 	/// Spread scale from casting the concentration spell continuously for longer than the caster's fatigue threshold.
-	float FatigueScale(RE::Projectile* projectile, RE::Actor* attacker) {
+	float FatigueScale(RE::Projectile* projectile, RE::Actor* attacker, WeaponType type) {
 		auto& runtimeData = projectile->GetProjectileRuntimeData();
 
-		auto fatigueUsage = SkillUsage(runtimeData.spell, attacker, kFatigueThreshold);
-		if (!fatigueUsage)
-			return 1.0f;
-
-		const auto& fatigue = Options::For(attacker).ConcentrationFatigueFor(fatigueUsage.weaponType);
-
-		const float threshold = fatigueUsage.FatigueThreshold(attacker);
-
-		const float fatigueSeconds = std::max(0.0f, ChargeTime::ConcentrationDuration(attacker, runtimeData.castingSource) - threshold);
-		const float fatigueProgress = 1.0f - std::exp2(-fatigueSeconds / fatigue.halfDuration);
-
-		return 1.0f + fatigue.maxSpreadMultiplier * fatigueProgress;
+		return Fatigue::ConcentrationScale(attacker, type, ChargeTime::ConcentrationDuration(attacker, runtimeData.castingSource));
 	}
 
 	RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Actor* attacker, const SkillUsage& skillUsage, float scale) {
@@ -136,7 +126,7 @@ namespace NLA::ConcentrationSpells
 					if (auto attacker = GetAttacker(projectile); attacker) {
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
-							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage, FatigueScale(projectile, attacker));
+							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage, FatigueScale(projectile, attacker, skillUsage.weaponType));
 							LocalContext::current = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);
