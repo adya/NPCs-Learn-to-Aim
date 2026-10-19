@@ -318,9 +318,11 @@ namespace NLA
 		if (range->max == range->min)
 			return range->min;
 
-		constexpr float rate = 0.025f;
-		const float     level = std::max(0.0f, EffectiveSkill(actor));
-		const float     progress = (1.0f - std::exp(-rate * level)) / (1.0f - std::exp(-rate * 100.0f));
+		constexpr float shape = 1.8f;
+		constexpr float saturation = 2.7f;
+
+		const float t = std::max(0.0f, EffectiveSkill(actor)) / 100.0f;
+		const float progress = (1.0f - std::exp(-saturation * std::pow(t, shape))) / (1.0f - std::exp(-saturation));
 
 		return range->min + (range->max - range->min) * progress;
 	}
