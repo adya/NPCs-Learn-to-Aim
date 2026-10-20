@@ -31,9 +31,6 @@ namespace NLA
 			}
 		}
 
-		/// Used for weapons that never fatigue the shooter.
-		const Options::Config::FatigueOptions kNoFatigue{ { .enabled = false, .maxSpreadMultiplier = 0.0f, .halfDuration = 1.0f }, 0.0f, 0.0f };
-
 		struct SteadyingModifier
 		{
 			float holdSeconds{ 0.0f };
@@ -53,8 +50,7 @@ namespace NLA
 
 			static SteadyingModifier ForWeapon(RE::Actor* attacker, WeaponType type, float holdSeconds) {
 				const auto& options = Options::For(attacker);
-				const auto* fatigue = options.WeaponFatigueFor(type);
-				return { attacker, holdSeconds, type, options.WeaponSteadyingFor(type), fatigue ? *fatigue : kNoFatigue };
+				return { attacker, holdSeconds, type, options.WeaponSteadyingFor(type), options.WeaponFatigueFor(type) };
 			}
 
 			static SteadyingModifier ForSpell(RE::Actor* attacker, WeaponType type, float holdSeconds) {
@@ -70,7 +66,7 @@ namespace NLA
 				const float steadyingSeconds = fatigue.enabled ? std::min(holdSeconds, fatigueThreshold) : holdSeconds;
 
 				if (steadying.enabled) {
-					steadied = 1.0f - steadying.maxSpreadMultiplier * (1.0f - std::exp2(-steadyingSeconds / steadying.halfDuration));
+					steadied = 1.0f - steadying.maxSpreadMultiplier * Fatigue::Progress(steadyingSeconds, steadying.halfDuration);
 				}
 				scale = steadied;
 
@@ -78,7 +74,7 @@ namespace NLA
 					return;
 
 				fatigueSeconds = std::max(0.0f, holdSeconds - fatigueThreshold);
-				fatigueProgress = 1.0f - std::exp2(-fatigueSeconds / fatigue.halfDuration);
+				fatigueProgress = Fatigue::Progress(fatigueSeconds, fatigue.halfDuration);
 
 				const float fatigueTarget = 1.0f + fatigue.maxSpreadMultiplier;
 				scale = steadied + (fatigueTarget - steadied) * fatigueProgress;
@@ -145,39 +141,39 @@ namespace NLA
 			logger::info("Shooting: {} with {}", attacker->GetName(), modifier.source ? modifier.source->GetName() : "?");
 
 			if (const auto& precision = modifier.precision; precision) {
-				logger::info("	Skill: {:.1f} (base: {:.1f}), factor: {:.4f}", precision.EffectiveSkill(attacker), precision.Skill(attacker), precision.SkillFactor(attacker));
+				logger::info("\tSkill: {:.1f} (base: {:.1f}), factor: {:.4f}", precision.EffectiveSkill(attacker), precision.Skill(attacker), precision.SkillFactor(attacker));
 			}
 
 			if (auto accuracy = weapon ? SkillUsage(weapon, attacker, kAccuracy) : SkillUsage(spell, attacker, kAccuracy); accuracy) {
 				const float variance = Accuracy::AimVariance(accuracy, attacker);
 				const float aimOffset = Settings::fCombatAimProjectileRandomOffset();
-				logger::info("	Aim variance: {:.4f} (max aim offset: {:.2f}, base: {:.2f})", variance, aimOffset * variance, aimOffset);
+				logger::info("\tAim variance: {:.4f} (max aim offset: {:.2f}, base: {:.2f})", variance, aimOffset * variance, aimOffset);
 			}
 
 			if (auto headshotUsage = SkillUsage(weapon, attacker, kHeadshot); headshotUsage) {
-				logger::info("	Headshot chance: {:.0f}% ({})", Accuracy::HeadshotChance(attacker, headshotUsage) * 100.0f, Accuracy::IsGoingForHeadshot(attacker) ? "going for a headshot" : "aiming at the body");
+				logger::info("\tHeadshot chance: {:.0f}% ({})", Accuracy::HeadshotChance(attacker, headshotUsage) * 100.0f, Accuracy::IsGoingForHeadshot(attacker) ? "going for a headshot" : "aiming at the body");
 			}
 
 			const float speed = weapon ? Draw::SpeedMultiplier(attacker, weapon) : ChargeTime::SpeedMultiplier(attacker, spell);
-			logger::info("	{} speed: x{:.3f}", weapon ? "Draw" : "Charge", speed);
+			logger::info("\t{} speed: x{:.3f}", weapon ? "Draw" : "Charge", speed);
 
 			if (modifier.steadying && weapon && modifier.steadying->holdSeconds <= 0.0f) {
-				logger::info("	Held ready: no hold time counted ({})", weapon->IsCrossbow() ? "crossbow" : "bow");
+				logger::info("\tHeld ready: no hold time counted ({})", weapon->IsCrossbow() ? "crossbow" : "bow");
 			}
 
 			if (modifier.steadying && modifier.steadying->holdSeconds > 0.0f) {
 				const auto& steadying = *modifier.steadying;
-				logger::info("	{}: {:.3f}s (steadying: x{:.3f})", weapon ? (weapon->IsCrossbow() ? "Held loaded" : "Held at full draw") : "Held charged", steadying.holdSeconds, steadying.steadied);
+				logger::info("\t{}: {:.3f}s (steadying: x{:.3f})", weapon ? (weapon->IsCrossbow() ? "Held loaded" : "Held at full draw") : "Held charged", steadying.holdSeconds, steadying.steadied);
 				if (steadying.fatigueEnabled) {
-					logger::info("	Fatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", steadying.fatigueThreshold, steadying.fatigueSeconds, steadying.fatigueProgress * 100.0f);
+					logger::info("\tFatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", steadying.fatigueThreshold, steadying.fatigueSeconds, steadying.fatigueProgress * 100.0f);
 				}
-				logger::info("	Spread scale: x{:.3f} ({:+.0f}%)", steadying.scale, (steadying.scale - 1.0f) * 100.0f);
+				logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", steadying.scale, (steadying.scale - 1.0f) * 100.0f);
 			}
 
 			if (const auto& precision = modifier.precision; precision) {
-				logger::info("	Spread: {:.4f} -> {:.4f} (max: {:.4f})", modifier.rawOffset.Length(), modifier.offset.Length(), precision.MaxSpread(attacker));
-				logger::info("	AngleX: {:.4f} -> {:.4f}", modifier.originalAngles.x, modifier.angles.x);
-				logger::info("	AngleZ: {:.4f} -> {:.4f}", modifier.originalAngles.y, modifier.angles.y);
+				logger::info("\tSpread: {:.4f} -> {:.4f} (max: {:.4f})", modifier.rawOffset.Length(), modifier.offset.Length(), precision.MaxSpread(attacker));
+				logger::info("\tAngleX: {:.4f} -> {:.4f}", modifier.originalAngles.x, modifier.angles.x);
+				logger::info("\tAngleZ: {:.4f} -> {:.4f}", modifier.originalAngles.y, modifier.angles.y);
 			}
 #endif
 		}
@@ -188,18 +184,19 @@ namespace NLA
 		/// Disable original random offset for arrows.
 		/// This allows replacing randomization logic with our own.
 		/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.
-		struct WeapFireAmmoRangomizeArrowDirection
+		struct WeapFireAmmoRandomizeArrowDirection
 		{
 			static inline constexpr REL::RelocationID  relocation{ 17693, 18102 };
 			static inline constexpr REL::VariantOffset offset{ 0xCB0, 0xCD5, 0xFFF };
 
 			static inline constexpr VariantSignature<"E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59",
 			                                         "E8 ?? ?? ?? ?? 0F 28 F0 41 0F 28 CF 41 0F 28 C2",
-			                                         "E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59"> signature;
+			                                         "E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59">
+				signature;
 
 			static inline void post_hook() { logger::info("Disabled default arrow deviation logic"); }
 
-			static float thunk(float min, float max) {
+			static float thunk(float, float) {
 				return 0;
 			}
 
@@ -280,7 +277,7 @@ namespace NLA
 				if (!IsHandledByPlayerAutoAim(player))
 					return;
 
-				const auto& runtimeData = projectile->GetProjectileRuntimeData();
+				const auto&  runtimeData = projectile->GetProjectileRuntimeData();
 				ShotModifier modifier{};
 				if (auto spell = runtimeData.spell; spell) {
 					modifier = ShotModifier(player, spell, ChargeTime::PopSpellHoldDuration(player, runtimeData.castingSource));
@@ -303,7 +300,7 @@ namespace NLA
 		};
 
 		void Install() {
-			stl::install_hook<WeapFireAmmoRangomizeArrowDirection>();
+			stl::install_hook<WeapFireAmmoRandomizeArrowDirection>();
 			stl::install_hook<LaunchSpellProjectile>();
 			stl::install_hook<WeaponFireProjectile>();
 			stl::install_hook<PlayerAutoAim>();

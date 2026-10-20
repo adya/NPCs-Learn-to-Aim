@@ -13,7 +13,12 @@ namespace NLA::Fatigue
 		const auto  attribute = usesStamina ? RE::ActorValue::kStamina : RE::ActorValue::kMagicka;
 		const float ratio = std::max(actor->GetActorValueMax(attribute), 0.0f) / baseline;
 
-		return fatigue.minThreshold + (fatigue.maxThreshold - fatigue.minThreshold) * std::pow(ratio, exponent);
+		// Max attribute above the baseline extends the threshold past `maxThreshold`, so a max below `min` could otherwise go negative.
+		return std::max(0.0f, fatigue.minThreshold + (fatigue.maxThreshold - fatigue.minThreshold) * std::pow(ratio, exponent));
+	}
+
+	float Progress(float seconds, float halfDuration) {
+		return 1.0f - std::exp2(-seconds / halfDuration);
 	}
 
 	float ConcentrationScale(RE::Actor* attacker, WeaponType type, float castSeconds) {
@@ -25,8 +30,7 @@ namespace NLA::Fatigue
 			return 1.0f;
 
 		const float fatigueSeconds = std::max(0.0f, castSeconds - Threshold(fatigue, attacker, type));
-		const float fatigueProgress = 1.0f - std::exp2(-fatigueSeconds / fatigue.halfDuration);
 
-		return 1.0f + fatigue.maxSpreadMultiplier * fatigueProgress;
+		return 1.0f + fatigue.maxSpreadMultiplier * Progress(fatigueSeconds, fatigue.halfDuration);
 	}
 }
