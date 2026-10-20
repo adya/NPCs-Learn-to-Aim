@@ -1,7 +1,6 @@
 #include "Menu+Internal.h"
-#include "CLIBUtil/string.hpp"
-#include <fmt/ranges.h>
 #include <SKSEMCP/SKSEMenuFramework.hpp>
+#include <fmt/ranges.h>
 
 using namespace ImGuiMCP;
 
@@ -38,7 +37,10 @@ namespace NLA::Menu
 		void KeywordsInput(const char* label, const char* id, const char* hint, KeywordBuffer& buffer, std::vector<std::string>& keywords, const char* tooltip) {
 			Text("%s", label);
 			if (InputTextWithHint(id, hint, buffer, sizeof(buffer))) {
-				keywords = clib_util::string::split(std::string(buffer), ",");
+				keywords = Options::ParseKeywords(buffer);
+			}
+			// Saving on every keystroke would rewrite the INI file that often.
+			if (IsItemDeactivatedAfterEdit()) {
 				Options::Save();
 			}
 			ShowTooltip(tooltip);
@@ -51,9 +53,9 @@ namespace NLA::Menu
 
 			auto& npc = Options::NPC;
 			auto  syncBuffers = [&] {
-				FillBuffer(includeBuffer, npc.includeKeywords);
-				FillBuffer(excludeBuffer, npc.excludeKeywords);
-				buffersGeneration = Options::currentID;
+                FillBuffer(includeBuffer, npc.includeKeywords);
+                FillBuffer(excludeBuffer, npc.excludeKeywords);
+                buffersGeneration = Options::currentID;
 			};
 
 			PushID("Filters");
@@ -65,11 +67,11 @@ namespace NLA::Menu
 				syncBuffers();
 			}
 
-			KeywordsInput("Include Keywords", "##IncludeKeywords", "ActorTypeNPC,UpdateDuringArchery", includeBuffer, npc.includeKeywords,
-				"Only NPCs with at least one of these keywords (on the NPC or its race) will learn to aim. Leave empty to skip this filter.");
+			static const std::string includeHint = fmt::format("{}", fmt::join(Options::NPCConfig::defaultConfig.includeKeywords, ","));
+
+			KeywordsInput("Include Keywords", "##IncludeKeywords", includeHint.c_str(), includeBuffer, npc.includeKeywords, "Only NPCs with at least one of these keywords (on the NPC or its race) will learn to aim. Leave empty to skip this filter.");
 			Spacing();
-			KeywordsInput("Exclude Keywords", "##ExcludeKeywords", "", excludeBuffer, npc.excludeKeywords,
-				"NPCs with any of these keywords (on the NPC or its race) will never learn to aim.");
+			KeywordsInput("Exclude Keywords", "##ExcludeKeywords", "", excludeBuffer, npc.excludeKeywords, "NPCs with any of these keywords (on the NPC or its race) will never learn to aim.");
 
 			Spacing();
 			if (Button("Reset Filters to Default")) {

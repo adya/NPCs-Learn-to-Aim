@@ -3,28 +3,41 @@
 
 namespace NLA
 {
+	namespace
+	{
+		/// Lowers the multiplier by how blind the attacker is, if blindness affects aiming.
+		float WithBlindness(float multiplier, RE::Actor* attacker, const Options::Config& options, SkillUsageContext context) {
+			if (!options.blindnessAffectsAiming)
+				return multiplier;
+
+			const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
+			return std::max(0.0f, multiplier - (1 - options.MultiplierFor(context).blindness) * blindness);
+		}
+	}
+
 	SkillUsage::SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker, SkillUsageContext context) {
 		if (!weapon || !attacker || !Options::NPC.ShouldLearn(attacker))
 			return;
 
+		const auto weaponKind = weapon->GetWeaponType();
+		if (weaponKind != RE::WEAPON_TYPE::kBow && weaponKind != RE::WEAPON_TYPE::kCrossbow)
+			return;
+
 		const auto& options = Options::For(attacker);
+		const bool  isCrossbow = weaponKind == RE::WEAPON_TYPE::kCrossbow;
+
+		weaponType = isCrossbow ? kCrossbow : kBow;
 
 		switch (context) {
 		case kChargeTime:
-			if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
-				weaponType = kCrossbow;
-				if (options.crossbowDrawSpeed.enabled) {
+			{
+				const auto& drawSpeed = isCrossbow ? options.crossbowDrawSpeed : options.bowDrawSpeed;
+				if (drawSpeed.enabled) {
 					skill = RE::ActorValue::kArchery;
-					multiplier = Range{ options.crossbowDrawSpeed.minMultiplier, options.crossbowDrawSpeed.maxMultiplier };
+					multiplier = Range{ drawSpeed.minMultiplier, drawSpeed.maxMultiplier };
 				}
-			} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
-				weaponType = kBow;
-				if (options.bowDrawSpeed.enabled) {
-					skill = RE::ActorValue::kArchery;
-					multiplier = Range{ options.bowDrawSpeed.minMultiplier, options.bowDrawSpeed.maxMultiplier };
-				}
+				break;
 			}
-			break;
 		case kHeadshot:
 			{
 				// Headshots are an NPC-only feature.
@@ -32,41 +45,20 @@ namespace NLA
 					break;
 
 				const auto& headshots = Options::NPC.headshots;
-				if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
-					weaponType = kCrossbow;
-					if (headshots.crossbow) {
-						skill = RE::ActorValue::kArchery;
-						multiplier = Range{ headshots.crossbowMinChance, headshots.crossbowMaxChance };
-					}
-				} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
-					weaponType = kBow;
-					if (headshots.bow) {
-						skill = RE::ActorValue::kArchery;
-						multiplier = Range{ headshots.bowMinChance, headshots.bowMaxChance };
-					}
+				if (isCrossbow ? headshots.crossbow : headshots.bow) {
+					skill = RE::ActorValue::kArchery;
+					multiplier = isCrossbow ? Range{ headshots.crossbowMinChance, headshots.crossbowMaxChance } : Range{ headshots.bowMinChance, headshots.bowMaxChance };
 				}
 				break;
 			}
 		case kAccuracy:
 		case kPrecision:
 			{
-				if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kCrossbow) {
-					weaponType = kCrossbow;
-					if (options.crossbowAiming) {
-						skill = RE::ActorValue::kArchery;
-						multiplier = options.MultiplierFor(context).crossbow;
-					}
-				} else if (weapon->GetWeaponType() == RE::WEAPON_TYPE::kBow) {
-					weaponType = kBow;
-					if (options.bowAiming) {
-						skill = RE::ActorValue::kArchery;
-						multiplier = options.MultiplierFor(context).bow;
-					}
-				}
+				if (isCrossbow ? options.crossbowAiming : options.bowAiming) {
+					const auto& multipliers = options.MultiplierFor(context);
 
-				if (options.blindnessAffectsAiming) {
-					const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
-					std::get<float>(multiplier) = std::max(0.0f, std::get<float>(multiplier) - (1 - options.MultiplierFor(context).blindness) * blindness);
+					skill = RE::ActorValue::kArchery;
+					multiplier = WithBlindness(isCrossbow ? multipliers.crossbow : multipliers.bow, attacker, options, context);
 				}
 				break;
 			}
@@ -223,7 +215,7 @@ namespace NLA
 			case RE::MagicSystem::SpellType::kSpell:
 			case RE::MagicSystem::SpellType::kLeveledSpell:
 				weaponType = kSpell;
-				if (isConcentration && options.concentrationSpellsAiming) {
+				if (isConcentration && options.concentrationSpellAiming) {
 					skill = MagicSkillFor(spell, attacker, context);
 					multiplier = options.MultiplierFor(context).concentrationSpell;
 				} else if (isFireAndForget && options.spellAiming) {
@@ -252,10 +244,7 @@ namespace NLA
 				break;
 			}
 
-			if (options.blindnessAffectsAiming) {
-				const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
-				std::get<float>(multiplier) = std::max(0.0f, std::get<float>(multiplier) - (1 - options.MultiplierFor(context).blindness) * blindness);
-			}
+			multiplier = WithBlindness(std::get<float>(multiplier), attacker, options, context);
 			break;
 
 		default:
@@ -266,8 +255,8 @@ namespace NLA
 	float SkillUsage::SkillFactor(RE::Actor* actor) const {
 		if (!actor || this->skill == RE::ActorValue::kNone)
 			return 1.0f;
-		const auto skill = EffectiveSkill(actor);
-		return std::exp(0.025f * (10 - skill));
+		const auto effectiveSkill = EffectiveSkill(actor);
+		return std::exp(0.025f * (10 - effectiveSkill));
 	}
 
 	float SkillUsage::LerpSkillFactor(RE::Actor* actor) const {
@@ -287,7 +276,7 @@ namespace NLA
 	}
 
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {
-		constexpr float toRadians = std::numbers::pi / 180.0f;
+		constexpr float toRadians = std::numbers::pi_v<float> / 180.0f;
 		return SkillFactor(actor) * Settings::fBowNPCSpreadAngle() * toRadians;
 	}
 

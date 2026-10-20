@@ -142,7 +142,7 @@ namespace NLA::Options
 
 		bool spellAiming = true;
 		bool staffAiming = true;
-		bool concentrationSpellsAiming = true;
+		bool concentrationSpellAiming = true;
 		bool concentrationStaffAiming = true;
 		bool scrollAiming = true;
 		bool bowAiming = true;
@@ -195,8 +195,11 @@ namespace NLA::Options
 		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
 		FatigueOptions bowFatigue;
 
-		/// Controls how much holding a loaded crossbow reduces spread. Crossbows don't fatigue the shooter.
+		/// Controls how much holding a loaded crossbow reduces spread.
 		Steadying crossbowSteadying;
+
+		/// Controls how long a crossbow can be held loaded before fatigue starts to affect accuracy.
+		FatigueOptions crossbowFatigue;
 
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
@@ -241,10 +244,10 @@ namespace NLA::Options
 			return type == kCrossbow ? crossbowSteadying : bowSteadying;
 		}
 
-		/// Fatigue while holding a drawn bow or loaded crossbow; null for weapons that never fatigue the shooter.
-		inline const FatigueOptions* WeaponFatigueFor(WeaponType type) const {
+		/// Fatigue while holding a drawn bow or loaded crossbow.
+		inline const FatigueOptions& WeaponFatigueFor(WeaponType type) const {
 			assert(type == kBow || type == kCrossbow);
-			return type == kBow ? &bowFatigue : nullptr;
+			return type == kCrossbow ? crossbowFatigue : bowFatigue;
 		}
 
 		inline const FatigueOptions& ConcentrationFatigueFor(WeaponType type) const {
@@ -263,7 +266,7 @@ namespace NLA::Options
 		Config{
 			.spellAiming = true,
 			.staffAiming = true,
-			.concentrationSpellsAiming = true,
+			.concentrationSpellAiming = true,
 			.concentrationStaffAiming = true,
 			.scrollAiming = true,
 			.bowAiming = true,
@@ -295,6 +298,7 @@ namespace NLA::Options
 			.bowSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 2.0f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
 			.crossbowSteadying = { .maxSpreadMultiplier = 0.3f, .halfDuration = 3.0f },
+			.crossbowFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
 		},
 	};
 
@@ -327,7 +331,7 @@ namespace NLA::Options
 		Config{
 			.spellAiming = true,
 			.staffAiming = true,
-			.concentrationSpellsAiming = true,
+			.concentrationSpellAiming = true,
 			.concentrationStaffAiming = true,
 			.scrollAiming = true,
 			.bowAiming = true,
@@ -359,6 +363,7 @@ namespace NLA::Options
 			.bowSteadying = { .maxSpreadMultiplier = 0.5f, .halfDuration = 2.0f },
 			.bowFatigue = { { .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
 			.crossbowSteadying = { .maxSpreadMultiplier = 0.3f, .halfDuration = 3.0f },
+			.crossbowFatigue = { { .enabled = false, .maxSpreadMultiplier = 1.0f, .halfDuration = 1.5f }, 0.5f, 2.5f },
 		},
 		{},
 		{},
@@ -376,6 +381,12 @@ namespace NLA::Options
 			return NPC;
 		}
 	}
+	/// Splits a comma-separated list of keyword EditorIDs, trimming whitespace around each and dropping empty entries.
+	std::vector<std::string> ParseKeywords(std::string_view list);
+
+	/// Forgets the cached keyword filter results of NPCs. Must be called whenever anything affecting `NPCConfig::ShouldLearn` changes.
+	void InvalidateActorCache();
+
 	void Load();
 	void Save();
 
@@ -391,7 +402,7 @@ namespace NLA::Options
 
 namespace NLA::Settings
 {
-	static float fCombatAimProjectileRandomOffset() {
+	inline float fCombatAimProjectileRandomOffset() {
 		auto settings = RE::GameSettingCollection::GetSingleton();
 		if (auto setting = settings->GetSetting("fCombatAimProjectileRandomOffset")) {
 			return setting->data.f;
@@ -399,7 +410,7 @@ namespace NLA::Settings
 		return 16.0f;
 	}
 
-	static float fCombatRangedAimVariance() {
+	inline float fCombatRangedAimVariance() {
 		auto settings = RE::GameSettingCollection::GetSingleton();
 		if (auto setting = settings->GetSetting("fCombatRangedAimVariance")) {
 			return setting->data.f;
@@ -407,7 +418,7 @@ namespace NLA::Settings
 		return 0.9f;
 	}
 
-	static float fBowNPCSpreadAngle() {
+	inline float fBowNPCSpreadAngle() {
 		auto settings = RE::GameSettingCollection::GetSingleton();
 		if (auto setting = settings->GetSetting("fBowNPCSpreadAngle")) {
 			return setting->data.f;

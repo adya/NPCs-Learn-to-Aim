@@ -2,13 +2,14 @@
 #include "CLIBUtil/string.hpp"
 #include <cmath>
 #include <fmt/ranges.h>
+#include <unordered_map>
 
 namespace NLA::Options
 {
 	namespace
 	{
 		template <typename T>
-		void SetOrDeleteValue(CSimpleIniA&, const char*, const char*, const T&, const T&, bool writeDefaults = false) {}
+		void SetOrDeleteValue(CSimpleIniA&, const char*, const char*, const T&, const T&, bool writeDefaults = false) = delete;
 
 		template <>
 		void SetOrDeleteValue<bool>(CSimpleIniA& ini, const char* section, const char* key, const bool& value, const bool& defaultValue, bool writeDefaults) {
@@ -108,11 +109,14 @@ namespace NLA::Options
 			}
 		}
 
+		// The order of options here and in Config::FromIni follows the order of Config's members.
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bSpellAiming", custom.spellAiming, defaults.spellAiming, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bStaffAiming", custom.staffAiming, defaults.staffAiming, writeDefaults);
+			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsAiming", custom.concentrationSpellAiming, defaults.concentrationSpellAiming, writeDefaults);
+			SetOrDeleteValue(ini, a_section, "bConcentrationStaffAiming", custom.concentrationStaffAiming, defaults.concentrationStaffAiming, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bScrollAiming", custom.scrollAiming, defaults.scrollAiming, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bBowAiming", custom.bowAiming, defaults.bowAiming, writeDefaults);
 			SetOrDeleteValue(ini, a_section, "bCrossbowAiming", custom.crossbowAiming, defaults.crossbowAiming, writeDefaults);
@@ -121,19 +125,21 @@ namespace NLA::Options
 			SaveSkillMultiplier(ini, a_section, "Precision", custom.precisionMultipliers, defaults.precisionMultipliers, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAiming", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming, writeDefaults);
+
 			SaveSkillSources(ini, a_section, "Spell", custom.spellSkills, defaults.spellSkills, writeDefaults);
 			SaveSkillSources(ini, a_section, "ConcentrationSpell", custom.concentrationSpellSkills, defaults.concentrationSpellSkills, writeDefaults);
 			SaveSkillSources(ini, a_section, "Staff", custom.staffSkills, defaults.staffSkills, writeDefaults);
 			SaveSkillSources(ini, a_section, "ConcentrationStaff", custom.concentrationStaffSkills, defaults.concentrationStaffSkills, writeDefaults);
 			SaveSkillSources(ini, a_section, "Scroll", custom.scrollSkills, defaults.scrollSkills, writeDefaults);
 
-			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsAiming", custom.concentrationSpellsAiming, defaults.concentrationSpellsAiming, writeDefaults);
 			SaveScalingOptions(ini, a_section, "ConcentrationSpellRange", custom.concentrationSpellRange, defaults.concentrationSpellRange, writeDefaults);
 			SaveScalingOptions(ini, a_section, "ConcentrationStaffRange", custom.concentrationStaffRange, defaults.concentrationStaffRange, writeDefaults);
 
-			SetOrDeleteValue(ini, a_section, "bConcentrationStaffAiming", custom.concentrationStaffAiming, defaults.concentrationStaffAiming, writeDefaults);
-
 			SaveScalingOptions(ini, a_section, "SpellChargeSpeed", custom.spellChargeSpeed, defaults.spellChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ConcentrationStaffChargeSpeed", custom.concentrationStaffChargeSpeed, defaults.concentrationStaffChargeSpeed, writeDefaults);
+			SaveScalingOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed, writeDefaults);
 
 			SaveSteadying(ini, a_section, "SpellSteadying", custom.spellSteadying, defaults.spellSteadying, writeDefaults);
 			SaveSteadying(ini, a_section, "StaffSteadying", custom.staffSteadying, defaults.staffSteadying, writeDefaults);
@@ -145,175 +151,270 @@ namespace NLA::Options
 			SaveFatigue(ini, a_section, "ConcentrationSpellFatigue", custom.concentrationSpellFatigue, defaults.concentrationSpellFatigue, writeDefaults);
 			SaveFatigue(ini, a_section, "ConcentrationStaffFatigue", custom.concentrationStaffFatigue, defaults.concentrationStaffFatigue, writeDefaults);
 
-			SaveScalingOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "ConcentrationStaffChargeSpeed", custom.concentrationStaffChargeSpeed, defaults.concentrationStaffChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed, writeDefaults);
-
 			SaveScalingOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed, writeDefaults);
 			SaveScalingOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
 			SaveSteadying(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
 			SaveFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
 			SaveSteadying(ini, a_section, "CrossbowSteadying", custom.crossbowSteadying, defaults.crossbowSteadying, writeDefaults);
+			SaveFatigue(ini, a_section, "CrossbowFatigue", custom.crossbowFatigue, defaults.crossbowFatigue, writeDefaults);
 		}
-	}
 
-	inline void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
-		if (mult > 1) {
-			auto percent = (mult - 1) * 100;
-			logger::info("\t{} with {} is {:.2f}% easier for {}", stage, weaponName, percent, actor);
-		} else if (mult < 1) {
-			auto percent = (1 - mult) * 100;
-			logger::info("\t{} with {} is {:.2f}% harder for {}", stage, weaponName, percent, actor);
-		} else {
-			logger::info("\t{} with {} is at standard difficuly for {}", stage, weaponName, actor);
-		}
-	}
-
-	inline void LogBlindnessSkillMultiplier(std::string_view actor, std::string_view stage, float mult) {
-		if (mult > 1) {
-			auto percent = (mult - 1) * 100;
-			logger::info("\tBlind {} have {:.2f}% easier {}", actor, percent, stage);
-		} else if (mult < 1) {
-			auto percent = (1 - mult) * 100;
-			logger::info("\tBlind {} have {:.2f}% harder {}", actor, percent, stage);
-		} else {
-			logger::info("\tBlind {} have standard {}", actor, stage);
-		}
-	}
-
-	inline void LogSkillSources(std::string_view actor, std::string_view name, const Config::SkillSources& sources, bool hasRange) {
-		const auto describe = [&](SkillSource source) -> std::string {
-			switch (source) {
-			case SkillSource::kEnchanting:
-				return "Enchanting skill";
-			case SkillSource::kHighest:
-				return fmt::format("the highest {}'s magic skill regardless of spell", actor);
-			default:
-				return "skill in spell's magic school";
+		void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
+			if (mult > 1) {
+				auto percent = (mult - 1) * 100;
+				logger::info("\t{} with {} is {:.2f}% easier for {}", stage, weaponName, percent, actor);
+			} else if (mult < 1) {
+				auto percent = (1 - mult) * 100;
+				logger::info("\t{} with {} is {:.2f}% harder for {}", stage, weaponName, percent, actor);
+			} else {
+				logger::info("\t{} with {} is at standard difficulty for {}", stage, weaponName, actor);
 			}
-		};
-		logger::info("	{}'s aiming with {} is based on {}", actor, name, describe(sources.aiming));
-		logger::info("	{}'s charge speed with {} is based on {}", actor, name, describe(sources.chargeSpeed));
-		if (hasRange) {
-			logger::info("	{}'s range with {} is based on {}", actor, name, describe(sources.range));
+		}
+
+		void LogBlindnessSkillMultiplier(std::string_view actor, std::string_view stage, float mult) {
+			if (mult > 1) {
+				auto percent = (mult - 1) * 100;
+				logger::info("\tBlind {} have {:.2f}% easier {}", actor, percent, stage);
+			} else if (mult < 1) {
+				auto percent = (1 - mult) * 100;
+				logger::info("\tBlind {} have {:.2f}% harder {}", actor, percent, stage);
+			} else {
+				logger::info("\tBlind {} have standard {}", actor, stage);
+			}
+		}
+
+		/// Logs how every weapon type's multiplier changes the difficulty of `stage` (Accuracy/Precision).
+		void LogSkillMultipliers(std::string_view actor, std::string_view stage, const Config::SkillMultiplier& multipliers, bool blindnessAffectsAiming) {
+			LogSkillMultiplier(actor, "Bows", stage, multipliers.bow);
+			LogSkillMultiplier(actor, "Crossbows", stage, multipliers.crossbow);
+			LogSkillMultiplier(actor, "Spells", stage, multipliers.spell);
+			LogSkillMultiplier(actor, "Concentration Spells", stage, multipliers.concentrationSpell);
+			LogSkillMultiplier(actor, "Staves", stage, multipliers.staff);
+			LogSkillMultiplier(actor, "Concentration Staves", stage, multipliers.concentrationStaff);
+			LogSkillMultiplier(actor, "Scrolls", stage, multipliers.scroll);
+			const char* noun = stage == "Accuracy" ? "accuracy" : "precision";
+			if (blindnessAffectsAiming) {
+				LogBlindnessSkillMultiplier(actor, noun, multipliers.blindness);
+			} else {
+				logger::info("\tBlindness doesn't affect {}'s {}", actor, noun);
+			}
+		}
+
+		void LogSkillSources(std::string_view actor, std::string_view name, const Config::SkillSources& sources, bool hasRange) {
+			const auto describe = [&](SkillSource source) -> std::string {
+				switch (source) {
+				case SkillSource::kEnchanting:
+					return "Enchanting skill";
+				case SkillSource::kHighest:
+					return fmt::format("the highest {}'s magic skill regardless of spell", actor);
+				default:
+					return "skill in spell's magic school";
+				}
+			};
+			logger::info("\t{}'s aiming with {} is based on {}", actor, name, describe(sources.aiming));
+			logger::info("\t{}'s charge speed with {} is based on {}", actor, name, describe(sources.chargeSpeed));
+			if (hasRange) {
+				logger::info("\t{}'s range with {} is based on {}", actor, name, describe(sources.range));
+			}
+		}
+
+		void LogRange(std::string_view actor, std::string_view categoryName, const Config::RangeScaling& range) {
+			if (!range.enabled) {
+				logger::info("\t{} always have vanilla reach with {}", actor, categoryName);
+			} else {
+				logger::info("\t{} reach {} at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, categoryName, range.minMultiplier, range.maxMultiplier);
+			}
+		}
+
+		std::string SpeedPercentPhrase(float mult) {
+			if (mult > 1) {
+				return fmt::format("{:.2f}% faster", (mult - 1) * 100);
+			} else if (mult < 1) {
+				return fmt::format("{:.2f}% slower", (1 - mult) * 100);
+			} else {
+				return "at vanilla speed";
+			}
+		}
+
+		/// `verb` is what the actor does with the category, e.g. "draw" or "charge/cast".
+		void LogSpeed(std::string_view actor, std::string_view verb, std::string_view categoryName, const Config::ScalingOptions& speed) {
+			const auto [enabled, minMult, maxMult] = std::tie(speed.enabled, speed.minMultiplier, speed.maxMultiplier);
+			if (!enabled) {
+				logger::info("\t{} always {} {} at vanilla speed", actor, verb, categoryName);
+			} else if (minMult == maxMult) {
+				logger::info("\t{} {} {} {}, regardless of skill", actor, verb, categoryName, SpeedPercentPhrase(minMult));
+			} else if (minMult == 1.0f) {
+				logger::info("\t{} {} {} up to {}, scaling with skill", actor, verb, categoryName, SpeedPercentPhrase(maxMult));
+			} else {
+				logger::info("\t{} {} {} {} at 0 skill, {} at 100 skill", actor, verb, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
+			}
+		}
+
+		/// `held` is what is being held, e.g. "a bow at full draw" or "spells charged".
+		void LogSteadying(std::string_view actor, std::string_view held, const Config::Steadying& steadying) {
+			if (!steadying.enabled) {
+				logger::info("\tHolding {} doesn't affect {}'s precision", held, actor);
+			} else {
+				logger::info("\tHolding {} reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", held, actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
+			}
+		}
+
+		/// `gerund` and `infinitive` describe the fatigued activity, e.g. "Holding a bow at full draw" and "hold a full draw".
+		void LogFatigue(std::string_view actor, std::string_view gerund, std::string_view infinitive, std::string_view attribute, const Config::FatigueOptions& fatigue) {
+			if (!fatigue.enabled) {
+				logger::info("\t{} for too long doesn't fatigue {}'s aim", gerund, actor);
+			} else {
+				logger::info(
+					"\t{} can {} for {:.2f}s at 0 max {} to {:.2f}s at 100 max {} before fatigue sets in, "
+					"adding up to {:.0f}% spread (half of that after another {:.2f}s)",
+					actor,
+					infinitive,
+					fatigue.minThreshold,
+					attribute,
+					fatigue.maxThreshold,
+					attribute,
+					fatigue.maxSpreadMultiplier * 100,
+					fatigue.halfDuration);
+			}
+		}
+
+		void LogHeadshots(const NPCConfig::HeadshotSettings& headshots) {
+			if (headshots.bow) {
+				logger::info("\tSkilled archers may go for headshots ({:.0f}%-{:.0f}% chance)", headshots.bowMinChance * 100, headshots.bowMaxChance * 100);
+			} else {
+				logger::info("\tArchers always aim for the chest");
+			}
+			if (headshots.crossbow) {
+				logger::info("\tSkilled crossbowmen may go for headshots ({:.0f}%-{:.0f}% chance)", headshots.crossbowMinChance * 100, headshots.crossbowMaxChance * 100);
+			} else {
+				logger::info("\tCrossbowmen always aim for the chest");
+			}
+		}
+
+		void LogKeywordFilters(const NPCConfig& npc) {
+			const bool include = !npc.includeKeywords.empty();
+			const bool exclude = !npc.excludeKeywords.empty();
+
+			if (include && exclude) {
+				logger::info("\tOnly NPCs that have at least one of these keywords: [{}] and none of these: [{}] will learn to aim", fmt::join(npc.includeKeywords, ", "), fmt::join(npc.excludeKeywords, ", "));
+			} else if (include) {
+				logger::info("\tOnly NPCs that have at least one of these keywords: [{}] will learn to aim", fmt::join(npc.includeKeywords, ", "));
+			} else if (exclude) {
+				logger::info("\tOnly NPCs that have none of these keywords: [{}] will learn to aim", fmt::join(npc.excludeKeywords, ", "));
+			} else {
+				logger::info("\tAll NPCs will learn to aim");
+			}
+		}
+
+		/// Logs everything the config changes. Accuracy and headshots are NPC-only: the Player aims by hand.
+		void LogConfig(std::string_view actor, const Config& cfg, const NPCConfig* npc = nullptr) {
+			const auto aiming = [&](std::string_view weapon, bool enabled) {
+				logger::info("\t{} {} with {}", actor, enabled ? "will learn to aim" : (npc ? "have perfect aim" : "has perfect aim"), weapon);
+			};
+			aiming("bows", cfg.bowAiming);
+			aiming("crossbows", cfg.crossbowAiming);
+			aiming("spells", cfg.spellAiming);
+			aiming("staves", cfg.staffAiming);
+			aiming("scrolls", cfg.scrollAiming);
+			aiming("concentration spells", cfg.concentrationSpellAiming);
+			aiming("concentration staves", cfg.concentrationStaffAiming);
+			if (npc) {
+				LogHeadshots(npc->headshots);
+			}
+
+			if (npc) {
+				logger::info("");
+				LogSkillMultipliers(actor, "Accuracy", cfg.accuracyMultipliers, cfg.blindnessAffectsAiming);
+			}
+			logger::info("");
+			LogSkillMultipliers(actor, "Precision", cfg.precisionMultipliers, cfg.blindnessAffectsAiming);
+
+			logger::info("");
+			LogSkillSources(actor, "spells", cfg.spellSkills, false);
+			LogSkillSources(actor, "concentration spells", cfg.concentrationSpellSkills, true);
+			LogSkillSources(actor, "staves", cfg.staffSkills, false);
+			LogSkillSources(actor, "concentration staves", cfg.concentrationStaffSkills, true);
+			LogSkillSources(actor, "scrolls", cfg.scrollSkills, false);
+			LogRange(actor, "concentration spells", cfg.concentrationSpellRange);
+			LogRange(actor, "concentration staves", cfg.concentrationStaffRange);
+
+			logger::info("");
+			LogSpeed(actor, "charge/cast", "spells", cfg.spellChargeSpeed);
+			LogSpeed(actor, "charge/cast", "concentration spells", cfg.concentrationSpellChargeSpeed);
+			LogSpeed(actor, "charge/cast", "staves", cfg.staffChargeSpeed);
+			LogSpeed(actor, "charge/cast", "concentration staves", cfg.concentrationStaffChargeSpeed);
+			LogSpeed(actor, "charge/cast", "scrolls", cfg.scrollChargeSpeed);
+			LogSpeed(actor, "draw", "bows", cfg.bowDrawSpeed);
+			LogSpeed(actor, "draw", "crossbows", cfg.crossbowDrawSpeed);
+
+			LogSteadying(actor, "spells charged", cfg.spellSteadying);
+			LogSteadying(actor, "staves charged", cfg.staffSteadying);
+			LogSteadying(actor, "scrolls charged", cfg.scrollSteadying);
+			LogSteadying(actor, "a bow at full draw", cfg.bowSteadying);
+			LogSteadying(actor, "a loaded crossbow", cfg.crossbowSteadying);
+
+			LogFatigue(actor, "Holding spells charged", "hold spells charged", "Magicka", cfg.spellFatigue);
+			LogFatigue(actor, "Holding staves charged", "hold staves charged", "Magicka", cfg.staffFatigue);
+			LogFatigue(actor, "Holding scrolls charged", "hold scrolls charged", "Magicka", cfg.scrollFatigue);
+			LogFatigue(actor, "Casting concentration spells", "cast concentration spells", "Magicka", cfg.concentrationSpellFatigue);
+			LogFatigue(actor, "Casting concentration staves", "cast concentration staves", "Magicka", cfg.concentrationStaffFatigue);
+			LogFatigue(actor, "Holding a bow at full draw", "hold a full draw", "Stamina", cfg.bowFatigue);
+			LogFatigue(actor, "Holding a loaded crossbow", "hold a loaded crossbow", "Stamina", cfg.crossbowFatigue);
+		}
+
+		/// Whether each NPC passed the keyword filters, so that hooks running every frame don't look up keywords each time.
+		RE::BSSpinLock                       learnersLock;
+		std::unordered_map<RE::FormID, bool> learners;
+
+		const std::filesystem::path kIniPath = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
+
+		/// Updates the INI file with the current options, or all of them when `writeDefaults` is set.
+		void Write(bool writeDefaults) {
+			CSimpleIniA ini{};
+			ini.SetUnicode();
+			ini.LoadFile(kIniPath.string().c_str());
+
+			SaveConfig(ini, "NPC", NPC, NPCConfig::defaultConfig, writeDefaults);
+			SaveConfig(ini, "Player", Player, PlayerConfig::defaultConfig, writeDefaults);
+
+			SaveHeadshotSettings(ini, "NPC", NPC.headshots, NPCConfig::defaultConfig.headshots, writeDefaults);
+
+			SetOrDeleteKeywords(ini, "NPC", "sExcludeKeywords", NPC.excludeKeywords, NPCConfig::defaultConfig.excludeKeywords, writeDefaults);
+			SetOrDeleteKeywords(ini, "NPC", "sIncludeKeywords", NPC.includeKeywords, NPCConfig::defaultConfig.includeKeywords, writeDefaults);
+
+			ini.SaveFile(kIniPath.string().c_str());
+
+			// Every settings edit ends up here, including the master switch and keyword filters.
+			InvalidateActorCache();
 		}
 	}
 
-	inline void LogConcentrationSpellRangeMultiplier(std::string_view actor, bool enabled, float minMult, float maxMult) {
-		if (!enabled) {
-			logger::info("	{} always have vanilla reach with concentration spells", actor);
-		} else {
-			logger::info("	{} reach concentration spells at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, minMult, maxMult);
+	std::vector<std::string> ParseKeywords(std::string_view list) {
+		std::vector<std::string> keywords;
+		for (auto& entry : clib_util::string::split(std::string(list), ",")) {
+			const auto first = entry.find_first_not_of(" \t");
+			if (first == std::string::npos) {
+				continue;
+			}
+			const auto last = entry.find_last_not_of(" \t");
+			keywords.push_back(entry.substr(first, last - first + 1));
 		}
+		return keywords;
 	}
 
-	inline void LogConcentrationStaffRangeMultiplier(std::string_view actor, bool enabled, float minMult, float maxMult) {
-		if (!enabled) {
-			logger::info("	{} always have vanilla reach with concentration staves", actor);
-		} else {
-			logger::info("	{} reach concentration staves at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, minMult, maxMult);
-		}
-	}
-
-	inline std::string SpeedPercentPhrase(float mult) {
-		if (mult > 1) {
-			return fmt::format("{:.2f}% faster", (mult - 1) * 100);
-		} else if (mult < 1) {
-			return fmt::format("{:.2f}% slower", (1 - mult) * 100);
-		} else {
-			return "at vanilla speed";
-		}
-	}
-
-	inline void LogSpellSteadying(std::string_view actor, std::string_view categoryName, const Config::Steadying& steadying) {
-		if (!steadying.enabled) {
-			logger::info("\tHolding {} charged doesn't affect {}'s precision", categoryName, actor);
-		} else {
-			logger::info("\tHolding {} charged reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", categoryName, actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
-		}
-	}
-
-	inline void LogBowSteadying(std::string_view actor, const Config::Steadying& steadying) {
-		if (!steadying.enabled) {
-			logger::info("\tHolding a bow at full draw doesn't affect {}'s precision", actor);
-		} else {
-			logger::info("\tHolding a bow at full draw reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)",
-			             actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
-		}
-	}
-
-	inline void LogCrossbowSteadying(std::string_view actor, const Config::Steadying& steadying) {
-		if (!steadying.enabled) {
-			logger::info("	Holding a loaded crossbow doesn't affect {}'s precision", actor);
-		} else {
-			logger::info("	Holding a loaded crossbow reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)",
-			             actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
-		}
-	}
-
-	inline void LogBowFatigue(std::string_view actor, const Config::FatigueOptions& fatigue) {
-		if (!fatigue.enabled) {
-			logger::info("\tHolding a bow too long doesn't fatigue {}'s aim", actor);
-		} else {
-			logger::info("\t{} can hold a full draw for {:.2f}s at 0 max Stamina to {:.2f}s at 100 max Stamina before fatigue sets in, "
-			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
-			             actor, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
-		}
-	}
-
-	inline void LogCastFatigue(std::string_view actor, std::string_view categoryName, const Config::FatigueOptions& fatigue) {
-		if (!fatigue.enabled) {
-			logger::info("\tHolding {} charged too long doesn't fatigue {}'s precision", categoryName, actor);
-		} else {
-			logger::info("\t{} can hold {} charged for {:.2f}s at 0 max Magicka to {:.2f}s at 100 max Magicka before fatigue sets in, "
-			             "growing spread back by up to {:.0f}% (half of that after another {:.2f}s)",
-			             actor, categoryName, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
-		}
-	}
-
-	inline void LogConcentrationFatigue(std::string_view actor, std::string_view categoryName, const Config::FatigueOptions& fatigue) {
-		if (!fatigue.enabled) {
-			logger::info("\tCasting {} for too long doesn't fatigue {}'s precision", categoryName, actor);
-		} else {
-			logger::info("\t{} can cast {} for {:.2f}s at 0 max Magicka to {:.2f}s at 100 max Magicka before fatigue sets in, "
-			             "growing spread by up to {:.0f}% (half of that after another {:.2f}s)",
-			             actor, categoryName, fatigue.minThreshold, fatigue.maxThreshold, fatigue.maxSpreadMultiplier * 100, fatigue.halfDuration);
-		}
-	}
-
-	inline void LogChargeSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
-		if (!enabled) {
-			logger::info("\t{} always charge/cast {} at vanilla speed", actor, categoryName);
-		} else if (minMult == maxMult) {
-			logger::info("\t{} charge/cast {} {}, regardless of skill", actor, categoryName, SpeedPercentPhrase(minMult));
-		} else if (minMult == 1.0f) {
-			logger::info("\t{} charge/cast {} up to {}, scaling with skill", actor, categoryName, SpeedPercentPhrase(maxMult));
-		} else {
-			logger::info("\t{} charge/cast {} {} at 0 skill, {} at 100 skill", actor, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
-		}
-	}
-
-	inline void LogDrawSpeedMultiplier(std::string_view actor, std::string_view categoryName, bool enabled, float minMult, float maxMult) {
-		if (!enabled) {
-			logger::info("\t{} always draw {} at vanilla speed", actor, categoryName);
-		} else if (minMult == maxMult) {
-			logger::info("\t{} draw {} {}, regardless of skill", actor, categoryName, SpeedPercentPhrase(minMult));
-		} else if (minMult == 1.0f) {
-			logger::info("\t{} draw {} up to {}, scaling with skill", actor, categoryName, SpeedPercentPhrase(maxMult));
-		} else {
-			logger::info("\t{} draw {} {} at 0 skill, {} at 100 skill", actor, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
-		}
+	void InvalidateActorCache() {
+		RE::BSSpinLockGuard lock{ learnersLock };
+		learners.clear();
 	}
 
 	void Load() {
 		++currentID;
+		InvalidateActorCache();
 
 		logger::info("{:*^40}", "OPTIONS");
-		std::filesystem::path options = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
-		CSimpleIniA           ini{};
+		CSimpleIniA ini{};
 		ini.SetUnicode();
-		if (ini.LoadFile(options.string().c_str()) >= 0) {
+		if (ini.LoadFile(kIniPath.string().c_str()) >= 0) {
 			NPC = NPCConfig::FromIni(ini);
 			Player = PlayerConfig::FromIni(ini);
 		} else {
@@ -322,182 +423,31 @@ namespace NLA::Options
 		}
 
 		logger::info("NPC:");
-		if (!NPC.enabled) {
+		if (NPC.enabled) {
+			LogConfig("NPCs", NPC, &NPC);
+			logger::info("");
+			LogKeywordFilters(NPC);
+		} else {
 			logger::info("\tMod is disabled for NPCs");
-			return;
-		}
-		logger::info("\tArchers {}", NPC.bowAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tCrossbowmen {}", NPC.crossbowAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tMages {} with spells", NPC.spellAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tMages {} with staves", NPC.staffAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tMages {} with scrolls", NPC.scrollAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tMages {} with concentration spells", NPC.concentrationSpellsAiming ? "will learn to aim" : "have perfect aim");
-		logger::info("\tMages {} with concentration staves", NPC.concentrationStaffAiming ? "will learn to aim" : "have perfect aim");
-		if (NPC.headshots.bow) {
-			logger::info("\tSkilled archers may go for headshots ({:.0f}%-{:.0f}% chance)", NPC.headshots.bowMinChance * 100, NPC.headshots.bowMaxChance * 100);
-		} else {
-			logger::info("\tArchers always aim for the chest");
-		}
-		if (NPC.headshots.crossbow) {
-			logger::info("\tSkilled crossbowmen may go for headshots ({:.0f}%-{:.0f}% chance)", NPC.headshots.crossbowMinChance * 100, NPC.headshots.crossbowMaxChance * 100);
-		} else {
-			logger::info("\tCrossbowmen always aim for the chest");
-		}
-
-		logger::info("");
-		LogSkillMultiplier("NPCs", "Bows", "Accuracy", NPC.accuracyMultipliers.bow);
-		LogSkillMultiplier("NPCs", "Crossbows", "Accuracy", NPC.accuracyMultipliers.crossbow);
-		LogSkillMultiplier("NPCs", "Spells", "Accuracy", NPC.accuracyMultipliers.spell);
-		LogSkillMultiplier("NPCs", "Concentration Spells", "Accuracy", NPC.accuracyMultipliers.concentrationSpell);
-		LogSkillMultiplier("NPCs", "Staves", "Accuracy", NPC.accuracyMultipliers.staff);
-		LogSkillMultiplier("NPCs", "Concentration Staves", "Accuracy", NPC.accuracyMultipliers.concentrationStaff);
-		LogSkillMultiplier("NPCs", "Scrolls", "Accuracy", NPC.accuracyMultipliers.scroll);
-		LogBlindnessSkillMultiplier("NPCs", "accuracy", NPC.accuracyMultipliers.blindness);
-
-		logger::info("");
-		LogSkillMultiplier("NPCs", "Bows", "Precision", NPC.precisionMultipliers.bow);
-		LogSkillMultiplier("NPCs", "Crossbows", "Precision", NPC.precisionMultipliers.crossbow);
-		LogSkillMultiplier("NPCs", "Spells", "Precision", NPC.precisionMultipliers.spell);
-		LogSkillMultiplier("NPCs", "Concentration Spells", "Precision", NPC.precisionMultipliers.concentrationSpell);
-		LogSkillMultiplier("NPCs", "Staves", "Precision", NPC.precisionMultipliers.staff);
-		LogSkillMultiplier("NPCs", "Concentration Staves", "Precision", NPC.precisionMultipliers.concentrationStaff);
-		LogSkillMultiplier("NPCs", "Scrolls", "Precision", NPC.precisionMultipliers.scroll);
-		LogBlindnessSkillMultiplier("NPCs", "precision", NPC.precisionMultipliers.blindness);
-
-		logger::info("");
-		LogSkillSources("NPCs", "spells", NPC.spellSkills, false);
-		LogSkillSources("NPCs", "concentration spells", NPC.concentrationSpellSkills, true);
-		LogSkillSources("NPCs", "staves", NPC.staffSkills, false);
-		LogSkillSources("NPCs", "concentration staves", NPC.concentrationStaffSkills, true);
-		LogSkillSources("NPCs", "scrolls", NPC.scrollSkills, false);
-		LogConcentrationSpellRangeMultiplier("NPCs", NPC.concentrationSpellRange.enabled, NPC.concentrationSpellRange.minMultiplier, NPC.concentrationSpellRange.maxMultiplier);
-		LogConcentrationStaffRangeMultiplier("NPCs", NPC.concentrationStaffRange.enabled, NPC.concentrationStaffRange.minMultiplier, NPC.concentrationStaffRange.maxMultiplier);
-
-		logger::info("");
-		LogChargeSpeedMultiplier("NPCs", "spells", NPC.spellChargeSpeed.enabled, NPC.spellChargeSpeed.minMultiplier, NPC.spellChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("NPCs", "concentration spells", NPC.concentrationSpellChargeSpeed.enabled, NPC.concentrationSpellChargeSpeed.minMultiplier, NPC.concentrationSpellChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("NPCs", "staves", NPC.staffChargeSpeed.enabled, NPC.staffChargeSpeed.minMultiplier, NPC.staffChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("NPCs", "concentration staves", NPC.concentrationStaffChargeSpeed.enabled, NPC.concentrationStaffChargeSpeed.minMultiplier, NPC.concentrationStaffChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("NPCs", "scrolls", NPC.scrollChargeSpeed.enabled, NPC.scrollChargeSpeed.minMultiplier, NPC.scrollChargeSpeed.maxMultiplier);
-		LogDrawSpeedMultiplier("NPCs", "bows", NPC.bowDrawSpeed.enabled, NPC.bowDrawSpeed.minMultiplier, NPC.bowDrawSpeed.maxMultiplier);
-		LogDrawSpeedMultiplier("NPCs", "crossbows", NPC.crossbowDrawSpeed.enabled, NPC.crossbowDrawSpeed.minMultiplier, NPC.crossbowDrawSpeed.maxMultiplier);
-		LogSpellSteadying("NPCs", "spells", NPC.spellSteadying);
-		LogSpellSteadying("NPCs", "staves", NPC.staffSteadying);
-		LogSpellSteadying("NPCs", "scrolls", NPC.scrollSteadying);
-		LogCastFatigue("NPCs", "spells", NPC.spellFatigue);
-		LogCastFatigue("NPCs", "staves", NPC.staffFatigue);
-		LogCastFatigue("NPCs", "scrolls", NPC.scrollFatigue);
-		LogConcentrationFatigue("NPCs", "concentration spells", NPC.concentrationSpellFatigue);
-		LogConcentrationFatigue("NPCs", "concentration staves", NPC.concentrationStaffFatigue);
-		LogBowSteadying("NPCs", NPC.bowSteadying);
-		LogBowFatigue("NPCs", NPC.bowFatigue);
-		LogCrossbowSteadying("NPCs", NPC.crossbowSteadying);
-
-		logger::info("");
-		if (NPC.excludeKeywords.empty() && NPC.includeKeywords.empty()) {
-			logger::info("\tAll NPCs will learn to aim");
-		} else {
-			bool include = !NPC.includeKeywords.empty();
-			bool exclude = !NPC.excludeKeywords.empty();
-			bool both = include && exclude;
-
-			if (both) {
-				logger::info("\tOnly NPCs that have at least one of these keywords: [{}] and none of these: [{}] will learn to aim", fmt::join(NPC.includeKeywords, ", "), fmt::join(NPC.excludeKeywords, ", "));
-			} else if (include) {
-				logger::info("\tOnly NPCs that have at least one of these keywords: [{}] will learn to aim", fmt::join(NPC.includeKeywords, ", "));
-			} else {
-				logger::info("\tOnly NPCs that have none of these keywords: [{}] will learn to aim", fmt::join(NPC.excludeKeywords, ", "));
-			}
 		}
 
 		logger::info("");
 		logger::info("Player:");
-		if (!Player.enabled) {
+		if (Player.enabled) {
+			LogConfig("Player", Player);
+		} else {
 			logger::info("\tMod is disabled for Player");
-			return;
 		}
-		logger::info("\t{} with bows", Player.bowAiming ? "Will learn to aim" : "Has perfect aim");
-		logger::info("\t{} with crossbows", Player.crossbowAiming ? "Will learn to aim" : "Has perfect aim");
-		logger::info("\t{} with spells", Player.spellAiming ? "Will learn to aim" : "Has perfect aim");
-		logger::info("\t{} with staves", Player.staffAiming ? "Will learn to aim" : "Has perfect aim");
-		logger::info("\t{} with scrolls", Player.scrollAiming ? "Will learn to aim" : "Has perfect aim");
-		logger::info("\t{} with concentration spells", Player.concentrationSpellsAiming ? "Will learn to aim" : "Has perfect aim");
-		logger::info("\t{} with concentration staves", Player.concentrationStaffAiming ? "Will learn to aim" : "Has perfect aim");
-
-		logger::info("");
-		LogSkillMultiplier("Player", "Bows", "Precision", Player.precisionMultipliers.bow);
-		LogSkillMultiplier("Player", "Crossbows", "Precision", Player.precisionMultipliers.crossbow);
-		LogSkillMultiplier("Player", "Spells", "Precision", Player.precisionMultipliers.spell);
-		LogSkillMultiplier("Player", "Concentration Spells", "Precision", Player.precisionMultipliers.concentrationSpell);
-		LogSkillMultiplier("Player", "Staves", "Precision", Player.precisionMultipliers.staff);
-		LogSkillMultiplier("Player", "Concentration Staves", "Precision", Player.precisionMultipliers.concentrationStaff);
-		LogSkillMultiplier("Player", "Scrolls", "Precision", Player.precisionMultipliers.scroll);
-
-		logger::info("");
-		LogSkillSources("Player", "spells", Player.spellSkills, false);
-		LogSkillSources("Player", "concentration spells", Player.concentrationSpellSkills, true);
-		LogSkillSources("Player", "staves", Player.staffSkills, false);
-		LogSkillSources("Player", "concentration staves", Player.concentrationStaffSkills, true);
-		LogSkillSources("Player", "scrolls", Player.scrollSkills, false);
-		LogConcentrationSpellRangeMultiplier("Player", Player.concentrationSpellRange.enabled, Player.concentrationSpellRange.minMultiplier, Player.concentrationSpellRange.maxMultiplier);
-		LogConcentrationStaffRangeMultiplier("Player", Player.concentrationStaffRange.enabled, Player.concentrationStaffRange.minMultiplier, Player.concentrationStaffRange.maxMultiplier);
-
-		logger::info("");
-		LogChargeSpeedMultiplier("Player", "spells", Player.spellChargeSpeed.enabled, Player.spellChargeSpeed.minMultiplier, Player.spellChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("Player", "concentration spells", Player.concentrationSpellChargeSpeed.enabled, Player.concentrationSpellChargeSpeed.minMultiplier, Player.concentrationSpellChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("Player", "staves", Player.staffChargeSpeed.enabled, Player.staffChargeSpeed.minMultiplier, Player.staffChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("Player", "concentration staves", Player.concentrationStaffChargeSpeed.enabled, Player.concentrationStaffChargeSpeed.minMultiplier, Player.concentrationStaffChargeSpeed.maxMultiplier);
-		LogChargeSpeedMultiplier("Player", "scrolls", Player.scrollChargeSpeed.enabled, Player.scrollChargeSpeed.minMultiplier, Player.scrollChargeSpeed.maxMultiplier);
-		LogDrawSpeedMultiplier("Player", "bows", Player.bowDrawSpeed.enabled, Player.bowDrawSpeed.minMultiplier, Player.bowDrawSpeed.maxMultiplier);
-		LogDrawSpeedMultiplier("Player", "crossbows", Player.crossbowDrawSpeed.enabled, Player.crossbowDrawSpeed.minMultiplier, Player.crossbowDrawSpeed.maxMultiplier);
-		LogSpellSteadying("Player", "spells", Player.spellSteadying);
-		LogSpellSteadying("Player", "staves", Player.staffSteadying);
-		LogSpellSteadying("Player", "scrolls", Player.scrollSteadying);
-		LogCastFatigue("Player", "spells", Player.spellFatigue);
-		LogCastFatigue("Player", "staves", Player.staffFatigue);
-		LogCastFatigue("Player", "scrolls", Player.scrollFatigue);
-		LogConcentrationFatigue("Player", "concentration spells", Player.concentrationSpellFatigue);
-		LogConcentrationFatigue("Player", "concentration staves", Player.concentrationStaffFatigue);
-		LogBowSteadying("Player", Player.bowSteadying);
-		LogBowFatigue("Player", Player.bowFatigue);
-		LogCrossbowSteadying("Player", Player.crossbowSteadying);
 
 		logger::info("{:*^40}", "");
 	}
 
-	namespace
-	{
-		void SaveAll(CSimpleIniA& ini, bool writeDefaults = false) {
-			SaveConfig(ini, "NPC", NPC, NPCConfig::defaultConfig, writeDefaults);
-			SaveConfig(ini, "Player", Player, PlayerConfig::defaultConfig, writeDefaults);
-
-			SaveHeadshotSettings(ini, "NPC", NPC.headshots, NPCConfig::defaultConfig.headshots, writeDefaults);
-
-			SetOrDeleteKeywords(ini, "NPC", "sExcludeKeywords", NPC.excludeKeywords, NPCConfig::defaultConfig.excludeKeywords, writeDefaults);
-			SetOrDeleteKeywords(ini, "NPC", "sIncludeKeywords", NPC.includeKeywords, NPCConfig::defaultConfig.includeKeywords, writeDefaults);
-		}
-	}
-
 	void Save() {
-		const std::filesystem::path options = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
-		CSimpleIniA                 ini{};
-		ini.SetUnicode();
-		ini.LoadFile(options.string().c_str());
-
-		SaveAll(ini);
-
-		ini.SaveFile(options.string().c_str());
+		Write(false);
 	}
 
 	void Export() {
-		const std::filesystem::path options = R"(Data\SKSE\Plugins\NPCsLearnToAim.ini)";
-		CSimpleIniA                 ini{};
-		ini.SetUnicode();
-		ini.LoadFile(options.string().c_str());
-
-		SaveAll(ini, true);
-
-		ini.SaveFile(options.string().c_str());
+		Write(true);
 	}
 
 	void ResetNPC() {
@@ -523,11 +473,26 @@ namespace NLA::Options
 		if (!enabled) {
 			return false;
 		}
-		if (!a_actor->HasAnyKeywordByEditorID(includeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(includeKeywords))) {
-			return false;
+
+		const auto formID = a_actor->GetFormID();
+		{
+			RE::BSSpinLockGuard lock{ learnersLock };
+			if (auto it = learners.find(formID); it != learners.end()) {
+				return it->second;
+			}
 		}
 
-		return !a_actor->HasAnyKeywordByEditorID(excludeKeywords) && (!a_actor->GetRace() || !a_actor->GetRace()->HasAnyKeywordByEditorID(excludeKeywords));
+		const auto* race = a_actor->GetRace();
+		const auto  hasAny = [&](const std::vector<std::string>& keywords) {
+            return a_actor->HasAnyKeywordByEditorID(keywords) || (race && race->HasAnyKeywordByEditorID(keywords));
+		};
+
+		// An empty include list means no filtering: HasAnyKeywordByEditorID would never match it.
+		const bool learns = (includeKeywords.empty() || hasAny(includeKeywords)) && (excludeKeywords.empty() || !hasAny(excludeKeywords));
+
+		RE::BSSpinLockGuard lock{ learnersLock };
+		learners[formID] = learns;
+		return learns;
 	}
 
 	Config Config::FromIni(CSimpleIniA& ini, const char* a_section, const Config& defaults) {
@@ -537,12 +502,14 @@ namespace NLA::Options
 
 		result.spellAiming = ini.GetBoolValue(a_section, "bSpellAiming", result.spellAiming);
 		result.staffAiming = ini.GetBoolValue(a_section, "bStaffAiming", result.staffAiming);
+		result.concentrationSpellAiming = ini.GetBoolValue(a_section, "bConcentrationSpellsAiming", result.concentrationSpellAiming);
+		result.concentrationStaffAiming = ini.GetBoolValue(a_section, "bConcentrationStaffAiming", result.concentrationStaffAiming);
 		result.scrollAiming = ini.GetBoolValue(a_section, "bScrollAiming", result.scrollAiming);
 		result.bowAiming = ini.GetBoolValue(a_section, "bBowAiming", result.bowAiming);
 		result.crossbowAiming = ini.GetBoolValue(a_section, "bCrossbowAiming", result.crossbowAiming);
 
-		result.accuracyMultipliers = SkillMultiplier::FromIni(ini, a_section, "Accuracy", defaults.accuracyMultipliers);
-		result.precisionMultipliers = SkillMultiplier::FromIni(ini, a_section, "Precision", defaults.precisionMultipliers);
+		result.accuracyMultipliers = SkillMultiplier::FromIni(ini, a_section, "Accuracy", result.accuracyMultipliers);
+		result.precisionMultipliers = SkillMultiplier::FromIni(ini, a_section, "Precision", result.precisionMultipliers);
 
 		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAiming", result.blindnessAffectsAiming);
 
@@ -552,12 +519,8 @@ namespace NLA::Options
 		result.concentrationStaffSkills = SkillSources::FromIni(ini, a_section, "ConcentrationStaff", result.concentrationStaffSkills);
 		result.scrollSkills = SkillSources::FromIni(ini, a_section, "Scroll", result.scrollSkills);
 
-
-
 		result.concentrationSpellRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellRange", result.concentrationSpellRange, Limits::kRangeMultiplier);
 		result.concentrationStaffRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffRange", result.concentrationStaffRange, Limits::kRangeMultiplier);
-
-		result.concentrationStaffAiming = ini.GetBoolValue(a_section, "bConcentrationStaffAiming", result.concentrationStaffAiming);
 
 		result.spellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed, Limits::kSpeedMultiplier);
 		result.concentrationSpellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed, Limits::kSpeedMultiplier);
@@ -580,24 +543,27 @@ namespace NLA::Options
 		result.bowSteadying = SpreadOptions::FromIni(ini, a_section, "BowSteadying", result.bowSteadying);
 		result.bowFatigue = FatigueOptions::FromIni(ini, a_section, "BowFatigue", result.bowFatigue);
 		result.crossbowSteadying = SpreadOptions::FromIni(ini, a_section, "CrossbowSteadying", result.crossbowSteadying);
+		result.crossbowFatigue = FatigueOptions::FromIni(ini, a_section, "CrossbowFatigue", result.crossbowFatigue);
 
 		return result;
 	}
 
 	PlayerConfig PlayerConfig::FromIni(CSimpleIniA& ini) {
-		PlayerConfig result{ Config::FromIni(ini, "Player", PlayerConfig::defaultConfig) };
-		result.concentrationSpellsAiming = ini.GetBoolValue("Player", "bConcentrationSpellsAiming", result.concentrationSpellsAiming);
-		return result;
+		return PlayerConfig{ Config::FromIni(ini, "Player", PlayerConfig::defaultConfig) };
 	}
 
 	NPCConfig NPCConfig::FromIni(CSimpleIniA& ini) {
 		NPCConfig result{ Config::FromIni(ini, "NPC", NPCConfig::defaultConfig) };
-		result.concentrationSpellsAiming = ini.GetBoolValue("NPC", "bConcentrationSpellsAiming", result.concentrationSpellsAiming);
 
 		result.headshots = HeadshotSettings::FromIni(ini, "NPC", NPCConfig::defaultConfig.headshots);
 
-		result.excludeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sExcludeKeywords", "")), ",");
-		result.includeKeywords = clib_util::string::split(std::string(ini.GetValue("NPC", "sIncludeKeywords", "ActorTypeNPC,UpdateDuringArchery")), ",");
+		// A key that is present but empty means "no keywords", whereas a missing one means the defaults.
+		const auto readKeywords = [&](const char* key, const std::vector<std::string>& fallback) {
+			const char* value = ini.GetValue("NPC", key, nullptr);
+			return value ? ParseKeywords(value) : fallback;
+		};
+		result.excludeKeywords = readKeywords("sExcludeKeywords", NPCConfig::defaultConfig.excludeKeywords);
+		result.includeKeywords = readKeywords("sIncludeKeywords", NPCConfig::defaultConfig.includeKeywords);
 		return result;
 	}
 
@@ -663,24 +629,18 @@ namespace NLA::Options
 	Config::SkillMultiplier Config::SkillMultiplier::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SkillMultiplier& defaults) {
 		SkillMultiplier result = defaults;
 
-		std::string bowOption = fmt::format("fBow{}SkillMultiplier", prefix);
-		std::string crossbowOption = fmt::format("fCrossbow{}SkillMultiplier", prefix);
-		std::string spellOption = fmt::format("fSpell{}SkillMultiplier", prefix);
-		std::string concentrationSpellOption = fmt::format("fConcentrationSpell{}SkillMultiplier", prefix);
-		std::string staffOption = fmt::format("fStaff{}SkillMultiplier", prefix);
-		std::string concentrationStaffOption = fmt::format("fConcentrationStaff{}SkillMultiplier", prefix);
-		std::string scrollOption = fmt::format("fScroll{}SkillMultiplier", prefix);
-		std::string blindnessOption = fmt::format("fBlindness{}SkillMultiplier", prefix);
+		const auto read = [&](std::string_view weapon, float fallback, Limit limit = Limits::kSkillMultiplier) {
+			return ReadClamped(ini, a_section, fmt::format("f{}{}SkillMultiplier", weapon, prefix), fallback, limit);
+		};
 
-		constexpr Limit limit = Limits::kSkillMultiplier;
-		result.bow = ReadClamped(ini, a_section, bowOption, result.bow, limit);
-		result.crossbow = ReadClamped(ini, a_section, crossbowOption, result.crossbow, limit);
-		result.spell = ReadClamped(ini, a_section, spellOption, result.spell, limit);
-		result.concentrationSpell = ReadClamped(ini, a_section, concentrationSpellOption, result.concentrationSpell, limit);
-		result.staff = ReadClamped(ini, a_section, staffOption, result.staff, limit);
-		result.concentrationStaff = ReadClamped(ini, a_section, concentrationStaffOption, result.concentrationStaff, limit);
-		result.scroll = ReadClamped(ini, a_section, scrollOption, result.scroll, limit);
-		result.blindness = ReadClamped(ini, a_section, blindnessOption, result.blindness, Limits::kBlindnessMultiplier);
+		result.bow = read("Bow", result.bow);
+		result.crossbow = read("Crossbow", result.crossbow);
+		result.spell = read("Spell", result.spell);
+		result.concentrationSpell = read("ConcentrationSpell", result.concentrationSpell);
+		result.staff = read("Staff", result.staff);
+		result.concentrationStaff = read("ConcentrationStaff", result.concentrationStaff);
+		result.scroll = read("Scroll", result.scroll);
+		result.blindness = read("Blindness", result.blindness, Limits::kBlindnessMultiplier);
 
 		return result;
 	}
