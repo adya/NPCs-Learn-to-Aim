@@ -35,19 +35,23 @@ namespace NLA
 
 	namespace Accuracy
 	{
-		RE::NiAVObject* GetHeadNode(RE::Actor* target) {
-			auto* process = target->GetActorRuntimeData().currentProcess;
-			return process && process->middleHigh ? process->middleHigh->headNode : nullptr;
-		}
-
-		/// Headshot decision made for the attacker's current target, kept until the shot is fired.
-		struct HeadshotDecision
+		namespace
 		{
-			RE::FormID target;
-			bool       headshot;
-		};
+			RE::NiAVObject* GetHeadNode(RE::Actor* target) {
+				auto* process = target->GetActorRuntimeData().currentProcess;
+				return process && process->middleHigh ? process->middleHigh->headNode : nullptr;
+			}
 
-		std::unordered_map<RE::FormID, HeadshotDecision> headshotDecisions{};
+			/// Headshot decision made for the attacker's current target, kept until the shot is fired.
+			struct HeadshotDecision
+			{
+				RE::FormID target;
+				bool       headshot;
+			};
+
+			RE::BSSpinLock                                   decisionsLock;
+			std::unordered_map<RE::FormID, HeadshotDecision> headshotDecisions{};
+		}
 
 		float AimVariance(const SkillUsage& accuracyUsage, RE::Actor* attacker) {
 			return 2.0f * Settings::fCombatRangedAimVariance() * accuracyUsage.SkillFactor(attacker);
@@ -61,6 +65,8 @@ namespace NLA
 			if (!attacker) {
 				return false;
 			}
+			RE::BSSpinLockGuard lock{ decisionsLock };
+
 			auto it = headshotDecisions.find(attacker->GetFormID());
 			return it != headshotDecisions.end() && it->second.headshot;
 		}
@@ -69,7 +75,15 @@ namespace NLA
 			if (!attacker) {
 				return;
 			}
+			RE::BSSpinLockGuard lock{ decisionsLock };
+
 			headshotDecisions.erase(attacker->GetFormID());
+		}
+
+		void Reset() {
+			RE::BSSpinLockGuard lock{ decisionsLock };
+
+			headshotDecisions.clear();
 		}
 
 		namespace
@@ -94,7 +108,9 @@ namespace NLA
 					}
 				}
 
-				void Apply(RE::CombatProjectileAimController* controller, RE::Actor* target, std::function<void(RE::CombatProjectileAimController*, RE::Actor*)> func) const {
+				using UpdateFunc = void (*)(RE::CombatProjectileAimController*, RE::Actor*);
+
+				void Apply(RE::CombatProjectileAimController* controller, RE::Actor* target, UpdateFunc func) const {
 					// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
 					// in such cases we can't determine the skill to use and should fallback to default logic.
 					// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
@@ -114,6 +130,8 @@ namespace NLA
 					if (!attacker || !target || !headshotUsage || attacker->IsPlayerRef()) {
 						return false;
 					}
+
+					RE::BSSpinLockGuard lock{ decisionsLock };
 
 					if (auto it = headshotDecisions.find(attacker->GetFormID()); it != headshotDecisions.end() && it->second.target == target->GetFormID()) {
 						return it->second.headshot;

@@ -1,5 +1,3 @@
-#include "ChargeTime.h"
-#include "DrawSpeed.h"
 #include "Hooks.h"
 #include "Menu/Menu.h"
 #include "Options.h"
@@ -13,8 +11,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 		break;
 	case SKSE::MessagingInterface::kPreLoadGame:
 	case SKSE::MessagingInterface::kNewGame:
-		NLA::ChargeTime::Reset();
-		NLA::Draw::Reset();
+		NLA::Reset();
 		break;
 	default:
 		break;

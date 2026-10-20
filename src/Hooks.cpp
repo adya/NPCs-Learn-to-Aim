@@ -1,9 +1,9 @@
 #include "Hooks.h"
 #include "Aiming/Aiming.h"
-#include "RE/C/CombatProjectileAimController.h"
-#include "ConcentrationSpells.h"
 #include "ChargeTime.h"
+#include "ConcentrationSpells.h"
 #include "DrawSpeed.h"
+#include "Options.h"
 
 namespace NLA
 {
@@ -15,5 +15,13 @@ namespace NLA
 		ConcentrationSpells::Install();
 		ChargeTime::Install();
 		Draw::Install();
+	}
+
+	void Reset() {
+		Options::InvalidateActorCache();
+		Accuracy::Reset();
+		ConcentrationSpells::Reset();
+		ChargeTime::Reset();
+		Draw::Reset();
 	}
 }
