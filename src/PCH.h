@@ -17,7 +17,8 @@ using namespace std::literals;
 
 #include "Version.h"
 
-inline std::default_random_engine rnd{};
+/// Each thread has its own engine, seeded from the OS, so sequences differ between launches and threads never share state.
+inline thread_local std::mt19937 rnd{ std::random_device{}() };
 
 namespace fmt
 {
