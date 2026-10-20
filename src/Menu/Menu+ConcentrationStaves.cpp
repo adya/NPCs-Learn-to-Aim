@@ -35,8 +35,7 @@ namespace NLA::Menu
 				"When enabled, casting a concentration staff continuously for too long tires the caster's arm, making the stream/beam wander wider the longer it's cast past their fatigue threshold. That threshold grows with the caster's max Magicka.",
 				"Seconds a concentration staff can be cast continuously before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",
 				"Seconds a concentration staff can be cast continuously before fatigue sets in for a caster with 100 max Magicka. Max Magicka above that extends it further, with diminishing returns.",
-				"The most extra spread that fatigue can add on top of the normal stream/beam wander. 100% means the wander can grow up to twice as wide.",
-				30.0f },
+				"The most extra spread that fatigue can add on top of the normal stream/beam wander. 100% means the wander can grow up to twice as wide." },
 		};
 	}
 

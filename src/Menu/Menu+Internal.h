@@ -87,11 +87,12 @@ namespace NLA::Menu
 	bool ResetButton(const char* label);
 
 	void ToggleColumn(const char* label, bool& value, const char* tooltip);
-	void SliderColumn(const char* id, float& value, const char* tooltip, float min = 0.01f, float max = 10.0f, const char* format = "x%.2f");
-	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, float min, float max);
+	void SliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit = Options::Limits::kSkillMultiplier, const char* format = "x%.2f");
+	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
 	/// A row with `label` and a drop-down to pick the skill.
 	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip);
-	void PercentSliderColumn(const char* id, float& value, const char* tooltip);
+	/// Shows `value` as a percentage; `limit` is in the same fractional units as the value (1.0 is 100%).
+	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
 	void NotApplicableColumn();
 
 	// ---- Category parts ----
@@ -172,9 +173,6 @@ namespace NLA::Menu
 		const char*                      minThresholdTooltip;
 		const char*                      maxThresholdTooltip;
 		const char*                      maxPenaltyTooltip;
-
-		/// Upper bound of the threshold sliders, in seconds.
-		float thresholdSliderMax = 10.0f;
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;

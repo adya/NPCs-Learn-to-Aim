@@ -149,17 +149,17 @@ namespace NLA::Menu
 		ShowTooltip(tooltip);
 	}
 
-	void SliderColumn(const char* id, float& value, const char* tooltip, float min, float max, const char* format) {
+	void SliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit, const char* format) {
 		TableNextColumn();
 		SetNextItemWidth(-1.0f);
-		if (SliderFloat(id, &value, min, max, format)) {
+		if (SliderFloat(id, &value, limit.min, limit.max, format)) {
 			value = RoundTo2Decimals(value);
 		}
 		SaveAfterEdit(tooltip);
 	}
 
-	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, float min, float max) {
-		SliderColumn(id, value, tooltip, min, max, "%.1fs");
+	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit) {
+		SliderColumn(id, value, tooltip, limit, "%.1fs");
 	}
 
 	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip) {
@@ -186,12 +186,12 @@ namespace NLA::Menu
 		PopClipRect();
 	}
 
-	void PercentSliderColumn(const char* id, float& value, const char* tooltip) {
+	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit) {
 		TableNextColumn();
 		SetNextItemWidth(-1.0f);
 		float percent = value * 100.0f;
-		if (SliderFloat(id, &percent, 0.0f, 100.0f, "%.0f%%")) {
-			value = percent / 100.0f;
+		if (SliderFloat(id, &percent, limit.min * 100.0f, limit.max * 100.0f, "%.0f%%")) {
+			value = std::round(percent) / 100.0f;
 		}
 		SaveAfterEdit(tooltip);
 	}

@@ -17,8 +17,8 @@ namespace NLA::Menu
 			ToggleColumn("Blindness Affects Aim", cfg.blindnessAffectsAiming, "When enabled, being blinded further affects aiming.");
 			{
 				DisabledIf off{ !cfg.blindnessAffectsAiming };
-				SliderColumn("##Accuracy", cfg.accuracyMultipliers.blindness, "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.");
-				SliderColumn("##Precision", cfg.precisionMultipliers.blindness, "How much the blindness affects general precision. The higher this multiplier is the easier it is to hit the target.");
+				SliderColumn("##Accuracy", cfg.accuracyMultipliers.blindness, "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.", Options::Limits::kBlindnessMultiplier);
+				SliderColumn("##Precision", cfg.precisionMultipliers.blindness, "How much the blindness affects general precision. The higher this multiplier is the easier it is to hit the target.", Options::Limits::kBlindnessMultiplier);
 			}
 
 			if (ResetButton("Reset Blindness to Default")) {

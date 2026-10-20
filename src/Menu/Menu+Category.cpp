@@ -39,8 +39,8 @@ namespace NLA::Menu
 		TableNextRow();
 		ToggleColumn(label, on, tooltip);
 		DisabledIf off{ !on };
-		PercentSliderColumn("##MinHeadshotChance", headshots.*minChance, fmt::format("Chance for a skilled {} to go for a headshot at 0 effective Archery skill.", shooter).c_str());
-		PercentSliderColumn("##MaxHeadshotChance", headshots.*maxChance, fmt::format("Chance for a skilled {} to go for a headshot at 100 effective Archery skill.", shooter).c_str());
+		PercentSliderColumn("##MinHeadshotChance", headshots.*minChance, fmt::format("Chance for a skilled {} to go for a headshot at 0 effective Archery skill.", shooter).c_str(), Options::Limits::kHeadshotChance);
+		PercentSliderColumn("##MaxHeadshotChance", headshots.*maxChance, fmt::format("Chance for a skilled {} to go for a headshot at 100 effective Archery skill.", shooter).c_str(), Options::Limits::kHeadshotChance);
 	}
 
 	void HeadshotRows::Reset(const PageContext& ctx) const {
@@ -64,8 +64,8 @@ namespace NLA::Menu
 		TableNextRow();
 		ToggleColumn("Scale Range With Skill", range.enabled, tooltip);
 		DisabledIf off{ !range.enabled };
-		SliderColumn("##MinRange", range.minMultiplier, minTooltip, 0.5f, 5.0f);
-		SliderColumn("##MaxRange", range.maxMultiplier, maxTooltip, 0.5f, 5.0f);
+		SliderColumn("##MinRange", range.minMultiplier, minTooltip, Options::Limits::kRangeMultiplier);
+		SliderColumn("##MaxRange", range.maxMultiplier, maxTooltip, Options::Limits::kRangeMultiplier);
 		RenderSkillSource(ctx, skill, "Range Skill", "how far the spell reaches");
 	}
 
@@ -84,8 +84,8 @@ namespace NLA::Menu
 		TableNextRow();
 		ToggleColumn(label, speed.enabled, tooltip);
 		DisabledIf off{ !speed.enabled };
-		SliderColumn("##MinSpeed", speed.minMultiplier, "Speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.", 0.1f, 3.0f);
-		SliderColumn("##MaxSpeed", speed.maxMultiplier, "Speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.", 0.1f, 3.0f);
+		SliderColumn("##MinSpeed", speed.minMultiplier, "Speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
+		SliderColumn("##MaxSpeed", speed.maxMultiplier, "Speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
 		RenderSkillSource(ctx, skill, "Speed Skill", "how fast the spell charges/casts");
 	}
 
@@ -104,8 +104,8 @@ namespace NLA::Menu
 		TableNextRow();
 		ToggleColumn(label, spread.enabled, tooltip);
 		DisabledIf off{ !spread.enabled };
-		PercentSliderColumn("##MaxReduction", spread.maxSpreadMultiplier, maxReductionTooltip);
-		SecondsSliderColumn("##SpreadHalfDuration", spread.halfDuration, halfDurationTooltip, 0.1f, 5.0f);
+		PercentSliderColumn("##MaxReduction", spread.maxSpreadMultiplier, maxReductionTooltip, Options::Limits::kSteadyingReduction);
+		SecondsSliderColumn("##SpreadHalfDuration", spread.halfDuration, halfDurationTooltip, Options::Limits::kHalfDuration);
 	}
 
 	void SpreadRows::Reset(const PageContext& ctx) const {
@@ -123,16 +123,16 @@ namespace NLA::Menu
 		ToggleColumn(label, fatigue.enabled, tooltip);
 		{
 			DisabledIf off{ !fatigue.enabled };
-			SecondsSliderColumn("##MinThreshold", fatigue.minThreshold, minThresholdTooltip, 0.0f, thresholdSliderMax);
-			SecondsSliderColumn("##MaxThreshold", fatigue.maxThreshold, maxThresholdTooltip, 0.0f, thresholdSliderMax);
+			SecondsSliderColumn("##MinThreshold", fatigue.minThreshold, minThresholdTooltip, Options::Limits::kFatigueThreshold);
+			SecondsSliderColumn("##MaxThreshold", fatigue.maxThreshold, maxThresholdTooltip, Options::Limits::kFatigueThreshold);
 		}
 
 		HeaderRow("Max Fatigue", "Half Duration");
 		TableNextRow();
 		TableNextColumn();
 		DisabledIf off{ !fatigue.enabled };
-		PercentSliderColumn("##MaxPenalty", fatigue.maxSpreadMultiplier, maxPenaltyTooltip);
-		SecondsSliderColumn("##FatigueHalfDuration", fatigue.halfDuration, "Seconds past the fatigue threshold to regrow roughly half of the max fatigue penalty. Lower duration means the aim shakes apart faster once fatigue sets in.", 0.1f, 5.0f);
+		PercentSliderColumn("##MaxPenalty", fatigue.maxSpreadMultiplier, maxPenaltyTooltip, Options::Limits::kFatiguePenalty);
+		SecondsSliderColumn("##FatigueHalfDuration", fatigue.halfDuration, "Seconds past the fatigue threshold to regrow roughly half of the max fatigue penalty. Lower duration means the aim shakes apart faster once fatigue sets in.", Options::Limits::kHalfDuration);
 	}
 
 	void FatigueRows::Reset(const PageContext& ctx) const {

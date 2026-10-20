@@ -37,6 +37,26 @@ namespace NLA::Options
 		kEnchanting
 	};
 
+	/// The allowed range of an option.
+	struct Limit
+	{
+		float min;
+		float max;
+	};
+
+	namespace Limits
+	{
+		inline constexpr Limit kSkillMultiplier{ 0.01f, 5.0f };
+		inline constexpr Limit kBlindnessMultiplier{ 0.0f, 2.0f };
+		inline constexpr Limit kHeadshotChance{ 0.0f, 1.0f };
+		inline constexpr Limit kRangeMultiplier{ 0.5f, 5.0f };
+		inline constexpr Limit kSpeedMultiplier{ 0.1f, 3.0f };
+		inline constexpr Limit kSteadyingReduction{ 0.0f, 1.0f };
+		inline constexpr Limit kFatigueThreshold{ 0.0f, 10.0f };
+		inline constexpr Limit kFatiguePenalty{ 0.0f, 3.0f };
+		inline constexpr Limit kHalfDuration{ 0.1f, 5.0f };
+	}
+
 	struct Config
 	{
 		struct SkillSources
@@ -93,7 +113,7 @@ namespace NLA::Options
 			/// Multiplier at 100 skill.
 			float maxMultiplier = 1.5f;
 
-			static ScalingOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const ScalingOptions& defaults);
+			static ScalingOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const ScalingOptions& defaults, Limit limit);
 		};
 
 		/// Controls how fast a spell/staff/scroll charges.

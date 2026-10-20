@@ -29,6 +29,15 @@ namespace NLA::Options
 			}
 		}
 
+		float ReadClamped(CSimpleIniA& ini, const char* section, const std::string& key, float fallback, Limit limit) {
+			const auto  raw = static_cast<float>(ini.GetDoubleValue(section, key.c_str(), fallback));
+			const float clamped = std::clamp(raw, limit.min, limit.max);
+			if (clamped != raw) {
+				logger::warn("[{}] {} = {} is outside the allowed range {}..{}, using {}", section, key, raw, limit.min, limit.max, clamped);
+			}
+			return clamped;
+		}
+
 		void SetOrDeleteKeywords(CSimpleIniA& ini, const char* section, const char* key, const std::vector<std::string>& value, const std::vector<std::string>& defaultValue, bool writeDefaults = false) {
 			if (writeDefaults || value != defaultValue) {
 				ini.SetValue(section, key, fmt::format("{}", fmt::join(value, ",")).c_str());
@@ -545,16 +554,16 @@ namespace NLA::Options
 
 
 
-		result.concentrationSpellRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellRange", result.concentrationSpellRange);
-		result.concentrationStaffRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffRange", result.concentrationStaffRange);
+		result.concentrationSpellRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellRange", result.concentrationSpellRange, Limits::kRangeMultiplier);
+		result.concentrationStaffRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffRange", result.concentrationStaffRange, Limits::kRangeMultiplier);
 
 		result.concentrationStaffAiming = ini.GetBoolValue(a_section, "bConcentrationStaffAiming", result.concentrationStaffAiming);
 
-		result.spellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed);
-		result.concentrationSpellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed);
-		result.staffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "StaffChargeSpeed", result.staffChargeSpeed);
-		result.concentrationStaffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffChargeSpeed", result.concentrationStaffChargeSpeed);
-		result.scrollChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed);
+		result.spellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed, Limits::kSpeedMultiplier);
+		result.concentrationSpellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed, Limits::kSpeedMultiplier);
+		result.staffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "StaffChargeSpeed", result.staffChargeSpeed, Limits::kSpeedMultiplier);
+		result.concentrationStaffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffChargeSpeed", result.concentrationStaffChargeSpeed, Limits::kSpeedMultiplier);
+		result.scrollChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed, Limits::kSpeedMultiplier);
 
 		result.spellSteadying = SpreadOptions::FromIni(ini, a_section, "SpellSteadying", result.spellSteadying);
 		result.staffSteadying = SpreadOptions::FromIni(ini, a_section, "StaffSteadying", result.staffSteadying);
@@ -566,8 +575,8 @@ namespace NLA::Options
 		result.concentrationSpellFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationSpellFatigue", result.concentrationSpellFatigue);
 		result.concentrationStaffFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationStaffFatigue", result.concentrationStaffFatigue);
 
-		result.bowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed);
-		result.crossbowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed);
+		result.bowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed, Limits::kSpeedMultiplier);
+		result.crossbowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed, Limits::kSpeedMultiplier);
 		result.bowSteadying = SpreadOptions::FromIni(ini, a_section, "BowSteadying", result.bowSteadying);
 		result.bowFatigue = FatigueOptions::FromIni(ini, a_section, "BowFatigue", result.bowFatigue);
 		result.crossbowSteadying = SpreadOptions::FromIni(ini, a_section, "CrossbowSteadying", result.crossbowSteadying);
@@ -595,11 +604,11 @@ namespace NLA::Options
 	NPCConfig::HeadshotSettings NPCConfig::HeadshotSettings::FromIni(CSimpleIniA& ini, const char* a_section, const HeadshotSettings& defaults) {
 		HeadshotSettings result = defaults;
 		result.bow = ini.GetBoolValue(a_section, "bBowHeadshots", result.bow);
-		result.bowMinChance = ini.GetDoubleValue(a_section, "fBowMinHeadshotChance", result.bowMinChance);
-		result.bowMaxChance = ini.GetDoubleValue(a_section, "fBowMaxHeadshotChance", result.bowMaxChance);
+		result.bowMinChance = ReadClamped(ini, a_section, "fBowMinHeadshotChance", result.bowMinChance, Limits::kHeadshotChance);
+		result.bowMaxChance = ReadClamped(ini, a_section, "fBowMaxHeadshotChance", result.bowMaxChance, Limits::kHeadshotChance);
 		result.crossbow = ini.GetBoolValue(a_section, "bCrossbowHeadshots", result.crossbow);
-		result.crossbowMinChance = ini.GetDoubleValue(a_section, "fCrossbowMinHeadshotChance", result.crossbowMinChance);
-		result.crossbowMaxChance = ini.GetDoubleValue(a_section, "fCrossbowMaxHeadshotChance", result.crossbowMaxChance);
+		result.crossbowMinChance = ReadClamped(ini, a_section, "fCrossbowMinHeadshotChance", result.crossbowMinChance, Limits::kHeadshotChance);
+		result.crossbowMaxChance = ReadClamped(ini, a_section, "fCrossbowMaxHeadshotChance", result.crossbowMaxChance, Limits::kHeadshotChance);
 		return result;
 	}
 
@@ -625,29 +634,29 @@ namespace NLA::Options
 		return result;
 	}
 
-	Config::ScalingOptions Config::ScalingOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const ScalingOptions& defaults) {
+	Config::ScalingOptions Config::ScalingOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const ScalingOptions& defaults, Limit limit) {
 		ScalingOptions result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), result.enabled);
-		result.minMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MinMultiplier", prefix).c_str(), result.minMultiplier));
-		result.maxMultiplier = static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), result.maxMultiplier));
+		result.minMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MinMultiplier", prefix), result.minMultiplier, limit);
+		result.maxMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MaxMultiplier", prefix), result.maxMultiplier, limit);
 		return result;
 	}
 
 	Config::SpreadOptions Config::SpreadOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SpreadOptions& defaults) {
 		SpreadOptions result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("b{}", prefix).c_str(), result.enabled);
-		result.maxSpreadMultiplier = std::clamp(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxSpreadReduction", prefix).c_str(), result.maxSpreadMultiplier)), 0.0f, 1.0f);
-		result.halfDuration = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}HalfDuration", prefix).c_str(), result.halfDuration)), 0.01f);
+		result.maxSpreadMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MaxSpreadReduction", prefix), result.maxSpreadMultiplier, Limits::kSteadyingReduction);
+		result.halfDuration = ReadClamped(ini, a_section, fmt::format("f{}HalfDuration", prefix), result.halfDuration, Limits::kHalfDuration);
 		return result;
 	}
 
 	Config::FatigueOptions Config::FatigueOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const FatigueOptions& defaults) {
 		FatigueOptions result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("b{}", prefix).c_str(), result.enabled);
-		result.minThreshold = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MinThreshold", prefix).c_str(), result.minThreshold)), 0.0f);
-		result.maxThreshold = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxThreshold", prefix).c_str(), result.maxThreshold)), 0.0f);
-		result.maxSpreadMultiplier = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}MaxPenalty", prefix).c_str(), result.maxSpreadMultiplier)), 0.0f);
-		result.halfDuration = std::max(static_cast<float>(ini.GetDoubleValue(a_section, fmt::format("f{}HalfDuration", prefix).c_str(), result.halfDuration)), 0.01f);
+		result.minThreshold = ReadClamped(ini, a_section, fmt::format("f{}MinThreshold", prefix), result.minThreshold, Limits::kFatigueThreshold);
+		result.maxThreshold = ReadClamped(ini, a_section, fmt::format("f{}MaxThreshold", prefix), result.maxThreshold, Limits::kFatigueThreshold);
+		result.maxSpreadMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MaxPenalty", prefix), result.maxSpreadMultiplier, Limits::kFatiguePenalty);
+		result.halfDuration = ReadClamped(ini, a_section, fmt::format("f{}HalfDuration", prefix), result.halfDuration, Limits::kHalfDuration);
 		return result;
 	}
 
@@ -663,14 +672,15 @@ namespace NLA::Options
 		std::string scrollOption = fmt::format("fScroll{}SkillMultiplier", prefix);
 		std::string blindnessOption = fmt::format("fBlindness{}SkillMultiplier", prefix);
 
-		result.bow = ini.GetDoubleValue(a_section, bowOption.c_str(), result.bow);
-		result.crossbow = ini.GetDoubleValue(a_section, crossbowOption.c_str(), result.crossbow);
-		result.spell = ini.GetDoubleValue(a_section, spellOption.c_str(), result.spell);
-		result.concentrationSpell = ini.GetDoubleValue(a_section, concentrationSpellOption.c_str(), result.concentrationSpell);
-		result.staff = ini.GetDoubleValue(a_section, staffOption.c_str(), result.staff);
-		result.concentrationStaff = ini.GetDoubleValue(a_section, concentrationStaffOption.c_str(), result.concentrationStaff);
-		result.scroll = ini.GetDoubleValue(a_section, scrollOption.c_str(), result.scroll);
-		result.blindness = ini.GetDoubleValue(a_section, blindnessOption.c_str(), result.blindness);
+		constexpr Limit limit = Limits::kSkillMultiplier;
+		result.bow = ReadClamped(ini, a_section, bowOption, result.bow, limit);
+		result.crossbow = ReadClamped(ini, a_section, crossbowOption, result.crossbow, limit);
+		result.spell = ReadClamped(ini, a_section, spellOption, result.spell, limit);
+		result.concentrationSpell = ReadClamped(ini, a_section, concentrationSpellOption, result.concentrationSpell, limit);
+		result.staff = ReadClamped(ini, a_section, staffOption, result.staff, limit);
+		result.concentrationStaff = ReadClamped(ini, a_section, concentrationStaffOption, result.concentrationStaff, limit);
+		result.scroll = ReadClamped(ini, a_section, scrollOption, result.scroll, limit);
+		result.blindness = ReadClamped(ini, a_section, blindnessOption, result.blindness, Limits::kBlindnessMultiplier);
 
 		return result;
 	}
