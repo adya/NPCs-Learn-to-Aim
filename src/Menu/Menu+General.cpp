@@ -65,7 +65,7 @@ namespace NLA::Menu
 				syncBuffers();
 			}
 
-			KeywordsInput("Include Keywords", "##IncludeKeywords", "ActorTypeNPC", includeBuffer, npc.includeKeywords,
+			KeywordsInput("Include Keywords", "##IncludeKeywords", "ActorTypeNPC,UpdateDuringArchery", includeBuffer, npc.includeKeywords,
 				"Only NPCs with at least one of these keywords (on the NPC or its race) will learn to aim. Leave empty to skip this filter.");
 			Spacing();
 			KeywordsInput("Exclude Keywords", "##ExcludeKeywords", "", excludeBuffer, npc.excludeKeywords,

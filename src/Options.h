@@ -362,7 +362,7 @@ namespace NLA::Options
 		},
 		{},
 		{},
-		{ "ActorTypeNPC" },
+		{ "ActorTypeNPC", "UpdateDuringArchery" },
 	};
 
 	inline NPCConfig    NPC{ NPCConfig::defaultConfig };
