@@ -20,8 +20,8 @@ namespace NLA::Menu
 				&Config::scrollChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast scrolls charge/cast. (the higher the skill the faster the cast)",
-					kChargeSpeedGroup,
-					ChargeSpeedSkill(&Config::scrollSkills) },
+				kChargeSpeedGroup,
+				ChargeSpeedSkill(&Config::scrollSkills) },
 			SpreadRows{
 				&Config::scrollSteadying,
 				kSteadyingLabel,

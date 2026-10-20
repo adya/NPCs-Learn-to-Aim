@@ -39,13 +39,11 @@ namespace NLA::Menu
 				Options::Save();
 			}
 			ShowTooltip(isNPC ?
-							"Master switch for NPCs. When disabled, NPCs have vanilla aiming and all settings below are ignored." :
-							"Master switch for the Player. When disabled, the Player has vanilla aiming and all settings below are ignored.");
+			                "Master switch for NPCs. When disabled, NPCs have vanilla aiming and all settings below are ignored." :
+			                "Master switch for the Player. When disabled, the Player has vanilla aiming and all settings below are ignored.");
 			Spacing();
 		} else if (!enabled) {
-			TextDisabled("%s", isNPC ?
-								   "NPC settings are disabled. Enable them by clicking the NPC section." :
-								   "Player settings are disabled. Enable them by clicking the Player section.");
+			TextDisabled("%s", isNPC ? "NPC settings are disabled. Enable them by clicking the NPC section." : "Player settings are disabled. Enable them by clicking the Player section.");
 			Spacing();
 		}
 		{
@@ -63,8 +61,8 @@ namespace NLA::Menu
 				}
 			}
 			ShowTooltip(isNPC ?
-							"Reset all NPC settings, including filters and headshots, to their defaults." :
-							"Reset all Player settings to their defaults.");
+			                "Reset all NPC settings, including filters and headshots, to their defaults." :
+			                "Reset all Player settings to their defaults.");
 		}
 		PopID();
 	}

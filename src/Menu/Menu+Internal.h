@@ -101,22 +101,22 @@ namespace NLA::Menu
 	/// Points at one of a spell type's skill sources; renders as a drop-down row inside the section it belongs to.
 	struct SkillSourceRef
 	{
-		Config::SkillSources Config::*               sources = nullptr;
-		Options::SkillSource Config::SkillSources::* field = nullptr;
+		Config::SkillSources Config::*sources = nullptr;
+		Options::SkillSource Config::SkillSources::*field = nullptr;
 	};
 
-	constexpr SkillSourceRef AimingSkill(Config::SkillSources Config::* sources) { return { sources, &Config::SkillSources::aiming }; }
-	constexpr SkillSourceRef ChargeSpeedSkill(Config::SkillSources Config::* sources) { return { sources, &Config::SkillSources::chargeSpeed }; }
-	constexpr SkillSourceRef RangeSkill(Config::SkillSources Config::* sources) { return { sources, &Config::SkillSources::range }; }
+	constexpr SkillSourceRef AimingSkill(Config::SkillSources Config::*sources) { return { sources, &Config::SkillSources::aiming }; }
+	constexpr SkillSourceRef ChargeSpeedSkill(Config::SkillSources Config::*sources) { return { sources, &Config::SkillSources::chargeSpeed }; }
+	constexpr SkillSourceRef RangeSkill(Config::SkillSources Config::*sources) { return { sources, &Config::SkillSources::range }; }
 
 	struct HeadshotRows
 	{
-		bool HeadshotSettings::*  enabled;
-		float HeadshotSettings::* minChance;
-		float HeadshotSettings::* maxChance;
-		const char*               label;
-		const char*               tooltip;
-		const char*               shooter;
+		bool HeadshotSettings::*enabled;
+		float HeadshotSettings::*minChance;
+		float HeadshotSettings::*maxChance;
+		const char*              label;
+		const char*              tooltip;
+		const char*              shooter;
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -124,10 +124,10 @@ namespace NLA::Menu
 
 	struct RangeRows
 	{
-		Config::ScalingOptions Config::* options;
-		const char*                      tooltip;
-		const char*                      minTooltip;
-		const char*                      maxTooltip;
+		Config::ScalingOptions Config::*options;
+		const char*                     tooltip;
+		const char*                     minTooltip;
+		const char*                     maxTooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
@@ -140,9 +140,9 @@ namespace NLA::Menu
 
 	struct SpeedRows
 	{
-		Config::ScalingOptions Config::* options;
-		const char*                      label;
-		const char*                      tooltip;
+		Config::ScalingOptions Config::*options;
+		const char*                     label;
+		const char*                     tooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
@@ -155,11 +155,11 @@ namespace NLA::Menu
 
 	struct SpreadRows
 	{
-		Config::SpreadOptions Config::* options;
-		const char*                     label;
-		const char*                     tooltip;
-		const char*                     maxReductionTooltip;
-		const char*                     halfDurationTooltip;
+		Config::SpreadOptions Config::*options;
+		const char*                    label;
+		const char*                    tooltip;
+		const char*                    maxReductionTooltip;
+		const char*                    halfDurationTooltip;
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -167,12 +167,12 @@ namespace NLA::Menu
 
 	struct FatigueRows
 	{
-		Config::FatigueOptions Config::* options;
-		const char*                      label;
-		const char*                      tooltip;
-		const char*                      minThresholdTooltip;
-		const char*                      maxThresholdTooltip;
-		const char*                      maxPenaltyTooltip;
+		Config::FatigueOptions Config::*options;
+		const char*                     label;
+		const char*                     tooltip;
+		const char*                     minThresholdTooltip;
+		const char*                     maxThresholdTooltip;
+		const char*                     maxPenaltyTooltip;
 
 		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
 		void Reset(const PageContext& ctx) const;
@@ -183,15 +183,15 @@ namespace NLA::Menu
 	/// The "Learn X" toggle with its skill multipliers, shared by every category.
 	struct CategoryBase
 	{
-		const char*                      id;
-		const char*                      label;
-		const char*                      tooltip;
-		bool Config::*                   aiming;
-		float Config::SkillMultiplier::* multiplier;
-		const char*                      accuracyTooltip;
-		const char*                      precisionTooltip;
-		const char*                      resetLabel;
-		SkillSourceRef                   aimSkill{};
+		const char* id;
+		const char* label;
+		const char* tooltip;
+		bool Config::*aiming;
+		float Config::SkillMultiplier::*multiplier;
+		const char*                     accuracyTooltip;
+		const char*                     precisionTooltip;
+		const char*                     resetLabel;
+		SkillSourceRef                  aimSkill{};
 	};
 
 	/// Parts are rendered below the "Learn X" row in the order they are listed.
@@ -199,15 +199,16 @@ namespace NLA::Menu
 	struct Category : CategoryBase, Parts...
 	{};
 
-	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator,
-		const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts);
+	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts);
 
 	/// Renders the category below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
 	/// a new section with their title; the rest stay in the section of the "Learn X" row.
 	template <class... Parts>
 	void RenderCategory(const Category<Parts...>& category, const PageContext& ctx, const char* separator = "Aiming") {
 		RenderCategoryTable(
-			category, ctx, separator,
+			category,
+			ctx,
+			separator,
 			[&](bool aiming, TableSections& sections) { (static_cast<const Parts&>(category).Render(ctx, aiming, sections), ...); },
 			[&] { (static_cast<const Parts&>(category).Reset(ctx), ...); });
 	}
@@ -221,7 +222,7 @@ namespace NLA::Menu
 	inline constexpr const char* kRangeGroup = "Range";
 
 	/// Shared by spells, staves and scrolls; only the toggle's tooltip differs.
-	constexpr FatigueRows CastFatigue(Config::FatigueOptions Config::* options, const char* tooltip) {
+	constexpr FatigueRows CastFatigue(Config::FatigueOptions Config::*options, const char* tooltip) {
 		return {
 			options,
 			"Holding Charge Fatigues Aim",

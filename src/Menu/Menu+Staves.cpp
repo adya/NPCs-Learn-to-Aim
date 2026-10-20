@@ -20,8 +20,8 @@ namespace NLA::Menu
 				&Config::staffChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast staves charge/cast. (the higher the skill the faster the cast)",
-					kChargeSpeedGroup,
-					ChargeSpeedSkill(&Config::staffSkills) },
+				kChargeSpeedGroup,
+				ChargeSpeedSkill(&Config::staffSkills) },
 			SpreadRows{
 				&Config::staffSteadying,
 				kSteadyingLabel,

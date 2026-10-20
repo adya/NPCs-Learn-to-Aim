@@ -1,6 +1,6 @@
 #include "Menu+Internal.h"
-#include <fmt/format.h>
 #include <SKSEMCP/SKSEMenuFramework.hpp>
+#include <fmt/format.h>
 
 using namespace ImGuiMCP;
 
@@ -23,7 +23,7 @@ namespace NLA::Menu
 		}
 
 		template <typename T>
-		void ResetMember(const PageContext& ctx, T Config::* member) {
+		void ResetMember(const PageContext& ctx, T Config::*member) {
 			ctx.cfg.*member = ctx.defaults.*member;
 		}
 	}
@@ -139,8 +139,7 @@ namespace NLA::Menu
 		ResetMember(ctx, options);
 	}
 
-	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator,
-		const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts) {
+	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts) {
 		auto& cfg = ctx.cfg;
 		auto& aiming = cfg.*category.aiming;
 

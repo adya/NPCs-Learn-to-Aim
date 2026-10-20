@@ -22,13 +22,13 @@ namespace NLA::Menu
 				"Concentration staff range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
 				"Concentration staff range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
 				kRangeGroup,
-					RangeSkill(&Config::concentrationStaffSkills) },
+				RangeSkill(&Config::concentrationStaffSkills) },
 			SpeedRows{
 				&Config::concentrationStaffChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast concentration staves charge/cast. (the higher the skill the faster the cast)",
 				kChargeSpeedGroup,
-					ChargeSpeedSkill(&Config::concentrationStaffSkills) },
+				ChargeSpeedSkill(&Config::concentrationStaffSkills) },
 			FatigueRows{
 				&Config::concentrationStaffFatigue,
 				"Prolonged Cast Fatigues Aim",

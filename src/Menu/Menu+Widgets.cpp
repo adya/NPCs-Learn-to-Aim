@@ -1,7 +1,7 @@
 #include "Menu+Internal.h"
+#include <SKSEMCP/SKSEMenuFramework.hpp>
 #include <cmath>
 #include <fmt/format.h>
-#include <SKSEMCP/SKSEMenuFramework.hpp>
 
 using namespace ImGuiMCP;
 
@@ -82,13 +82,13 @@ namespace NLA::Menu
 			TableSetColumnIndex(1);
 			CenteredHeaderCell(kAccuracyHeader, !hasAccuracy);
 			ShowTooltip(hasAccuracy ?
-							"How accurately NPCs can aim their shots at a target. The higher the skill the more likely they can aim at the target." :
-							"Not applicable to the Player: you use your mouse/controller to aim :)");
+			                "How accurately NPCs can aim their shots at a target. The higher the skill the more likely they can aim at the target." :
+			                "Not applicable to the Player: you use your mouse/controller to aim :)");
 			TableSetColumnIndex(2);
 			CenteredHeaderCell(kPrecisionHeader);
 			ShowTooltip(hasAccuracy ?
-							"How precisely NPCs can hit their target in the aimed point. The higher the skill the more precisely they can hit desired spot." :
-							"How precisely you can hit the target in the aimed point. The higher the skill the more precisely you can hit the desired spot.");
+			                "How precisely NPCs can hit their target in the aimed point. The higher the skill the more precisely they can hit desired spot." :
+			                "How precisely you can hit the target in the aimed point. The higher the skill the more precisely you can hit the desired spot.");
 		}
 		return true;
 	}

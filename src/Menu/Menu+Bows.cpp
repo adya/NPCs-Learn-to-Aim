@@ -16,7 +16,9 @@ namespace NLA::Menu
 				.resetLabel = "Reset Bows to Default",
 			},
 			HeadshotRows{
-				&HeadshotSettings::bow, &HeadshotSettings::bowMinChance, &HeadshotSettings::bowMaxChance,
+				&HeadshotSettings::bow,
+				&HeadshotSettings::bowMinChance,
+				&HeadshotSettings::bowMaxChance,
 				"Bow Headshots",
 				"When enabled, sufficiently skilled archers have a chance to aim for the head instead of the chest.",
 				"archer" },
@@ -24,7 +26,7 @@ namespace NLA::Menu
 				&Config::bowDrawSpeed,
 				kScaleDrawSpeedLabel,
 				"When enabled, Archery skill also affects how fast a bow reaches full draw. (the higher the skill the faster the draw)",
-					kDrawSpeedGroup },
+				kDrawSpeedGroup },
 			SpreadRows{
 				&Config::bowSteadying,
 				"Full Draw Steadies Aim",

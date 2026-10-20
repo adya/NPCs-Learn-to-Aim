@@ -21,7 +21,7 @@ namespace NLA::Menu
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding Magic skill also affects how fast fire-and-forget spells charge/cast. (the higher the skill the faster the cast)",
 				kChargeSpeedGroup,
-					ChargeSpeedSkill(&Config::spellSkills) },
+				ChargeSpeedSkill(&Config::spellSkills) },
 			SpreadRows{
 				&Config::spellSteadying,
 				kSteadyingLabel,
