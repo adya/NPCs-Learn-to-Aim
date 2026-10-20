@@ -56,18 +56,10 @@ namespace NLA::Draw
 	}
 
 	float SpeedMultiplier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
-		if (!attacker || !weapon)
-			return 1.0f;
-
-		const auto weaponType = weapon->GetWeaponType();
-		if (weaponType != RE::WEAPON_TYPE::kBow && weaponType != RE::WEAPON_TYPE::kCrossbow)
-			return 1.0f;
-
-		auto skillUsage = SkillUsage(weapon, attacker, kChargeTime);
-		if (!skillUsage)
-			return 1.0f;
-
-		return skillUsage.LerpSkillFactor(attacker);
+		if (auto skillUsage = SkillUsage(weapon, attacker, kChargeTime); skillUsage) {
+			return skillUsage.LerpSkillFactor(attacker);
+		}
+		return 1.0f;
 	}
 
 	float PopFullDrawDuration(RE::Actor* actor) {

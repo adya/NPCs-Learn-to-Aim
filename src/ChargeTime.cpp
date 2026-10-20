@@ -14,6 +14,9 @@ namespace NLA::ChargeTime
 		{
 			RE::MagicCaster::State lastState{ RE::MagicCaster::State::kNone };
 
+			/// Whether the mod applies to the actor. Decided once when a cast starts, to avoid looking up keywords every frame.
+			bool learns{ false };
+
 			/// Time that spell is held in charged state in given casting source (e.g. left/right hand) for a given actor.
 			float chargedDuration{ 0.0f };
 
@@ -54,6 +57,73 @@ namespace NLA::ChargeTime
 			       state != RE::MagicCaster::State::kUnk01 &&
 			       !IsCharging(state) &&
 			       !IsInterrupted(state);
+		}
+	}
+
+	namespace
+	{
+		/// Updates the caster's tracked durations and returns whether the mod applies to its actor.
+		bool Track(const RE::ActorMagicCaster* caster, RE::MagicCaster::State state, float delta) {
+			auto* actor = caster->actor;
+			if (!actor) {
+				return false;
+			}
+
+			const auto key = MakeKey(actor->GetFormID(), caster->castingSource);
+
+			RE::BSSpinLockGuard lock{ entriesLock };
+
+			auto it = entries.find(key);
+			if (it == entries.end()) {
+				if (state == RE::MagicCaster::State::kNone) {
+					return false;  // idle casters are the vast majority, so don't even track them.
+				}
+				it = entries.try_emplace(key).first;
+			}
+
+			auto&      entry = it->second;
+			const auto prev = entry.lastState;
+
+			if (prev != state) {
+				if (prev == RE::MagicCaster::State::kNone) {
+					entry.learns = Options::NPC.ShouldLearn(actor);
+				}
+
+				if (entry.learns) {
+					if (IsReady(prev)) {
+						const float duration = entry.chargedDuration;
+						entry.chargedDuration = 0.0f;
+
+						if (IsInterrupted(state)) {
+							entry.holdDuration = 0.0f;
+						} else {
+							entry.holdDuration = duration;
+						}
+					} else if (IsCharging(state) || IsInterrupted(state)) {
+						entry.holdDuration = 0.0f;  // a new cast is starting or the previous one was cancelled.
+					}
+				}
+
+				entry.lastState = state;
+			}
+
+			if (entry.learns) {
+				if (IsReady(state)) {
+					entry.chargedDuration += delta;
+				}
+
+				if (IsConcentrating(caster, state)) {
+					entry.concentrationDuration += delta;
+				} else {
+					entry.concentrationDuration = 0.0f;
+				}
+			}
+
+			const bool learns = entry.learns;
+			if (state == RE::MagicCaster::State::kNone && entry.holdDuration == 0.0f) {
+				entries.erase(it);
+			}
+			return learns;
 		}
 	}
 
@@ -115,46 +185,7 @@ namespace NLA::ChargeTime
 			if (caster) {
 				const auto state = caster->state.get();
 
-				if (caster->actor) {
-					RE::BSSpinLockGuard lock{ entriesLock };
-
-					const auto key = MakeKey(caster->actor->GetFormID(), caster->castingSource);
-					auto&      entry = entries[key];
-					const auto prev = entry.lastState;
-
-					if (prev != state) {
-						if (IsReady(prev)) {
-							const float duration = entry.chargedDuration;
-							entry.chargedDuration = 0.0f;
-
-							if (IsInterrupted(state)) {
-								entry.holdDuration = 0.0f;
-							} else {
-								entry.holdDuration = duration;
-							}
-						} else if (IsCharging(state) || IsInterrupted(state)) {
-							entry.holdDuration = 0.0f;  // a new cast is starting or the previous one was cancelled.
-						}
-
-						entry.lastState = state;
-					}
-
-					if (IsReady(state)) {
-						entry.chargedDuration += delta;
-					}
-
-					if (IsConcentrating(caster, state)) {
-						entry.concentrationDuration += delta;
-					} else {
-						entry.concentrationDuration = 0.0f;
-					}
-
-					if (state == RE::MagicCaster::State::kNone && entry.holdDuration == 0.0f) {
-						entries.erase(key);
-					}
-				}
-
-				if (IsCharging(state)) {
+				if (Track(caster, state, delta) && IsCharging(state)) {
 					delta *= SpeedMultiplier(caster->actor, caster->currentSpell);
 				}
 			}
