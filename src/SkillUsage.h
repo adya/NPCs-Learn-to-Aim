@@ -52,6 +52,4 @@ namespace NLA
 		/// A random deviation in a random direction, with magnitude normally distributed within MaxSpread.
 		RE::NiPoint2 RandomSpreadOffset(RE::Actor* actor) const;
 	};
-
-	RE::ActorValue MagicSkillFor(const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context);
 }

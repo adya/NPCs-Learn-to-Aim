@@ -28,10 +28,12 @@ namespace NLA
 
 		weaponType = isCrossbow ? kCrossbow : kBow;
 
+		const auto& kind = Options::AttackKind::For(weaponType);
+
 		switch (context) {
 		case kChargeTime:
 			{
-				const auto& drawSpeed = isCrossbow ? options.crossbowDrawSpeed : options.bowDrawSpeed;
+				const auto& drawSpeed = options.*kind.speed;
 				if (drawSpeed.enabled) {
 					skill = RE::ActorValue::kArchery;
 					multiplier = Range{ drawSpeed.minMultiplier, drawSpeed.maxMultiplier };
@@ -54,11 +56,9 @@ namespace NLA
 		case kAccuracy:
 		case kPrecision:
 			{
-				if (isCrossbow ? options.crossbowAiming : options.bowAiming) {
-					const auto& multipliers = options.MultiplierFor(context);
-
+				if (options.*kind.aiming) {
 					skill = RE::ActorValue::kArchery;
-					multiplier = WithBlindness(isCrossbow ? multipliers.crossbow : multipliers.bow, attacker, options, context);
+					multiplier = WithBlindness(options.MultiplierFor(context).*kind.multiplier, attacker, options, context);
 				}
 				break;
 			}
@@ -76,62 +76,39 @@ namespace NLA
 				return actor->AsActorValueOwner()->GetActorValue(a) < actor->AsActorValueOwner()->GetActorValue(b);
 			});
 		}
-	}
 
-	RE::ActorValue MagicSkillFor(const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context) {
-		if (!spell || !caster)
-			return RE::ActorValue::kNone;
+		RE::ActorValue SkillFor(const Options::AttackKind& kind, const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context) {
+			const auto& sources = Options::For(caster).*kind.skills;
 
-		const auto& options = Options::For(caster);
-
-		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
-
-		const Options::Config::SkillSources* sources = nullptr;
-		switch (spell->GetSpellType()) {
-		case RE::MagicSystem::SpellType::kSpell:
-		case RE::MagicSystem::SpellType::kLeveledSpell:
-			sources = isConcentration ? &options.concentrationSpellSkills : &options.spellSkills;
-			break;
-		case RE::MagicSystem::SpellType::kStaffEnchantment:
-			sources = isConcentration ? &options.concentrationStaffSkills : &options.staffSkills;
-			break;
-		case RE::MagicSystem::SpellType::kScroll:
-			sources = &options.scrollSkills;
-			break;
-		default:
-			break;
-		}
-
-		Options::SkillSource source = Options::SkillSource::kSpellSkill;
-		if (sources) {
+			Options::SkillSource source;
 			switch (context) {
 			case kChargeTime:
-				source = sources->chargeSpeed;
+				source = sources.chargeSpeed;
 				break;
 			case kRange:
-				source = sources->range;
+				source = sources.range;
 				break;
 			default:
-				source = sources->aiming;
+				source = sources.aiming;
 				break;
 			}
-		}
 
-		switch (source) {
-		case Options::SkillSource::kEnchanting:
-			return RE::ActorValue::kEnchanting;
-		case Options::SkillSource::kHighest:
-			return HighestMagicSkill(caster);
-		default:
-			if (auto effect = spell->GetCostliestEffectItem(); effect) {
-				if (auto base = effect->baseEffect; base) {
-					if (auto skill = base->GetMagickSkill(); skill != RE::ActorValue::kNone) {
-						return skill;
+			switch (source) {
+			case Options::SkillSource::kEnchanting:
+				return RE::ActorValue::kEnchanting;
+			case Options::SkillSource::kHighest:
+				return HighestMagicSkill(caster);
+			default:
+				if (auto effect = spell->GetCostliestEffectItem(); effect) {
+					if (auto base = effect->baseEffect; base) {
+						if (auto skill = base->GetMagickSkill(); skill != RE::ActorValue::kNone) {
+							return skill;
+						}
 					}
 				}
+				// Spells without a magic school still aim by the caster's best school.
+				return HighestMagicSkill(caster);
 			}
-			// Spells without a magic school (e.g. some abilities or modded effects) still aim by the caster's best school.
-			return HighestMagicSkill(caster);
 		}
 	}
 
@@ -139,112 +116,44 @@ namespace NLA
 		if (!spell || !attacker || !Options::ShouldLearn(attacker))
 			return;
 
-		const auto& options = Options::For(attacker);
+		const auto* kind = Options::AttackKind::For(spell);
+		if (!kind)
+			return;
 
-		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
-		const bool isFireAndForget = spell->GetCastingType() == RE::MagicSystem::CastingType::kFireAndForget;
-		const bool isAimed = spell->GetDelivery() == RE::MagicSystem::Delivery::kAimed;
+		const auto castingType = spell->GetCastingType();
+		if (kind->type != kScroll && castingType != RE::MagicSystem::CastingType::kFireAndForget && castingType != RE::MagicSystem::CastingType::kConcentration)
+			return;
+
+		const auto& options = Options::For(attacker);
+		const bool  isAimed = spell->GetDelivery() == RE::MagicSystem::Delivery::kAimed;
+
+		weaponType = kind->type;
+
+		const auto use = [&](std::variant<float, Range> value) {
+			skill = SkillFor(*kind, spell, attacker, context);
+			multiplier = value;
+		};
 
 		switch (context) {
 		case kChargeTime:
-			switch (spell->GetSpellType()) {
-			case RE::MagicSystem::SpellType::kSpell:
-			case RE::MagicSystem::SpellType::kLeveledSpell:
-				weaponType = kSpell;
-				if (isConcentration && options.concentrationSpellChargeSpeed.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.concentrationSpellChargeSpeed.minMultiplier, options.concentrationSpellChargeSpeed.maxMultiplier };
-				} else if (isFireAndForget && options.spellChargeSpeed.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.spellChargeSpeed.minMultiplier, options.spellChargeSpeed.maxMultiplier };
-				}
-				break;
-			case RE::MagicSystem::SpellType::kStaffEnchantment:
-				weaponType = kStaff;
-				if (isConcentration && options.concentrationStaffChargeSpeed.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.concentrationStaffChargeSpeed.minMultiplier, options.concentrationStaffChargeSpeed.maxMultiplier };
-				} else if (isFireAndForget && options.staffChargeSpeed.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.staffChargeSpeed.minMultiplier, options.staffChargeSpeed.maxMultiplier };
-				}
-				break;
-			case RE::MagicSystem::SpellType::kScroll:
-				weaponType = kScroll;
-				if (options.scrollChargeSpeed.enabled) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = Range{ options.scrollChargeSpeed.minMultiplier, options.scrollChargeSpeed.maxMultiplier };
-				}
-				break;
-			default:
-				break;
+			if (const auto& speed = options.*kind->speed; speed.enabled) {
+				use(Range{ speed.minMultiplier, speed.maxMultiplier });
 			}
 			break;
 
 		case kRange:
-			if (isAimed && isConcentration) {
-				switch (spell->GetSpellType()) {
-				case RE::MagicSystem::SpellType::kSpell:
-				case RE::MagicSystem::SpellType::kLeveledSpell:
-					if (options.concentrationSpellRange.enabled) {
-						weaponType = kSpell;
-						skill = MagicSkillFor(spell, attacker, context);
-						multiplier = Range{ options.concentrationSpellRange.minMultiplier, options.concentrationSpellRange.maxMultiplier };
-					}
-					break;
-				case RE::MagicSystem::SpellType::kStaffEnchantment:
-					if (options.concentrationStaffRange.enabled) {
-						weaponType = kStaff;
-						skill = MagicSkillFor(spell, attacker, context);
-						multiplier = Range{ options.concentrationStaffRange.minMultiplier, options.concentrationStaffRange.maxMultiplier };
-					}
-					break;
-				default:
-					break;
+			if (isAimed && kind->range) {
+				if (const auto& range = options.*kind->range; range.enabled) {
+					use(Range{ range.minMultiplier, range.maxMultiplier });
 				}
 			}
 			break;
 
 		case kAccuracy:
 		case kPrecision:
-			// Only support aimed spells.
-			if (!isAimed)
-				break;
-
-			switch (spell->GetSpellType()) {
-			case RE::MagicSystem::SpellType::kSpell:
-			case RE::MagicSystem::SpellType::kLeveledSpell:
-				weaponType = kSpell;
-				if (isConcentration && options.concentrationSpellAiming) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = options.MultiplierFor(context).concentrationSpell;
-				} else if (isFireAndForget && options.spellAiming) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = options.MultiplierFor(context).spell;
-				}
-				break;
-			case RE::MagicSystem::SpellType::kStaffEnchantment:
-				weaponType = kStaff;
-				if (isConcentration && options.concentrationStaffAiming) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = options.MultiplierFor(context).concentrationStaff;
-				} else if (isFireAndForget && options.staffAiming) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = options.MultiplierFor(context).staff;
-				}
-				break;
-			case RE::MagicSystem::SpellType::kScroll:
-				weaponType = kScroll;
-				if (options.scrollAiming) {
-					skill = MagicSkillFor(spell, attacker, context);
-					multiplier = options.MultiplierFor(context).scroll;
-				}
-				break;
-			default:
-				break;
+			if (isAimed && options.*kind->aiming) {
+				use(WithBlindness(options.MultiplierFor(context).*kind->multiplier, attacker, options, context));
 			}
-
-			multiplier = WithBlindness(std::get<float>(multiplier), attacker, options, context);
 			break;
 
 		default:
