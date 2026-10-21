@@ -93,18 +93,25 @@ namespace NLA
 
 			ShotModifier() = default;
 
-			ShotModifier(RE::Actor* attacker, const RE::MagicItem* spell, float holdSeconds) :
-				attacker(attacker), source(spell), precision(spell, attacker, kPrecision) {
-				if (precision) {
-					steadying = SteadyingModifier::For(attacker, precision.weaponType, holdSeconds);
+			/// Pops the hold time that the steadying depends on.
+			static ShotModifier ForSpell(RE::Actor* attacker, const RE::MagicItem* spell, RE::MagicSystem::CastingSource source) {
+				ShotModifier modifier{ attacker, spell, SkillUsage(spell, attacker, kPrecision) };
+
+				const float holdSeconds = ChargeTime::PopSpellHoldDuration(attacker, source);
+				if (modifier.precision) {
+					modifier.steadying = SteadyingModifier::For(attacker, modifier.precision.weaponType, holdSeconds);
 				}
+				return modifier;
 			}
 
-			ShotModifier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) :
-				attacker(attacker), source(weapon), precision(weapon, attacker, kPrecision) {
+			/// Pops the hold time that the steadying depends on.
+			static ShotModifier ForWeapon(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
+				ShotModifier modifier{ attacker, weapon, SkillUsage(weapon, attacker, kPrecision) };
+
 				if (auto type = HoldableType(weapon); type) {
-					steadying = SteadyingModifier::For(attacker, *type, Draw::PopFullDrawDuration(attacker));
+					modifier.steadying = SteadyingModifier::For(attacker, *type, Draw::PopFullDrawDuration(attacker));
 				}
+				return modifier;
 			}
 
 			/// Adds a random spread to the given launch angles.
@@ -121,6 +128,10 @@ namespace NLA
 
 				angles = { *angleX, *angleZ };
 			}
+
+		private:
+			ShotModifier(RE::Actor* attacker, const RE::TESForm* source, SkillUsage precision) :
+				attacker(attacker), source(source), precision(precision) {}
 		};
 
 		void LogShot([[maybe_unused]] const ShotModifier& modifier) {
@@ -133,7 +144,7 @@ namespace NLA
 			const auto* spell = modifier.source ? modifier.source->As<RE::MagicItem>() : nullptr;
 
 			logger::info("");
-			logger::info("Shooting: {} with {}", attacker->GetName(), modifier.source ? modifier.source->GetName() : "?");
+			logger::info("Shooting: {} with {}", *attacker, modifier.source ? modifier.source->GetName() : "?");
 
 			if (const auto& precision = modifier.precision; precision) {
 				logger::info("\tSkill: {:.1f} (base: {:.1f}), factor: {:.4f}", precision.EffectiveSkill(attacker), precision.Skill(attacker), precision.SkillFactor(attacker));
@@ -211,9 +222,7 @@ namespace NLA
 
 				// PlayerAutoAim will handle 3rd person aim.
 				if (!IsHandledByPlayerAutoAim(attacker)) {
-					const float holdSeconds = ChargeTime::PopSpellHoldDuration(attacker, launchData.castingSource);
-
-					ShotModifier modifier(attacker, launchData.spell, holdSeconds);
+					auto modifier = ShotModifier::ForSpell(attacker, launchData.spell, launchData.castingSource);
 					modifier.Apply(&launchData.angleX, &launchData.angleZ);
 					LogShot(modifier);
 				}
@@ -241,7 +250,7 @@ namespace NLA
 
 				// PlayerAutoAim will handle 3rd person aim.
 				if (!IsHandledByPlayerAutoAim(attacker)) {
-					ShotModifier modifier(attacker, launchData.weaponSource);
+					auto modifier = ShotModifier::ForWeapon(attacker, launchData.weaponSource);
 					modifier.Apply(&launchData.angleX, &launchData.angleZ);
 					LogShot(modifier);
 				}
@@ -275,9 +284,9 @@ namespace NLA
 				const auto&  runtimeData = projectile->GetProjectileRuntimeData();
 				ShotModifier modifier{};
 				if (auto spell = runtimeData.spell; spell) {
-					modifier = ShotModifier(player, spell, ChargeTime::PopSpellHoldDuration(player, runtimeData.castingSource));
+					modifier = ShotModifier::ForSpell(player, spell, runtimeData.castingSource);
 				} else if (auto weapon = runtimeData.weaponSource; weapon) {
-					modifier = ShotModifier(player, weapon);
+					modifier = ShotModifier::ForWeapon(player, weapon);
 				}
 
 				if (modifier.precision) {

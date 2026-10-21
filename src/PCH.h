@@ -32,7 +32,7 @@ namespace fmt
 
 		template <class FormatContext>
 		constexpr auto format(const RE::Actor& actor, FormatContext& a_ctx) const {
-			return fmt::format_to(a_ctx.out(), "'{}' [0x{:X}]", actor.GetActorBase()->GetName(), actor.formID);
+			return fmt::format_to(a_ctx.out(), "'{}' [0x{:X}]", actor.GetName(), actor.formID);
 		}
 	};
 }
