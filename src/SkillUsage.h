@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Options.h"
-#include <variant>
 
 namespace NLA
 {

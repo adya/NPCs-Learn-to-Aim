@@ -1,5 +1,4 @@
 #include "SkillUsage.h"
-#include <numbers>
 
 namespace NLA
 {

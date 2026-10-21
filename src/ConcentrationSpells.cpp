@@ -2,9 +2,7 @@
 #include "ChargeTime.h"
 #include "Fatigue.h"
 #include "Hooking.h"
-#include "Options.h"
 #include "SkillUsage.h"
-#include <unordered_map>
 
 namespace NLA::ConcentrationSpells
 {

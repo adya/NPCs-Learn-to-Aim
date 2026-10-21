@@ -1,8 +1,6 @@
 #include "Options.h"
 #include "CLIBUtil/string.hpp"
-#include <cmath>
 #include <fmt/ranges.h>
-#include <unordered_map>
 
 namespace NLA::Options
 {

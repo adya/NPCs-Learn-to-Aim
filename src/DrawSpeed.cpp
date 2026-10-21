@@ -1,9 +1,7 @@
 #include "DrawSpeed.h"
 #include "Hooking.h"
-#include "Options.h"
 #include "SkillUsage.h"
 
-#include <unordered_map>
 
 namespace NLA::Draw
 {

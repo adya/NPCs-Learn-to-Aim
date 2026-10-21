@@ -3,8 +3,6 @@
 #include "Options.h"
 #include "SkillUsage.h"
 
-#include <unordered_map>
-#include <utility>
 
 namespace NLA::ChargeTime
 {

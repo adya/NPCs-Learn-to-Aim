@@ -1,7 +1,5 @@
 #include "Menu+Internal.h"
 #include <SKSEMCP/SKSEMenuFramework.hpp>
-#include <cmath>
-#include <fmt/format.h>
 
 using namespace ImGuiMCP;
 

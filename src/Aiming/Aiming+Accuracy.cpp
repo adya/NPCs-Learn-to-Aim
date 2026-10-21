@@ -4,7 +4,6 @@
 #include "RE/C/CombatProjectileAimController.h"
 #include "SkillUsage.h"
 
-#include <unordered_map>
 
 namespace NLA
 {
