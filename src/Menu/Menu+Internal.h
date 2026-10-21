@@ -124,7 +124,7 @@ namespace NLA::Menu
 
 	struct RangeRows
 	{
-		Config::ScalingOptions Config::*options;
+		Config::Scaling Config::*options;
 		const char*                     tooltip;
 		const char*                     minTooltip;
 		const char*                     maxTooltip;
@@ -140,7 +140,7 @@ namespace NLA::Menu
 
 	struct SpeedRows
 	{
-		Config::ScalingOptions Config::*options;
+		Config::Scaling Config::*options;
 		const char*                     label;
 		const char*                     tooltip;
 
@@ -155,7 +155,7 @@ namespace NLA::Menu
 
 	struct SpreadRows
 	{
-		Config::SpreadOptions Config::*options;
+		Config::Spread Config::*options;
 		const char*                    label;
 		const char*                    tooltip;
 		const char*                    maxReductionTooltip;
@@ -167,7 +167,7 @@ namespace NLA::Menu
 
 	struct FatigueRows
 	{
-		Config::FatigueOptions Config::*options;
+		Config::Fatigue Config::*options;
 		const char*                     label;
 		const char*                     tooltip;
 		const char*                     minThresholdTooltip;
@@ -222,7 +222,7 @@ namespace NLA::Menu
 	inline constexpr const char* kRangeGroup = "Range";
 
 	/// Shared by spells, staves and scrolls; only the toggle's tooltip differs.
-	constexpr FatigueRows CastFatigue(Config::FatigueOptions Config::*options, const char* tooltip) {
+	constexpr FatigueRows CastFatigue(Config::Fatigue Config::*options, const char* tooltip) {
 		return {
 			options,
 			"Holding Charge Fatigues Aim",

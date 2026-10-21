@@ -48,13 +48,9 @@ namespace NLA::Options
 		}
 
 		void SaveSkillMultiplier(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SkillMultiplier& value, const Config::SkillMultiplier& defaultValue, bool writeDefaults = false) {
-			SetOrDeleteValue(ini, a_section, fmt::format("fBow{}SkillMultiplier", prefix).c_str(), value.bow, defaultValue.bow, writeDefaults);
-			SetOrDeleteValue(ini, a_section, fmt::format("fCrossbow{}SkillMultiplier", prefix).c_str(), value.crossbow, defaultValue.crossbow, writeDefaults);
-			SetOrDeleteValue(ini, a_section, fmt::format("fSpell{}SkillMultiplier", prefix).c_str(), value.spell, defaultValue.spell, writeDefaults);
-			SetOrDeleteValue(ini, a_section, fmt::format("fConcentrationSpell{}SkillMultiplier", prefix).c_str(), value.concentrationSpell, defaultValue.concentrationSpell, writeDefaults);
-			SetOrDeleteValue(ini, a_section, fmt::format("fStaff{}SkillMultiplier", prefix).c_str(), value.staff, defaultValue.staff, writeDefaults);
-			SetOrDeleteValue(ini, a_section, fmt::format("fConcentrationStaff{}SkillMultiplier", prefix).c_str(), value.concentrationStaff, defaultValue.concentrationStaff, writeDefaults);
-			SetOrDeleteValue(ini, a_section, fmt::format("fScroll{}SkillMultiplier", prefix).c_str(), value.scroll, defaultValue.scroll, writeDefaults);
+			for (const auto& kind : kAttackKinds) {
+				SetOrDeleteValue(ini, a_section, fmt::format("f{}{}SkillMultiplier", kind.name, prefix).c_str(), value.*kind.multiplier, defaultValue.*kind.multiplier, writeDefaults);
+			}
 			SetOrDeleteValue(ini, a_section, fmt::format("fBlindness{}SkillMultiplier", prefix).c_str(), value.blindness, defaultValue.blindness, writeDefaults);
 		}
 
@@ -73,13 +69,13 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration, writeDefaults);
 		}
 
-		void SaveScalingOptions(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::ScalingOptions& value, const Config::ScalingOptions& defaultValue, bool writeDefaults = false) {
+		void SaveScalingOptions(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::Scaling& value, const Config::Scaling& defaultValue, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), value.enabled, defaultValue.enabled, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MinMultiplier", prefix).c_str(), value.minMultiplier, defaultValue.minMultiplier, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxMultiplier", prefix).c_str(), value.maxMultiplier, defaultValue.maxMultiplier, writeDefaults);
 		}
 
-		void SaveFatigue(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::FatigueOptions& value, const Config::FatigueOptions& defaultValue, bool writeDefaults = false) {
+		void SaveFatigue(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::Fatigue& value, const Config::Fatigue& defaultValue, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, fmt::format("b{}", prefix).c_str(), value.enabled, defaultValue.enabled, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MinThreshold", prefix).c_str(), value.minThreshold, defaultValue.minThreshold, writeDefaults);
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}MaxThreshold", prefix).c_str(), value.maxThreshold, defaultValue.maxThreshold, writeDefaults);
@@ -87,7 +83,8 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, fmt::format("f{}HalfDuration", prefix).c_str(), value.halfDuration, defaultValue.halfDuration, writeDefaults);
 		}
 
-		constexpr std::array<const char*, 3> kSkillSourceNames{ "SpellSkill", "Highest", "Enchanting" };
+		constexpr std::array kSkillSourceNames{ "SpellSkill", "Highest", "Enchanting" };
+		static_assert(kSkillSourceNames.size() == static_cast<std::size_t>(SkillSource::kTotal));
 
 		const char* SkillSourceName(SkillSource source) {
 			return kSkillSourceNames[std::min<std::size_t>(static_cast<std::size_t>(source), kSkillSourceNames.size() - 1)];
@@ -101,62 +98,84 @@ namespace NLA::Options
 			}
 		}
 
-		void SaveSkillSources(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SkillSources& value, const Config::SkillSources& defaultValue, bool writeDefaults = false) {
+		void SaveSkillSources(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Config::SkillSources& value, const Config::SkillSources& defaultValue, bool hasRange, bool writeDefaults = false) {
 			SaveSkillSource(ini, a_section, fmt::format("s{}AimingSkill", prefix), value.aiming, defaultValue.aiming, writeDefaults);
 			SaveSkillSource(ini, a_section, fmt::format("s{}ChargeSpeedSkill", prefix), value.chargeSpeed, defaultValue.chargeSpeed, writeDefaults);
-			if (prefix.starts_with("Concentration")) {
+			if (hasRange) {
 				SaveSkillSource(ini, a_section, fmt::format("s{}RangeSkill", prefix), value.range, defaultValue.range, writeDefaults);
 			}
 		}
 
-		// The order of options here and in Config::FromIni follows the order of Config's members.
+		std::string SpeedName(const AttackKind& kind) {
+			const bool isDrawn = kind.type == kBow || kind.type == kCrossbow;
+			return fmt::format("{}{}", kind.name, isDrawn ? "DrawSpeed" : "ChargeSpeed");
+		}
+
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults, bool writeDefaults = false) {
 			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled, writeDefaults);
-
-			SetOrDeleteValue(ini, a_section, "bSpellAiming", custom.spellAiming, defaults.spellAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bStaffAiming", custom.staffAiming, defaults.staffAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationSpellsAiming", custom.concentrationSpellAiming, defaults.concentrationSpellAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bConcentrationStaffAiming", custom.concentrationStaffAiming, defaults.concentrationStaffAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bScrollAiming", custom.scrollAiming, defaults.scrollAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bBowAiming", custom.bowAiming, defaults.bowAiming, writeDefaults);
-			SetOrDeleteValue(ini, a_section, "bCrossbowAiming", custom.crossbowAiming, defaults.crossbowAiming, writeDefaults);
 
 			SaveSkillMultiplier(ini, a_section, "Accuracy", custom.accuracyMultipliers, defaults.accuracyMultipliers, writeDefaults);
 			SaveSkillMultiplier(ini, a_section, "Precision", custom.precisionMultipliers, defaults.precisionMultipliers, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAiming", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming, writeDefaults);
 
-			SaveSkillSources(ini, a_section, "Spell", custom.spellSkills, defaults.spellSkills, writeDefaults);
-			SaveSkillSources(ini, a_section, "ConcentrationSpell", custom.concentrationSpellSkills, defaults.concentrationSpellSkills, writeDefaults);
-			SaveSkillSources(ini, a_section, "Staff", custom.staffSkills, defaults.staffSkills, writeDefaults);
-			SaveSkillSources(ini, a_section, "ConcentrationStaff", custom.concentrationStaffSkills, defaults.concentrationStaffSkills, writeDefaults);
-			SaveSkillSources(ini, a_section, "Scroll", custom.scrollSkills, defaults.scrollSkills, writeDefaults);
+			for (const auto& kind : kAttackKinds) {
+				const std::string_view name = kind.name;
 
-			SaveScalingOptions(ini, a_section, "ConcentrationSpellRange", custom.concentrationSpellRange, defaults.concentrationSpellRange, writeDefaults);
-			SaveScalingOptions(ini, a_section, "ConcentrationStaffRange", custom.concentrationStaffRange, defaults.concentrationStaffRange, writeDefaults);
+				SetOrDeleteValue(ini, a_section, fmt::format("b{}Aiming", name).c_str(),custom.*kind.aiming, defaults.*kind.aiming, writeDefaults);
 
-			SaveScalingOptions(ini, a_section, "SpellChargeSpeed", custom.spellChargeSpeed, defaults.spellChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "ConcentrationSpellChargeSpeed", custom.concentrationSpellChargeSpeed, defaults.concentrationSpellChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "StaffChargeSpeed", custom.staffChargeSpeed, defaults.staffChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "ConcentrationStaffChargeSpeed", custom.concentrationStaffChargeSpeed, defaults.concentrationStaffChargeSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "ScrollChargeSpeed", custom.scrollChargeSpeed, defaults.scrollChargeSpeed, writeDefaults);
+				if (kind.skills) {
+					SaveSkillSources(ini, a_section, name, custom.*kind.skills, defaults.*kind.skills, kind.range != nullptr, writeDefaults);
+				}
+				if (kind.range) {
+					SaveScalingOptions(ini, a_section, fmt::format("{}Range", name), custom.*kind.range, defaults.*kind.range, writeDefaults);
+				}
+				SaveScalingOptions(ini, a_section, SpeedName(kind), custom.*kind.speed, defaults.*kind.speed, writeDefaults);
+				if (kind.steadying) {
+					SaveSteadying(ini, a_section, fmt::format("{}Steadying", name), custom.*kind.steadying, defaults.*kind.steadying, writeDefaults);
+				}
+				SaveFatigue(ini, a_section, fmt::format("{}Fatigue", name), custom.*kind.fatigue, defaults.*kind.fatigue, writeDefaults);
+			}
+		}
 
-			SaveSteadying(ini, a_section, "SpellSteadying", custom.spellSteadying, defaults.spellSteadying, writeDefaults);
-			SaveSteadying(ini, a_section, "StaffSteadying", custom.staffSteadying, defaults.staffSteadying, writeDefaults);
-			SaveSteadying(ini, a_section, "ScrollSteadying", custom.scrollSteadying, defaults.scrollSteadying, writeDefaults);
+		struct Wording
+		{
+			std::string_view kind;
 
-			SaveFatigue(ini, a_section, "SpellFatigue", custom.spellFatigue, defaults.spellFatigue, writeDefaults);
-			SaveFatigue(ini, a_section, "StaffFatigue", custom.staffFatigue, defaults.staffFatigue, writeDefaults);
-			SaveFatigue(ini, a_section, "ScrollFatigue", custom.scrollFatigue, defaults.scrollFatigue, writeDefaults);
-			SaveFatigue(ini, a_section, "ConcentrationSpellFatigue", custom.concentrationSpellFatigue, defaults.concentrationSpellFatigue, writeDefaults);
-			SaveFatigue(ini, a_section, "ConcentrationStaffFatigue", custom.concentrationStaffFatigue, defaults.concentrationStaffFatigue, writeDefaults);
+			std::string_view plural;
 
-			SaveScalingOptions(ini, a_section, "BowDrawSpeed", custom.bowDrawSpeed, defaults.bowDrawSpeed, writeDefaults);
-			SaveScalingOptions(ini, a_section, "CrossbowDrawSpeed", custom.crossbowDrawSpeed, defaults.crossbowDrawSpeed, writeDefaults);
-			SaveSteadying(ini, a_section, "BowSteadying", custom.bowSteadying, defaults.bowSteadying, writeDefaults);
-			SaveFatigue(ini, a_section, "BowFatigue", custom.bowFatigue, defaults.bowFatigue, writeDefaults);
-			SaveSteadying(ini, a_section, "CrossbowSteadying", custom.crossbowSteadying, defaults.crossbowSteadying, writeDefaults);
-			SaveFatigue(ini, a_section, "CrossbowFatigue", custom.crossbowFatigue, defaults.crossbowFatigue, writeDefaults);
+			std::string_view speedVerb;
+
+			/// Empty for kinds without steadying.
+			std::string_view held;
+
+			std::string_view fatigueGerund;
+			std::string_view fatigueInfinitive;
+
+			std::string_view attribute;
+
+			static const Wording& For(const AttackKind& kind);
+		};
+
+		constexpr std::array kWordings{
+			Wording{ "Bow", "bows", "draw", "a bow at full draw", "Holding a bow at full draw", "hold a full draw", "Stamina" },
+			Wording{ "Crossbow", "crossbows", "reload", "a loaded crossbow", "Holding a loaded crossbow", "hold a loaded crossbow", "Stamina" },
+			Wording{ "Spell", "spells", "charge/cast", "spells charged", "Holding spells charged", "hold spells charged", "Magicka" },
+			Wording{ "ConcentrationSpell", "concentration spells", "charge/cast", "", "Casting concentration spells", "cast concentration spells", "Magicka" },
+			Wording{ "Staff", "staves", "charge/cast", "staves charged", "Holding staves charged", "hold staves charged", "Magicka" },
+			Wording{ "ConcentrationStaff", "concentration staves", "charge/cast", "", "Casting concentration staves", "cast concentration staves", "Magicka" },
+			Wording{ "Scroll", "scrolls", "charge/cast", "scrolls charged", "Holding scrolls charged", "hold scrolls charged", "Magicka" },
+		};
+		static_assert(kWordings.size() == kAttackKinds.size());
+
+		const Wording& Wording::For(const AttackKind& kind) {
+			for (const auto& wording : kWordings) {
+				if (wording.kind == kind.name) {
+					return wording;
+				}
+			}
+			assert(false && "No wording for the kind");
+			return kWordings.front();
 		}
 
 		void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
@@ -185,13 +204,9 @@ namespace NLA::Options
 
 		/// Logs how every weapon type's multiplier changes the difficulty of `stage` (Accuracy/Precision).
 		void LogSkillMultipliers(std::string_view actor, std::string_view stage, const Config::SkillMultiplier& multipliers, bool blindnessAffectsAiming) {
-			LogSkillMultiplier(actor, "Bows", stage, multipliers.bow);
-			LogSkillMultiplier(actor, "Crossbows", stage, multipliers.crossbow);
-			LogSkillMultiplier(actor, "Spells", stage, multipliers.spell);
-			LogSkillMultiplier(actor, "Concentration Spells", stage, multipliers.concentrationSpell);
-			LogSkillMultiplier(actor, "Staves", stage, multipliers.staff);
-			LogSkillMultiplier(actor, "Concentration Staves", stage, multipliers.concentrationStaff);
-			LogSkillMultiplier(actor, "Scrolls", stage, multipliers.scroll);
+			for (const auto& kind : kAttackKinds) {
+				LogSkillMultiplier(actor, Wording::For(kind).plural, stage, multipliers.*kind.multiplier);
+			}
 			const char* noun = stage == "Accuracy" ? "accuracy" : "precision";
 			if (blindnessAffectsAiming) {
 				LogBlindnessSkillMultiplier(actor, noun, multipliers.blindness);
@@ -218,11 +233,11 @@ namespace NLA::Options
 			}
 		}
 
-		void LogRange(std::string_view actor, std::string_view categoryName, const Config::RangeScaling& range) {
+		void LogRange(std::string_view actor, std::string_view kindName, const Config::RangeScaling& range) {
 			if (!range.enabled) {
-				logger::info("\t{} always have vanilla reach with {}", actor, categoryName);
+				logger::info("\t{} always have vanilla reach with {}", actor, kindName);
 			} else {
-				logger::info("\t{} reach {} at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, categoryName, range.minMultiplier, range.maxMultiplier);
+				logger::info("\t{} reach {} at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, kindName, range.minMultiplier, range.maxMultiplier);
 			}
 		}
 
@@ -236,17 +251,17 @@ namespace NLA::Options
 			}
 		}
 
-		/// `verb` is what the actor does with the category, e.g. "draw" or "charge/cast".
-		void LogSpeed(std::string_view actor, std::string_view verb, std::string_view categoryName, const Config::ScalingOptions& speed) {
+		/// `verb` is what the actor does with the kind, e.g. "draw" or "charge/cast".
+		void LogSpeed(std::string_view actor, std::string_view verb, std::string_view kindName, const Config::Scaling& speed) {
 			const auto [enabled, minMult, maxMult] = std::tie(speed.enabled, speed.minMultiplier, speed.maxMultiplier);
 			if (!enabled) {
-				logger::info("\t{} always {} {} at vanilla speed", actor, verb, categoryName);
+				logger::info("\t{} always {} {} at vanilla speed", actor, verb, kindName);
 			} else if (minMult == maxMult) {
-				logger::info("\t{} {} {} {}, regardless of skill", actor, verb, categoryName, SpeedPercentPhrase(minMult));
+				logger::info("\t{} {} {} {}, regardless of skill", actor, verb, kindName, SpeedPercentPhrase(minMult));
 			} else if (minMult == 1.0f) {
-				logger::info("\t{} {} {} up to {}, scaling with skill", actor, verb, categoryName, SpeedPercentPhrase(maxMult));
+				logger::info("\t{} {} {} up to {}, scaling with skill", actor, verb, kindName, SpeedPercentPhrase(maxMult));
 			} else {
-				logger::info("\t{} {} {} {} at 0 skill, {} at 100 skill", actor, verb, categoryName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
+				logger::info("\t{} {} {} {} at 0 skill, {} at 100 skill", actor, verb, kindName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
 			}
 		}
 
@@ -260,7 +275,7 @@ namespace NLA::Options
 		}
 
 		/// `gerund` and `infinitive` describe the fatigued activity, e.g. "Holding a bow at full draw" and "hold a full draw".
-		void LogFatigue(std::string_view actor, std::string_view gerund, std::string_view infinitive, std::string_view attribute, const Config::FatigueOptions& fatigue) {
+		void LogFatigue(std::string_view actor, std::string_view gerund, std::string_view infinitive, std::string_view attribute, const Config::Fatigue& fatigue) {
 			if (!fatigue.enabled) {
 				logger::info("\t{} for too long doesn't fatigue {}'s aim", gerund, actor);
 			} else {
@@ -311,13 +326,9 @@ namespace NLA::Options
 			const auto aiming = [&](std::string_view weapon, bool enabled) {
 				logger::info("\t{} {} with {}", actor, enabled ? "will learn to aim" : (npc ? "have perfect aim" : "has perfect aim"), weapon);
 			};
-			aiming("bows", cfg.bowAiming);
-			aiming("crossbows", cfg.crossbowAiming);
-			aiming("spells", cfg.spellAiming);
-			aiming("staves", cfg.staffAiming);
-			aiming("scrolls", cfg.scrollAiming);
-			aiming("concentration spells", cfg.concentrationSpellAiming);
-			aiming("concentration staves", cfg.concentrationStaffAiming);
+			for (const auto& kind : kAttackKinds) {
+				aiming(Wording::For(kind).plural, cfg.*kind.aiming);
+			}
 			if (npc) {
 				LogHeadshots(npc->headshots);
 			}
@@ -330,36 +341,33 @@ namespace NLA::Options
 			LogSkillMultipliers(actor, "Precision", cfg.precisionMultipliers, cfg.blindnessAffectsAiming);
 
 			logger::info("");
-			LogSkillSources(actor, "spells", cfg.spellSkills, false);
-			LogSkillSources(actor, "concentration spells", cfg.concentrationSpellSkills, true);
-			LogSkillSources(actor, "staves", cfg.staffSkills, false);
-			LogSkillSources(actor, "concentration staves", cfg.concentrationStaffSkills, true);
-			LogSkillSources(actor, "scrolls", cfg.scrollSkills, false);
-			LogRange(actor, "concentration spells", cfg.concentrationSpellRange);
-			LogRange(actor, "concentration staves", cfg.concentrationStaffRange);
+			for (const auto& kind : kAttackKinds) {
+				if (kind.skills) {
+					LogSkillSources(actor, Wording::For(kind).plural, cfg.*kind.skills, kind.range != nullptr);
+				}
+			}
+			for (const auto& kind : kAttackKinds) {
+				if (kind.range) {
+					LogRange(actor, Wording::For(kind).plural, cfg.*kind.range);
+				}
+			}
 
 			logger::info("");
-			LogSpeed(actor, "charge/cast", "spells", cfg.spellChargeSpeed);
-			LogSpeed(actor, "charge/cast", "concentration spells", cfg.concentrationSpellChargeSpeed);
-			LogSpeed(actor, "charge/cast", "staves", cfg.staffChargeSpeed);
-			LogSpeed(actor, "charge/cast", "concentration staves", cfg.concentrationStaffChargeSpeed);
-			LogSpeed(actor, "charge/cast", "scrolls", cfg.scrollChargeSpeed);
-			LogSpeed(actor, "draw", "bows", cfg.bowDrawSpeed);
-			LogSpeed(actor, "draw", "crossbows", cfg.crossbowDrawSpeed);
+			for (const auto& kind : kAttackKinds) {
+				const auto& wording = Wording::For(kind);
+				LogSpeed(actor, wording.speedVerb, wording.plural, cfg.*kind.speed);
+			}
 
-			LogSteadying(actor, "spells charged", cfg.spellSteadying);
-			LogSteadying(actor, "staves charged", cfg.staffSteadying);
-			LogSteadying(actor, "scrolls charged", cfg.scrollSteadying);
-			LogSteadying(actor, "a bow at full draw", cfg.bowSteadying);
-			LogSteadying(actor, "a loaded crossbow", cfg.crossbowSteadying);
+			for (const auto& kind : kAttackKinds) {
+				if (kind.steadying) {
+					LogSteadying(actor, Wording::For(kind).held, cfg.*kind.steadying);
+				}
+			}
 
-			LogFatigue(actor, "Holding spells charged", "hold spells charged", "Magicka", cfg.spellFatigue);
-			LogFatigue(actor, "Holding staves charged", "hold staves charged", "Magicka", cfg.staffFatigue);
-			LogFatigue(actor, "Holding scrolls charged", "hold scrolls charged", "Magicka", cfg.scrollFatigue);
-			LogFatigue(actor, "Casting concentration spells", "cast concentration spells", "Magicka", cfg.concentrationSpellFatigue);
-			LogFatigue(actor, "Casting concentration staves", "cast concentration staves", "Magicka", cfg.concentrationStaffFatigue);
-			LogFatigue(actor, "Holding a bow at full draw", "hold a full draw", "Stamina", cfg.bowFatigue);
-			LogFatigue(actor, "Holding a loaded crossbow", "hold a loaded crossbow", "Stamina", cfg.crossbowFatigue);
+			for (const auto& kind : kAttackKinds) {
+				const auto& wording = Wording::For(kind);
+				LogFatigue(actor, wording.fatigueGerund, wording.fatigueInfinitive, wording.attribute, cfg.*kind.fatigue);
+			}
 		}
 
 		/// Whether each NPC passed the keyword filters, so that hooks running every frame don't look up keywords each time.
@@ -386,6 +394,22 @@ namespace NLA::Options
 
 			// Every settings edit ends up here, including the master switch and keyword filters.
 			InvalidateActorCache();
+		}
+	}
+
+	const AttackKind* AttackKind::For(const RE::MagicItem* spell) {
+		const bool isConcentration = spell->GetCastingType() == RE::MagicSystem::CastingType::kConcentration;
+
+		switch (spell->GetSpellType()) {
+		case RE::MagicSystem::SpellType::kSpell:
+		case RE::MagicSystem::SpellType::kLeveledSpell:
+			return &For(kSpell, isConcentration);
+		case RE::MagicSystem::SpellType::kStaffEnchantment:
+			return &For(kStaff, isConcentration);
+		case RE::MagicSystem::SpellType::kScroll:
+			return &For(kScroll);
+		default:
+			return nullptr;
 		}
 	}
 
@@ -502,50 +526,28 @@ namespace NLA::Options
 
 		result.enabled = ini.GetBoolValue(a_section, "bEnabled", result.enabled);
 
-		result.spellAiming = ini.GetBoolValue(a_section, "bSpellAiming", result.spellAiming);
-		result.staffAiming = ini.GetBoolValue(a_section, "bStaffAiming", result.staffAiming);
-		result.concentrationSpellAiming = ini.GetBoolValue(a_section, "bConcentrationSpellsAiming", result.concentrationSpellAiming);
-		result.concentrationStaffAiming = ini.GetBoolValue(a_section, "bConcentrationStaffAiming", result.concentrationStaffAiming);
-		result.scrollAiming = ini.GetBoolValue(a_section, "bScrollAiming", result.scrollAiming);
-		result.bowAiming = ini.GetBoolValue(a_section, "bBowAiming", result.bowAiming);
-		result.crossbowAiming = ini.GetBoolValue(a_section, "bCrossbowAiming", result.crossbowAiming);
-
 		result.accuracyMultipliers = SkillMultiplier::FromIni(ini, a_section, "Accuracy", result.accuracyMultipliers);
 		result.precisionMultipliers = SkillMultiplier::FromIni(ini, a_section, "Precision", result.precisionMultipliers);
 
 		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAiming", result.blindnessAffectsAiming);
 
-		result.spellSkills = SkillSources::FromIni(ini, a_section, "Spell", result.spellSkills);
-		result.concentrationSpellSkills = SkillSources::FromIni(ini, a_section, "ConcentrationSpell", result.concentrationSpellSkills);
-		result.staffSkills = SkillSources::FromIni(ini, a_section, "Staff", result.staffSkills);
-		result.concentrationStaffSkills = SkillSources::FromIni(ini, a_section, "ConcentrationStaff", result.concentrationStaffSkills);
-		result.scrollSkills = SkillSources::FromIni(ini, a_section, "Scroll", result.scrollSkills);
+		for (const auto& kind : kAttackKinds) {
+			const std::string_view name = kind.name;
 
-		result.concentrationSpellRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellRange", result.concentrationSpellRange, Limits::kRangeMultiplier);
-		result.concentrationStaffRange = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffRange", result.concentrationStaffRange, Limits::kRangeMultiplier);
+			result.*kind.aiming = ini.GetBoolValue(a_section, fmt::format("b{}Aiming", name).c_str(),result.*kind.aiming);
 
-		result.spellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "SpellChargeSpeed", result.spellChargeSpeed, Limits::kSpeedMultiplier);
-		result.concentrationSpellChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationSpellChargeSpeed", result.concentrationSpellChargeSpeed, Limits::kSpeedMultiplier);
-		result.staffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "StaffChargeSpeed", result.staffChargeSpeed, Limits::kSpeedMultiplier);
-		result.concentrationStaffChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ConcentrationStaffChargeSpeed", result.concentrationStaffChargeSpeed, Limits::kSpeedMultiplier);
-		result.scrollChargeSpeed = ScalingOptions::FromIni(ini, a_section, "ScrollChargeSpeed", result.scrollChargeSpeed, Limits::kSpeedMultiplier);
-
-		result.spellSteadying = SpreadOptions::FromIni(ini, a_section, "SpellSteadying", result.spellSteadying);
-		result.staffSteadying = SpreadOptions::FromIni(ini, a_section, "StaffSteadying", result.staffSteadying);
-		result.scrollSteadying = SpreadOptions::FromIni(ini, a_section, "ScrollSteadying", result.scrollSteadying);
-
-		result.spellFatigue = FatigueOptions::FromIni(ini, a_section, "SpellFatigue", result.spellFatigue);
-		result.staffFatigue = FatigueOptions::FromIni(ini, a_section, "StaffFatigue", result.staffFatigue);
-		result.scrollFatigue = FatigueOptions::FromIni(ini, a_section, "ScrollFatigue", result.scrollFatigue);
-		result.concentrationSpellFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationSpellFatigue", result.concentrationSpellFatigue);
-		result.concentrationStaffFatigue = FatigueOptions::FromIni(ini, a_section, "ConcentrationStaffFatigue", result.concentrationStaffFatigue);
-
-		result.bowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "BowDrawSpeed", result.bowDrawSpeed, Limits::kSpeedMultiplier);
-		result.crossbowDrawSpeed = ScalingOptions::FromIni(ini, a_section, "CrossbowDrawSpeed", result.crossbowDrawSpeed, Limits::kSpeedMultiplier);
-		result.bowSteadying = SpreadOptions::FromIni(ini, a_section, "BowSteadying", result.bowSteadying);
-		result.bowFatigue = FatigueOptions::FromIni(ini, a_section, "BowFatigue", result.bowFatigue);
-		result.crossbowSteadying = SpreadOptions::FromIni(ini, a_section, "CrossbowSteadying", result.crossbowSteadying);
-		result.crossbowFatigue = FatigueOptions::FromIni(ini, a_section, "CrossbowFatigue", result.crossbowFatigue);
+			if (kind.skills) {
+				result.*kind.skills = SkillSources::FromIni(ini, a_section, name, result.*kind.skills);
+			}
+			if (kind.range) {
+				result.*kind.range = Scaling::FromIni(ini, a_section, fmt::format("{}Range", name), result.*kind.range, Limits::kRangeMultiplier);
+			}
+			result.*kind.speed = Scaling::FromIni(ini, a_section, SpeedName(kind), result.*kind.speed, Limits::kSpeedMultiplier);
+			if (kind.steadying) {
+				result.*kind.steadying = Spread::FromIni(ini, a_section, fmt::format("{}Steadying", name), result.*kind.steadying);
+			}
+			result.*kind.fatigue = Fatigue::FromIni(ini, a_section, fmt::format("{}Fatigue", name), result.*kind.fatigue);
+		}
 
 		return result;
 	}
@@ -602,24 +604,24 @@ namespace NLA::Options
 		return result;
 	}
 
-	Config::ScalingOptions Config::ScalingOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const ScalingOptions& defaults, Limit limit) {
-		ScalingOptions result = defaults;
+	Config::Scaling Config::Scaling::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Scaling& defaults, Limit limit) {
+		Scaling result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("bScale{}WithSkill", prefix).c_str(), result.enabled);
 		result.minMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MinMultiplier", prefix), result.minMultiplier, limit);
 		result.maxMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MaxMultiplier", prefix), result.maxMultiplier, limit);
 		return result;
 	}
 
-	Config::SpreadOptions Config::SpreadOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const SpreadOptions& defaults) {
-		SpreadOptions result = defaults;
+	Config::Spread Config::Spread::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Spread& defaults) {
+		Spread result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("b{}", prefix).c_str(), result.enabled);
 		result.maxSpreadMultiplier = ReadClamped(ini, a_section, fmt::format("f{}MaxSpreadReduction", prefix), result.maxSpreadMultiplier, Limits::kSteadyingReduction);
 		result.halfDuration = ReadClamped(ini, a_section, fmt::format("f{}HalfDuration", prefix), result.halfDuration, Limits::kHalfDuration);
 		return result;
 	}
 
-	Config::FatigueOptions Config::FatigueOptions::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const FatigueOptions& defaults) {
-		FatigueOptions result = defaults;
+	Config::Fatigue Config::Fatigue::FromIni(CSimpleIniA& ini, const char* a_section, std::string_view prefix, const Fatigue& defaults) {
+		Fatigue result = defaults;
 		result.enabled = ini.GetBoolValue(a_section, fmt::format("b{}", prefix).c_str(), result.enabled);
 		result.minThreshold = ReadClamped(ini, a_section, fmt::format("f{}MinThreshold", prefix), result.minThreshold, Limits::kFatigueThreshold);
 		result.maxThreshold = ReadClamped(ini, a_section, fmt::format("f{}MaxThreshold", prefix), result.maxThreshold, Limits::kFatigueThreshold);
@@ -635,13 +637,9 @@ namespace NLA::Options
 			return ReadClamped(ini, a_section, fmt::format("f{}{}SkillMultiplier", weapon, prefix), fallback, limit);
 		};
 
-		result.bow = read("Bow", result.bow);
-		result.crossbow = read("Crossbow", result.crossbow);
-		result.spell = read("Spell", result.spell);
-		result.concentrationSpell = read("ConcentrationSpell", result.concentrationSpell);
-		result.staff = read("Staff", result.staff);
-		result.concentrationStaff = read("ConcentrationStaff", result.concentrationStaff);
-		result.scroll = read("Scroll", result.scroll);
+		for (const auto& kind : kAttackKinds) {
+			result.*kind.multiplier = read(kind.name, result.*kind.multiplier);
+		}
 		result.blindness = read("Blindness", result.blindness, Limits::kBlindnessMultiplier);
 
 		return result;

@@ -13,6 +13,9 @@ namespace NLA::Menu
 		constexpr const char* kAccuracyHeader = "Accuracy";
 		constexpr const char* kPrecisionHeader = "Precision";
 		constexpr const char* kNotApplicableText = "N/A";
+		constexpr std::array kSkillSourceLabels{ "Spell's Magic Skill", "Highest Magic Skill", "Enchanting" };
+		static_assert(kSkillSourceLabels.size() == static_cast<std::size_t>(Options::SkillSource::kTotal));
+
 		constexpr const char* kWidestLabel = kScaleChargeSpeedLabel;
 
 		float RoundTo2Decimals(float value) {
@@ -175,10 +178,8 @@ namespace NLA::Menu
 		PushClipRect(cell, ImVec2(cell.x + width, cell.y + GetFrameHeightWithSpacing()), false);
 		SetNextItemWidth(width);
 
-		constexpr const char* kItems[] = { "Spell's Magic Skill", "Highest Magic Skill", "Enchanting" };
-
 		int current = static_cast<int>(value);
-		if (Combo(fmt::format("##{}", label).c_str(), &current, kItems, static_cast<int>(std::size(kItems)))) {
+		if (Combo(fmt::format("##{}", label).c_str(), &current, kSkillSourceLabels.data(), static_cast<int>(kSkillSourceLabels.size()))) {
 			value = static_cast<Options::SkillSource>(current);
 			Options::Save();
 		}

@@ -34,7 +34,9 @@ namespace NLA::Options
 		kSpellSkill,
 		/// The highest of the actor's magic skills, regardless of the spell.
 		kHighest,
-		kEnchanting
+		kEnchanting,
+
+		kTotal
 	};
 
 	/// The allowed range of an option.
@@ -85,7 +87,7 @@ namespace NLA::Options
 			static SkillMultiplier FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SkillMultiplier& defaults);
 		};
 
-		struct SpreadOptions
+		struct Spread
 		{
 			bool enabled = true;
 
@@ -96,14 +98,17 @@ namespace NLA::Options
 			/// Note, the multiplier is not linear, so 2 * halfDuration does not give the full multiplier.
 			float halfDuration;
 
-			static SpreadOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const SpreadOptions& defaults);
+			static Spread FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const Spread& defaults);
+
+			/// Concentration spells and staves share the steadying of their fire-and-forget counterparts.
+			static const Spread& For(const Config& config, WeaponType type);
 		};
 
 		/// Controls how much holding a bow at full draw, a crossbow loaded or a spell/staff/scroll charged reduces spread.
-		using Steadying = SpreadOptions;
+		using Steadying = Spread;
 
 		/// A multiplier that grows with skill from `minMultiplier` to `maxMultiplier`.
-		struct ScalingOptions
+		struct Scaling
 		{
 			bool enabled = true;
 
@@ -113,19 +118,19 @@ namespace NLA::Options
 			/// Multiplier at 100 skill.
 			float maxMultiplier = 1.5f;
 
-			static ScalingOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const ScalingOptions& defaults, Limit limit);
+			static Scaling FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const Scaling& defaults, Limit limit);
 		};
 
 		/// Controls how fast a spell/staff/scroll charges.
-		using ChargeSpeed = ScalingOptions;
+		using ChargeSpeed = Scaling;
 
 		/// Controls how fast a bow is drawn and crossbow is loaded.
-		using DrawSpeed = ScalingOptions;
+		using DrawSpeed = Scaling;
 
 		/// Controls how far concentration spells/staves reach.
-		using RangeScaling = ScalingOptions;
+		using RangeScaling = Scaling;
 
-		struct FatigueOptions : SpreadOptions
+		struct Fatigue : Spread
 		{
 			/// Duration in seconds that must pass before fatigue sets in for an actor with 0 max Stamina (bows) or Magicka (spells).
 			float minThreshold;
@@ -134,7 +139,9 @@ namespace NLA::Options
 			float maxThreshold;
 
 			/// `prefix` is the full ini key prefix, verb included (e.g. "BowFatigue").
-			static FatigueOptions FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const FatigueOptions& defaults);
+			static Fatigue FromIni(CSimpleIniA& ini, const char* section, std::string_view prefix, const Fatigue& defaults);
+
+			static const Fatigue& For(const Config& config, WeaponType type, bool concentration = false);
 		};
 
 		/// Controls whether the mod works for given characters.
@@ -176,13 +183,13 @@ namespace NLA::Options
 		Steadying scrollSteadying;
 
 		/// Controls how long a spell/staff/scroll can be held charged before fatigue starts to affect accuracy.
-		FatigueOptions spellFatigue;
-		FatigueOptions staffFatigue;
-		FatigueOptions scrollFatigue;
+		Fatigue spellFatigue;
+		Fatigue staffFatigue;
+		Fatigue scrollFatigue;
 
 		/// Controls how long a concentration spell/staff can be cast continuously before fatigue starts to affect accuracy.
-		FatigueOptions concentrationSpellFatigue;
-		FatigueOptions concentrationStaffFatigue;
+		Fatigue concentrationSpellFatigue;
+		Fatigue concentrationStaffFatigue;
 
 		/// Controls how fast a bow reaches full draw.
 		DrawSpeed bowDrawSpeed;
@@ -193,17 +200,18 @@ namespace NLA::Options
 		Steadying bowSteadying;
 
 		/// Controls how long a bow can be held fully drawn before fatigue starts to affect accuracy.
-		FatigueOptions bowFatigue;
+		Fatigue bowFatigue;
 
 		/// Controls how much holding a loaded crossbow reduces spread.
 		Steadying crossbowSteadying;
 
 		/// Controls how long a crossbow can be held loaded before fatigue starts to affect accuracy.
-		FatigueOptions crossbowFatigue;
+		Fatigue crossbowFatigue;
 
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
 		inline const SkillMultiplier& MultiplierFor(SkillUsageContext context) const {
+			assert(context == kAccuracy || context == kPrecision);
 			switch (context) {
 			case kAccuracy:
 				return accuracyMultipliers;
@@ -213,48 +221,123 @@ namespace NLA::Options
 				return accuracyMultipliers;
 			}
 		}
-
-		inline const Steadying& SpellSteadyingFor(WeaponType type) const {
-			assert(type == kSpell || type == kStaff || type == kScroll);
-			switch (type) {
-			case kStaff:
-				return staffSteadying;
-			case kScroll:
-				return scrollSteadying;
-			default:
-				return spellSteadying;
-			}
-		}
-
-		inline const FatigueOptions& SpellFatigueFor(WeaponType type) const {
-			assert(type == kSpell || type == kStaff || type == kScroll);
-			switch (type) {
-			case kStaff:
-				return staffFatigue;
-			case kScroll:
-				return scrollFatigue;
-			default:
-				return spellFatigue;
-			}
-		}
-
-		/// Steadying while holding a drawn bow or loaded crossbow.
-		inline const Steadying& WeaponSteadyingFor(WeaponType type) const {
-			assert(type == kBow || type == kCrossbow);
-			return type == kCrossbow ? crossbowSteadying : bowSteadying;
-		}
-
-		/// Fatigue while holding a drawn bow or loaded crossbow.
-		inline const FatigueOptions& WeaponFatigueFor(WeaponType type) const {
-			assert(type == kBow || type == kCrossbow);
-			return type == kCrossbow ? crossbowFatigue : bowFatigue;
-		}
-
-		inline const FatigueOptions& ConcentrationFatigueFor(WeaponType type) const {
-			assert(type == kSpell || type == kStaff);
-			return type == kStaff ? concentrationStaffFatigue : concentrationSpellFatigue;
-		}
 	};
+
+	/// What differs between kinds of ranged attacks, so that options can be walked generically instead of listed one by one.
+	struct AttackKind
+	{
+		WeaponType type;
+		bool       concentration;
+
+		const char* name;
+
+		bool Config::*                   aiming;
+		float Config::SkillMultiplier::* multiplier;
+
+		/// Null for bows and crossbows, which always use Archery.
+		Config::SkillSources Config::* skills;
+
+		Config::Scaling Config::* speed;
+
+		/// Null unless the kind is a concentration spell/staff.
+		Config::Scaling Config::* range;
+
+		/// Null for concentration spells/staves, which share steadying with their fire-and-forget counterparts.
+		Config::Steadying Config::* steadying;
+
+		Config::Fatigue Config::* fatigue;
+
+		static const AttackKind& For(WeaponType type, bool concentration = false);
+
+		/// Null if the mod doesn't handle this kind of spell.
+		static const AttackKind* For(const RE::MagicItem* spell);
+	};
+
+	inline constexpr std::array<AttackKind, 7> kAttackKinds{ {
+		{ .type = kBow,
+		  .concentration = false,
+		  .name = "Bow",
+		  .aiming = &Config::bowAiming,
+		  .multiplier = &Config::SkillMultiplier::bow,
+		  .speed = &Config::bowDrawSpeed,
+		  .steadying = &Config::bowSteadying,
+		  .fatigue = &Config::bowFatigue },
+		{ .type = kCrossbow,
+		  .concentration = false,
+		  .name = "Crossbow",
+		  .aiming = &Config::crossbowAiming,
+		  .multiplier = &Config::SkillMultiplier::crossbow,
+		  .speed = &Config::crossbowDrawSpeed,
+		  .steadying = &Config::crossbowSteadying,
+		  .fatigue = &Config::crossbowFatigue },
+		{ .type = kSpell,
+		  .concentration = false,
+		  .name = "Spell",
+		  .aiming = &Config::spellAiming,
+		  .multiplier = &Config::SkillMultiplier::spell,
+		  .skills = &Config::spellSkills,
+		  .speed = &Config::spellChargeSpeed,
+		  .steadying = &Config::spellSteadying,
+		  .fatigue = &Config::spellFatigue },
+		{ .type = kSpell,
+		  .concentration = true,
+		  .name = "ConcentrationSpell",
+		  .aiming = &Config::concentrationSpellAiming,
+		  .multiplier = &Config::SkillMultiplier::concentrationSpell,
+		  .skills = &Config::concentrationSpellSkills,
+		  .speed = &Config::concentrationSpellChargeSpeed,
+		  .range = &Config::concentrationSpellRange,
+		  .fatigue = &Config::concentrationSpellFatigue },
+		{ .type = kStaff,
+		  .concentration = false,
+		  .name = "Staff",
+		  .aiming = &Config::staffAiming,
+		  .multiplier = &Config::SkillMultiplier::staff,
+		  .skills = &Config::staffSkills,
+		  .speed = &Config::staffChargeSpeed,
+		  .steadying = &Config::staffSteadying,
+		  .fatigue = &Config::staffFatigue },
+		{ .type = kStaff,
+		  .concentration = true,
+		  .name = "ConcentrationStaff",
+		  .aiming = &Config::concentrationStaffAiming,
+		  .multiplier = &Config::SkillMultiplier::concentrationStaff,
+		  .skills = &Config::concentrationStaffSkills,
+		  .speed = &Config::concentrationStaffChargeSpeed,
+		  .range = &Config::concentrationStaffRange,
+		  .fatigue = &Config::concentrationStaffFatigue },
+		{ .type = kScroll,
+		  .concentration = false,
+		  .name = "Scroll",
+		  .aiming = &Config::scrollAiming,
+		  .multiplier = &Config::SkillMultiplier::scroll,
+		  .skills = &Config::scrollSkills,
+		  .speed = &Config::scrollChargeSpeed,
+		  .steadying = &Config::scrollSteadying,
+		  .fatigue = &Config::scrollFatigue },
+	} };
+
+	inline const AttackKind& AttackKind::For(WeaponType type, bool concentration) {
+		assert(!concentration || type == kSpell || type == kStaff);
+		for (const auto& kind : kAttackKinds) {
+			if (kind.type == type && kind.concentration == concentration) {
+				return kind;
+			}
+		}
+		assert(false && "No such attack kind");
+		return kAttackKinds.front();
+	}
+
+	inline const Config::Spread& Config::Spread::For(const Config& config, WeaponType type) {
+		const auto& kind = AttackKind::For(type);
+		assert(kind.steadying);
+		return config.*kind.steadying;
+	}
+
+	inline const Config::Fatigue& Config::Fatigue::For(const Config& config, WeaponType type, bool concentration) {
+		assert(!concentration || type == kSpell || type == kStaff);
+		return config.*AttackKind::For(type, concentration).fatigue;
+	}
 
 	struct PlayerConfig : Config
 	{

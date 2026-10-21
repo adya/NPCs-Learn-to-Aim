@@ -2,7 +2,7 @@
 
 namespace NLA::Fatigue
 {
-	float Threshold(const Options::Config::FatigueOptions& fatigue, RE::Actor* actor, WeaponType type) {
+	float Threshold(const Options::Config::Fatigue& fatigue, RE::Actor* actor, WeaponType type) {
 		if (!actor)
 			return 0.0f;
 
@@ -25,7 +25,7 @@ namespace NLA::Fatigue
 		if (type != kSpell && type != kStaff)
 			return 1.0f;
 
-		const auto& fatigue = Options::For(attacker).ConcentrationFatigueFor(type);
+		const auto& fatigue = Options::Config::Fatigue::For(Options::For(attacker), type, true);
 		if (!fatigue.enabled)
 			return 1.0f;
 
