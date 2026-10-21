@@ -21,16 +21,24 @@ namespace NLA::Fatigue
 		return 1.0f - std::exp2(-seconds / halfDuration);
 	}
 
-	float ConcentrationScale(RE::Actor* attacker, WeaponType type, float castSeconds) {
+	ConcentrationState Concentration(RE::Actor* attacker, WeaponType type, float castSeconds) {
+		ConcentrationState state{ .castSeconds = castSeconds };
 		if (type != kSpell && type != kStaff)
-			return 1.0f;
+			return state;
 
 		const auto& fatigue = Options::Config::Fatigue::For(Options::For(attacker), type, true);
 		if (!fatigue.enabled)
-			return 1.0f;
+			return state;
 
-		const float fatigueSeconds = std::max(0.0f, castSeconds - Threshold(fatigue, attacker, type));
+		state.enabled = true;
+		state.threshold = Threshold(fatigue, attacker, type);
+		state.fatigueSeconds = std::max(0.0f, castSeconds - state.threshold);
+		state.progress = Progress(state.fatigueSeconds, fatigue.halfDuration);
+		state.scale = 1.0f + fatigue.maxSpreadMultiplier * state.progress;
+		return state;
+	}
 
-		return 1.0f + fatigue.maxSpreadMultiplier * Progress(fatigueSeconds, fatigue.halfDuration);
+	float ConcentrationScale(RE::Actor* attacker, WeaponType type, float castSeconds) {
+		return Concentration(attacker, type, castSeconds).scale;
 	}
 }
