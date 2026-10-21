@@ -57,8 +57,8 @@ namespace NLA::ConcentrationSpells
 			}
 		};
 
-		/// Projectile updates run on the main thread, which is also where the state is reset, so no locking is needed.
-		std::unordered_map<RE::FormID, WanderAnimation> wanderAnimations;
+		/// One for each hand of each caster. Projectile updates run on the main thread, which is also where the state is reset, so no locking is needed.
+		std::unordered_map<std::uint64_t, WanderAnimation> wanderAnimations;
 
 		struct LocalContext
 		{
@@ -81,8 +81,8 @@ namespace NLA::ConcentrationSpells
 			return Fatigue::ConcentrationScale(attacker, type, ChargeTime::ConcentrationDuration(attacker, runtimeData.castingSource));
 		}
 
-		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Actor* attacker, const SkillUsage& skillUsage, float scale) {
-			auto& anim = wanderAnimations[attacker->formID];
+		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& skillUsage, float scale) {
+			auto& anim = wanderAnimations[ChargeTime::CasterKey(attacker->GetFormID(), source)];
 			anim.Advance(attacker, skillUsage);
 
 			const RE::NiPoint2 offset = anim.current * scale;
@@ -124,7 +124,7 @@ namespace NLA::ConcentrationSpells
 					if (auto attacker = GetAttacker(projectile); attacker) {
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
-							auto offset = ApplyWanderOffset(rotation, attacker, skillUsage, FatigueScale(projectile, attacker, skillUsage.weaponType));
+							auto offset = ApplyWanderOffset(rotation, attacker, runtimeData.castingSource, skillUsage, FatigueScale(projectile, attacker, skillUsage.weaponType));
 							localContext = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);

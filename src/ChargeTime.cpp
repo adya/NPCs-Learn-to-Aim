@@ -30,10 +30,6 @@ namespace NLA::ChargeTime
 		RE::BSSpinLock                           entriesLock;
 		std::unordered_map<std::uint64_t, Entry> entries;
 
-		std::uint64_t MakeKey(RE::FormID formID, RE::MagicSystem::CastingSource source) {
-			return (std::uint64_t(formID) << 8) | std::to_underlying(source);
-		}
-
 		bool IsReady(RE::MagicCaster::State state) {
 			return state == RE::MagicCaster::State::kReady;
 		}
@@ -58,10 +54,7 @@ namespace NLA::ChargeTime
 			       !IsCharging(state) &&
 			       !IsInterrupted(state);
 		}
-	}
 
-	namespace
-	{
 		/// Updates the caster's tracked durations and returns whether the mod applies to its actor.
 		bool Track(const RE::ActorMagicCaster* caster, RE::MagicCaster::State state, float delta) {
 			auto* actor = caster->actor;
@@ -69,7 +62,7 @@ namespace NLA::ChargeTime
 				return false;
 			}
 
-			const auto key = MakeKey(actor->GetFormID(), caster->castingSource);
+			const auto key = CasterKey(actor->GetFormID(), caster->castingSource);
 
 			RE::BSSpinLockGuard lock{ entriesLock };
 
@@ -127,6 +120,10 @@ namespace NLA::ChargeTime
 		}
 	}
 
+	std::uint64_t CasterKey(RE::FormID formID, RE::MagicSystem::CastingSource source) {
+		return (std::uint64_t(formID) << 8) | std::to_underlying(source);
+	}
+
 	float SpeedMultiplier(RE::Actor* actor, const RE::MagicItem* spell) {
 		if (auto skillUsage = SkillUsage(spell, actor, kChargeTime); skillUsage) {
 			return skillUsage.LerpSkillFactor(actor);
@@ -141,7 +138,7 @@ namespace NLA::ChargeTime
 
 		RE::BSSpinLockGuard lock{ entriesLock };
 
-		auto it = entries.find(MakeKey(actor->GetFormID(), source));
+		auto it = entries.find(CasterKey(actor->GetFormID(), source));
 		if (it == entries.end()) {
 			return 0.0f;
 		}
@@ -163,7 +160,7 @@ namespace NLA::ChargeTime
 
 		RE::BSSpinLockGuard lock{ entriesLock };
 
-		auto it = entries.find(MakeKey(actor->GetFormID(), source));
+		auto it = entries.find(CasterKey(actor->GetFormID(), source));
 		return it != entries.end() ? it->second.concentrationDuration : 0.0f;
 	}
 
