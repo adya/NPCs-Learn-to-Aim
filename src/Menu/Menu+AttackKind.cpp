@@ -139,34 +139,34 @@ namespace NLA::Menu
 		ResetMember(ctx, options);
 	}
 
-	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts) {
+	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts) {
 		auto& cfg = ctx.cfg;
-		auto& aiming = cfg.*category.aiming;
+		auto& aiming = cfg.*kind.aiming;
 
-		PushID(category.id);
+		PushID(kind.id);
 		{
 			TableSections sections{ ctx.isNPC };
 			if (sections.Section(separator)) {
 				TableNextRow();
-				ToggleColumn(category.label, aiming, category.tooltip);
+				ToggleColumn(kind.label, aiming, kind.tooltip);
 				DisabledIf off{ !aiming };
 				if (ctx.isNPC) {
-					SliderColumn("##Accuracy", cfg.accuracyMultipliers.*category.multiplier, category.accuracyTooltip);
+					SliderColumn("##Accuracy", cfg.accuracyMultipliers.*kind.multiplier, kind.accuracyTooltip);
 				} else {
 					NotApplicableColumn();
 				}
-				SliderColumn("##Precision", cfg.precisionMultipliers.*category.multiplier, category.precisionTooltip);
-				RenderSkillSource(ctx, category.aimSkill, "Aiming Skill", "aiming");
+				SliderColumn("##Precision", cfg.precisionMultipliers.*kind.multiplier, kind.precisionTooltip);
+				RenderSkillSource(ctx, kind.aimSkill, "Aiming Skill", "aiming");
 			}
 
 			renderParts(aiming, sections);
 
 			// The last section is still open, so the button lands in its first column.
-			if (sections.Section(nullptr) && ResetButton(category.resetLabel)) {
-				ResetMember(ctx, category.aiming);
-				cfg.accuracyMultipliers.*category.multiplier = ctx.defaults.accuracyMultipliers.*category.multiplier;
-				cfg.precisionMultipliers.*category.multiplier = ctx.defaults.precisionMultipliers.*category.multiplier;
-				ResetSkillSource(ctx, category.aimSkill);
+			if (sections.Section(nullptr) && ResetButton(kind.resetLabel)) {
+				ResetMember(ctx, kind.aiming);
+				cfg.accuracyMultipliers.*kind.multiplier = ctx.defaults.accuracyMultipliers.*kind.multiplier;
+				cfg.precisionMultipliers.*kind.multiplier = ctx.defaults.precisionMultipliers.*kind.multiplier;
+				ResetSkillSource(ctx, kind.aimSkill);
 				resetParts();
 				Options::Save();
 			}

@@ -60,7 +60,7 @@ namespace NLA::Menu
 	/// Begins a table with the (empty)/Accuracy/Precision header, renders `rows` and ends it.
 	void RenderTable(const char* id, bool hasAccuracy, const std::function<void()>& rows);
 
-	/// Lays a category out as consecutive tables, each titled by a separator. The label column has a fixed width,
+	/// Lays an attack kind out as consecutive tables, each titled by a separator. The label column has a fixed width,
 	/// so sliders line up across tables, and only the first table has the Accuracy/Precision header.
 	class TableSections
 	{
@@ -95,8 +95,8 @@ namespace NLA::Menu
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
 	void NotApplicableColumn();
 
-	// ---- Category parts ----
-	// Each part renders and resets its own rows. `aiming` is the state of the category's "Learn X" toggle.
+	// ---- Attack kind parts ----
+	// Each part renders and resets its own rows. `aiming` is the state of the attack kind's "Learn X" toggle.
 
 	/// Points at one of a spell type's skill sources; renders as a drop-down row inside the section it belongs to.
 	struct SkillSourceRef
@@ -178,10 +178,10 @@ namespace NLA::Menu
 		void Reset(const PageContext& ctx) const;
 	};
 
-	// ---- Categories ----
+	// ---- Attack kinds ----
 
-	/// The "Learn X" toggle with its skill multipliers, shared by every category.
-	struct CategoryBase
+	/// The "Learn X" toggle with its skill multipliers, shared by every attack kind.
+	struct AttackKindBase
 	{
 		const char* id;
 		const char* label;
@@ -196,21 +196,21 @@ namespace NLA::Menu
 
 	/// Parts are rendered below the "Learn X" row in the order they are listed.
 	template <class... Parts>
-	struct Category : CategoryBase, Parts...
+	struct AttackKind : AttackKindBase, Parts...
 	{};
 
-	void RenderCategoryTable(const CategoryBase& category, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts);
+	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts);
 
-	/// Renders the category below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
+	/// Renders the attack kind below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
 	/// a new section with their title; the rest stay in the section of the "Learn X" row.
 	template <class... Parts>
-	void RenderCategory(const Category<Parts...>& category, const PageContext& ctx, const char* separator = "Aiming") {
-		RenderCategoryTable(
-			category,
+	void RenderAttackKind(const AttackKind<Parts...>& kind, const PageContext& ctx, const char* separator = "Aiming") {
+		RenderAttackKindTable(
+			kind,
 			ctx,
 			separator,
-			[&](bool aiming, TableSections& sections) { (static_cast<const Parts&>(category).Render(ctx, aiming, sections), ...); },
-			[&] { (static_cast<const Parts&>(category).Reset(ctx), ...); });
+			[&](bool aiming, TableSections& sections) { (static_cast<const Parts&>(kind).Render(ctx, aiming, sections), ...); },
+			[&] { (static_cast<const Parts&>(kind).Reset(ctx), ...); });
 	}
 
 	inline constexpr const char* kScaleAimLabel = "Scale Aim With Skill";

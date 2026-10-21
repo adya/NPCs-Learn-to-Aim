@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kCrossbows{
+		constexpr AttackKind<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kCrossbows{
 			{
 				.id = "Crossbows",
 				.label = kScaleAimLabel,
@@ -44,6 +44,6 @@ namespace NLA::Menu
 	}
 
 	void RenderCrossbowsPage(const PageContext& ctx) {
-		RenderCategory(kCrossbows, ctx);
+		RenderAttackKind(kCrossbows, ctx);
 	}
 }

@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<SpeedRows, SpreadRows, FatigueRows> kStaves{
+		constexpr AttackKind<SpeedRows, SpreadRows, FatigueRows> kStaves{
 			{
 				.id = "Staves",
 				.label = kScaleAimLabel,
@@ -33,6 +33,6 @@ namespace NLA::Menu
 	}
 
 	void RenderStavesPage(const PageContext& ctx) {
-		RenderCategory(kStaves, ctx);
+		RenderAttackKind(kStaves, ctx);
 	}
 }

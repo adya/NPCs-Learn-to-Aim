@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<RangeRows, SpeedRows, FatigueRows> kConcentrationStaves{
+		constexpr AttackKind<RangeRows, SpeedRows, FatigueRows> kConcentrationStaves{
 			{
 				.id = "ConcentrationStaves",
 				.label = kScaleAimLabel,
@@ -40,6 +40,6 @@ namespace NLA::Menu
 	}
 
 	void RenderConcentrationStavesPage(const PageContext& ctx) {
-		RenderCategory(kConcentrationStaves, ctx);
+		RenderAttackKind(kConcentrationStaves, ctx);
 	}
 }

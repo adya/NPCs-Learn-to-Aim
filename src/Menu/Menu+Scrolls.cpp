@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr Category<SpeedRows, SpreadRows, FatigueRows> kScrolls{
+		constexpr AttackKind<SpeedRows, SpreadRows, FatigueRows> kScrolls{
 			{
 				.id = "Scrolls",
 				.label = kScaleAimLabel,
@@ -33,6 +33,6 @@ namespace NLA::Menu
 	}
 
 	void RenderScrollsPage(const PageContext& ctx) {
-		RenderCategory(kScrolls, ctx);
+		RenderAttackKind(kScrolls, ctx);
 	}
 }
