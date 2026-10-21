@@ -13,7 +13,7 @@ namespace NLA::Menu
 		constexpr const char* kAccuracyHeader = "Accuracy";
 		constexpr const char* kPrecisionHeader = "Precision";
 		constexpr const char* kNotApplicableText = "N/A";
-		constexpr const char* kWidestLabel = "Scale Charge Speed With Skill";
+		constexpr const char* kWidestLabel = kScaleChargeSpeedLabel;
 
 		float RoundTo2Decimals(float value) {
 			return std::round(value * 100.0f) / 100.0f;

@@ -36,11 +36,10 @@ namespace NLA::Menu
 
 		void KeywordsInput(const char* label, const char* id, const char* hint, KeywordBuffer& buffer, std::vector<std::string>& keywords, const char* tooltip) {
 			Text("%s", label);
-			if (InputTextWithHint(id, hint, buffer, sizeof(buffer))) {
-				keywords = Options::ParseKeywords(buffer);
-			}
-			// Saving on every keystroke would rewrite the INI file that often.
+			InputTextWithHint(id, hint, buffer, sizeof(buffer));
+
 			if (IsItemDeactivatedAfterEdit()) {
+				keywords = Options::ParseKeywords(buffer);
 				Options::Save();
 			}
 			ShowTooltip(tooltip);
@@ -53,9 +52,9 @@ namespace NLA::Menu
 
 			auto& npc = Options::NPC;
 			auto  syncBuffers = [&] {
-                FillBuffer(includeBuffer, npc.includeKeywords);
-                FillBuffer(excludeBuffer, npc.excludeKeywords);
-                buffersGeneration = Options::currentID;
+				FillBuffer(includeBuffer, npc.includeKeywords);
+				FillBuffer(excludeBuffer, npc.excludeKeywords);
+				buffersGeneration = Options::currentID;
 			};
 
 			PushID("Filters");
