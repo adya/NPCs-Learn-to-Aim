@@ -86,7 +86,7 @@ namespace NLA::ChargeTime
 
 			if (prev != state) {
 				if (prev == RE::MagicCaster::State::kNone) {
-					entry.learns = Options::NPC.ShouldLearn(actor);
+					entry.learns = Options::ShouldLearn(actor);
 				}
 
 				if (entry.learns) {

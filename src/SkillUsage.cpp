@@ -16,7 +16,7 @@ namespace NLA
 	}
 
 	SkillUsage::SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker, SkillUsageContext context) {
-		if (!weapon || !attacker || !Options::NPC.ShouldLearn(attacker))
+		if (!weapon || !attacker || !Options::ShouldLearn(attacker))
 			return;
 
 		const auto weaponKind = weapon->GetWeaponType();
@@ -136,7 +136,7 @@ namespace NLA
 	}
 
 	SkillUsage::SkillUsage(const RE::MagicItem* spell, RE::Actor* attacker, SkillUsageContext context) {
-		if (!spell || !attacker || !Options::NPC.ShouldLearn(attacker))
+		if (!spell || !attacker || !Options::ShouldLearn(attacker))
 			return;
 
 		const auto& options = Options::For(attacker);

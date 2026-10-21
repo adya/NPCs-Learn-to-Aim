@@ -323,8 +323,6 @@ namespace NLA::Options
 
 		static NPCConfig FromIni(CSimpleIniA& ini);
 
-		bool ShouldLearn(RE::Actor* actor);
-
 		static const NPCConfig defaultConfig;
 	};
 	inline const NPCConfig NPCConfig::defaultConfig{
@@ -384,7 +382,10 @@ namespace NLA::Options
 	/// Splits a comma-separated list of keyword EditorIDs, trimming whitespace around each and dropping empty entries.
 	std::vector<std::string> ParseKeywords(std::string_view list);
 
-	/// Forgets the cached keyword filter results of NPCs. Must be called whenever anything affecting `NPCConfig::ShouldLearn` changes.
+	/// Whether the mod applies to the actor. Cached per actor, so that hooks running every frame don't look up keywords each time.
+	bool ShouldLearn(RE::Actor* actor);
+
+	/// Forgets the cached results of `ShouldLearn`. Must be called whenever anything affecting them changes.
 	void InvalidateActorCache();
 
 	void Load();

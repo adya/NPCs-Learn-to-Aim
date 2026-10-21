@@ -462,7 +462,7 @@ namespace NLA::Options
 		Save();
 	}
 
-	bool NPCConfig::ShouldLearn(RE::Actor* a_actor) {
+	bool ShouldLearn(RE::Actor* a_actor) {
 		if (!a_actor) {
 			return false;
 		}
@@ -470,7 +470,7 @@ namespace NLA::Options
 			return Player.enabled;
 		}
 
-		if (!enabled) {
+		if (!NPC.enabled) {
 			return false;
 		}
 
@@ -484,11 +484,13 @@ namespace NLA::Options
 
 		const auto* race = a_actor->GetRace();
 		const auto  hasAny = [&](const std::vector<std::string>& keywords) {
-            return a_actor->HasAnyKeywordByEditorID(keywords) || (race && race->HasAnyKeywordByEditorID(keywords));
+			return a_actor->HasAnyKeywordByEditorID(keywords) || (race && race->HasAnyKeywordByEditorID(keywords));
 		};
 
 		// An empty include list means no filtering: HasAnyKeywordByEditorID would never match it.
-		const bool learns = (includeKeywords.empty() || hasAny(includeKeywords)) && (excludeKeywords.empty() || !hasAny(excludeKeywords));
+		const auto& include = NPC.includeKeywords;
+		const auto& exclude = NPC.excludeKeywords;
+		const bool  learns = (include.empty() || hasAny(include)) && (exclude.empty() || !hasAny(exclude));
 
 		RE::BSSpinLockGuard lock{ learnersLock };
 		learners[formID] = learns;

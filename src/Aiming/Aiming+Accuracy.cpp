@@ -179,7 +179,7 @@ namespace NLA
 				}
 
 				RE::Actor* attacker = controller->combat_control->attackerHandle.get().get();
-				if (!attacker || !Options::NPC.ShouldLearn(attacker)) {
+				if (!attacker || !Options::ShouldLearn(attacker)) {
 					func(controller, target);
 					return;
 				}
