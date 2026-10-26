@@ -354,7 +354,7 @@ namespace NLA::Options
 			.bowAiming = true,
 			.crossbowAiming = true,
 			.accuracyMultipliers = { .bow = 1.0f, .crossbow = 1.0f, .spell = 1.0f, .concentrationSpell = 1.0f, .staff = 1.0f, .concentrationStaff = 1.0f, .scroll = 1.0f, .blindness = 1.0f },
-			.precisionMultipliers = { .bow = 1.4f, .crossbow = 3.0f, .spell = 1.4f, .concentrationSpell = 1.4f, .staff = 1.25f, .concentrationStaff = 1.25f, .scroll = 1.4f, .blindness = 0.5f },
+			.precisionMultipliers = { .bow = 1.0f, .crossbow = 3.0f, .spell = 1.0f, .concentrationSpell = 1.0f, .staff = 0.85f, .concentrationStaff = 0.85f, .scroll = 1.0f, .blindness = 0.5f },
 			.spellSkills = { .aiming = SkillSource::kHighest, .chargeSpeed = SkillSource::kSpellSkill },
 			.concentrationSpellSkills = { .aiming = SkillSource::kHighest, .chargeSpeed = SkillSource::kSpellSkill, .range = SkillSource::kSpellSkill },
 			.staffSkills = { .aiming = SkillSource::kHighest, .chargeSpeed = SkillSource::kEnchanting },
