@@ -2,9 +2,11 @@
 #include "ChargeTime.h"
 #include "DrawSpeed.h"
 #include "Fatigue.h"
+#include "Helpers.h"
 #include "Hooking.h"
 #include "Options.h"
 #include "SkillUsage.h"
+#include "Steadying.h"
 
 namespace NLA
 {
@@ -15,20 +17,6 @@ namespace NLA
 				return false;
 			auto* camera = RE::PlayerCamera::GetSingleton();
 			return camera && !camera->IsInFirstPerson();
-		}
-
-		/// Weapons that can be held ready before firing.
-		std::optional<WeaponType> HoldableType(const RE::TESObjectWEAP* weapon) {
-			if (!weapon)
-				return std::nullopt;
-			switch (weapon->GetWeaponType()) {
-			case RE::WEAPON_TYPE::kBow:
-				return kBow;
-			case RE::WEAPON_TYPE::kCrossbow:
-				return kCrossbow;
-			default:
-				return std::nullopt;
-			}
 		}
 
 		struct SteadyingModifier
@@ -93,23 +81,21 @@ namespace NLA
 
 			ShotModifier() = default;
 
-			/// Pops the hold time that the steadying depends on.
 			static ShotModifier ForSpell(RE::Actor* attacker, const RE::MagicItem* spell, RE::MagicSystem::CastingSource source) {
 				ShotModifier modifier{ attacker, spell, SkillUsage(spell, attacker, kPrecision) };
 
-				const float holdSeconds = ChargeTime::PopSpellHoldDuration(attacker, source);
+				const float holdSeconds = Steadying::SpellDuration(attacker, source);
 				if (modifier.precision) {
 					modifier.steadying = SteadyingModifier::For(attacker, modifier.precision.weaponType, holdSeconds);
 				}
 				return modifier;
 			}
 
-			/// Pops the hold time that the steadying depends on.
 			static ShotModifier ForWeapon(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
 				ShotModifier modifier{ attacker, weapon, SkillUsage(weapon, attacker, kPrecision) };
 
-				if (auto type = HoldableType(weapon); type) {
-					modifier.steadying = SteadyingModifier::For(attacker, *type, Draw::PopFullDrawDuration(attacker));
+				if (auto type = Weapon::TypeOf(weapon); type) {
+					modifier.steadying = SteadyingModifier::For(attacker, *type, Steadying::FullDrawDuration(attacker));
 				}
 				return modifier;
 			}
@@ -142,6 +128,9 @@ namespace NLA
 
 			const auto* weapon = modifier.source ? modifier.source->As<RE::TESObjectWEAP>() : nullptr;
 			const auto* spell = modifier.source ? modifier.source->As<RE::MagicItem>() : nullptr;
+
+			if (Spell::IsConcentration(spell))
+				return;
 
 			logger::info("");
 			logger::info("Shooting: {} with {}", *attacker, modifier.source ? modifier.source->GetName() : "?");
@@ -200,7 +189,7 @@ namespace NLA
 			                                         "E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59">
 				signature;
 
-			static inline void post_hook() { logger::info("Disabled default arrow deviation logic"); }
+			static inline void post_hook() { logger::info("🪝 Disabled default arrow deviation logic"); }
 
 			static float thunk(float, float) {
 				return 0;
@@ -215,7 +204,7 @@ namespace NLA
 			static inline constexpr REL::VariantOffset offset{ 0x377, 0x354, 0x377 };
 			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 C7 44 24 ?? 00 00 00 00 48 8D" };
 
-			static inline void post_hook() { logger::info("Installed spells deviation logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed spells deviation logic"); }
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
@@ -243,7 +232,7 @@ namespace NLA
 			                                         "E8 ?? ?? ?? ?? 48 8D 55 ?? 48 8D 4D ?? E8">
 				signature;
 
-			static inline void post_hook() { logger::info("Installed modded arrow deviation logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed modded arrow deviation logic"); }
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
@@ -269,7 +258,7 @@ namespace NLA
 			static inline constexpr REL::VariantOffset offset{ 0x201, 0x201, 0x201 };
 			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 8B 87 ?? ?? ?? ?? C1 E8 11 A8 01" };
 
-			static inline void post_hook() { logger::info("Installed Player 3rd person projectiles deviation logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed Player 3rd person projectiles deviation logic"); }
 
 			static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {
 				func(player, projectile, fireNode, angleZ, angleX, defaultOrigin, tiltZ, tiltX);

@@ -1,4 +1,5 @@
 #include "SkillUsage.h"
+#include "Helpers.h"
 
 namespace NLA
 {
@@ -18,14 +19,14 @@ namespace NLA
 		if (!weapon || !attacker || !Options::ShouldLearn(attacker))
 			return;
 
-		const auto weaponKind = weapon->GetWeaponType();
-		if (weaponKind != RE::WEAPON_TYPE::kBow && weaponKind != RE::WEAPON_TYPE::kCrossbow)
+		const auto type = Weapon::TypeOf(weapon);
+		if (!type)
 			return;
 
 		const auto& options = Options::For(attacker);
-		const bool  isCrossbow = weaponKind == RE::WEAPON_TYPE::kCrossbow;
 
-		weaponType = isCrossbow ? kCrossbow : kBow;
+		weaponType = *type;
+		const bool isCrossbow = weaponType == kCrossbow;
 
 		const auto& kind = Options::AttackKind::For(weaponType);
 

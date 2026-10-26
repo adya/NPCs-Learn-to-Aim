@@ -1,8 +1,10 @@
 #include "ConcentrationSpells.h"
 #include "ChargeTime.h"
 #include "Fatigue.h"
+#include "Helpers.h"
 #include "Hooking.h"
 #include "SkillUsage.h"
+#include "Steadying.h"
 
 namespace NLA::ConcentrationSpells
 {
@@ -68,7 +70,7 @@ namespace NLA::ConcentrationSpells
 		};
 
 		/// One for each hand of each caster. Projectile updates run on the main thread, which is also where the state is reset, so no locking is needed.
-		std::unordered_map<std::uint64_t, WanderAnimation> wanderAnimations;
+		std::unordered_map<TrackingKey, WanderAnimation> wanderAnimations;
 
 		struct LocalContext
 		{
@@ -88,7 +90,7 @@ namespace NLA::ConcentrationSpells
 		Fatigue::ConcentrationState FatigueState(RE::Projectile* projectile, RE::Actor* attacker, WeaponType type) {
 			auto& runtimeData = projectile->GetProjectileRuntimeData();
 
-			return Fatigue::Concentration(attacker, type, ChargeTime::ConcentrationDuration(attacker, runtimeData.castingSource));
+			return Fatigue::Concentration(attacker, type, Steadying::SpellDuration(attacker, runtimeData.castingSource));
 		}
 
 #ifndef NDEBUG
@@ -115,7 +117,7 @@ namespace NLA::ConcentrationSpells
 #endif
 
 		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Projectile* projectile, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& skillUsage, const Fatigue::ConcentrationState& fatigue) {
-			auto& anim = wanderAnimations[ChargeTime::CasterKey(attacker->GetFormID(), source)];
+			auto& anim = wanderAnimations[TrackingKey::ForCaster(attacker, source)];
 			anim.Advance(attacker, skillUsage);
 
 			const RE::NiPoint2 offset = anim.current * fatigue.scale;
@@ -202,7 +204,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed free beam wander logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed free beam wander logic"); }
 		};
 
 		struct UpdateImpl_MakeRotation
@@ -214,7 +216,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed locked beam wander logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed locked beam wander logic"); }
 		};
 
 		/// Scales range for raycasts when beam finds a target.
@@ -234,7 +236,7 @@ namespace NLA::ConcentrationSpells
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed concentration beam range scaling logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed concentration beam range scaling logic"); }
 		};
 	}
 
@@ -249,7 +251,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed free flame wander logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed free flame wander logic"); }
 		};
 
 		struct UpdateImpl_CopyRotation
@@ -261,7 +263,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
-			static inline void post_hook() { logger::info("Installed locked flame wander logic"); }
+			static inline void post_hook() { logger::info("🪝 Installed locked flame wander logic"); }
 		};
 	}
 

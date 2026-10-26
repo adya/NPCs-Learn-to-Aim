@@ -1,4 +1,5 @@
 #include "Fatigue.h"
+#include "Helpers.h"
 
 namespace NLA::Fatigue
 {
@@ -9,11 +10,10 @@ namespace NLA::Fatigue
 		constexpr float baseline = 100.0f;
 		constexpr float exponent = 0.7f;
 
-		const bool  usesStamina = type == kBow || type == kCrossbow;
+		const bool  usesStamina = Weapon::IsBowOrCrossbow(type);
 		const auto  attribute = usesStamina ? RE::ActorValue::kStamina : RE::ActorValue::kMagicka;
 		const float ratio = std::max(actor->GetActorValueMax(attribute), 0.0f) / baseline;
 
-		// Max attribute above the baseline extends the threshold past `maxThreshold`, so a max below `min` could otherwise go negative.
 		return std::max(0.0f, fatigue.minThreshold + (fatigue.maxThreshold - fatigue.minThreshold) * std::pow(ratio, exponent));
 	}
 

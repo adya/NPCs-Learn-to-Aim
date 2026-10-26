@@ -4,6 +4,7 @@
 #include "ConcentrationSpells.h"
 #include "DrawSpeed.h"
 #include "Options.h"
+#include "Steadying.h"
 
 namespace NLA
 {
@@ -15,13 +16,13 @@ namespace NLA
 		ConcentrationSpells::Install();
 		ChargeTime::Install();
 		Draw::Install();
+		Steadying::Install();
 	}
 
 	void Reset() {
 		Options::InvalidateActorCache();
 		Accuracy::Reset();
 		ConcentrationSpells::Reset();
-		ChargeTime::Reset();
-		Draw::Reset();
+		Steadying::Reset();
 	}
 }

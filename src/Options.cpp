@@ -1,5 +1,6 @@
 #include "Options.h"
 #include "CLIBUtil/string.hpp"
+#include "Helpers.h"
 #include <fmt/ranges.h>
 
 namespace NLA::Options
@@ -105,8 +106,7 @@ namespace NLA::Options
 		}
 
 		std::string SpeedName(const AttackKind& kind) {
-			const bool isDrawn = kind.type == kBow || kind.type == kCrossbow;
-			return fmt::format("{}{}", kind.name, isDrawn ? "DrawSpeed" : "ChargeSpeed");
+			return fmt::format("{}{}", kind.name, Weapon::IsBowOrCrossbow(kind.type) ? "DrawSpeed" : "ChargeSpeed");
 		}
 
 		void SaveConfig(CSimpleIniA& ini, const char* a_section, const Config& custom, const Config& defaults, bool writeDefaults = false) {
@@ -120,7 +120,7 @@ namespace NLA::Options
 			for (const auto& kind : kAttackKinds) {
 				const std::string_view name = kind.name;
 
-				SetOrDeleteValue(ini, a_section, fmt::format("b{}Aiming", name).c_str(),custom.*kind.aiming, defaults.*kind.aiming, writeDefaults);
+				SetOrDeleteValue(ini, a_section, fmt::format("b{}Aiming", name).c_str(), custom.*kind.aiming, defaults.*kind.aiming, writeDefaults);
 
 				if (kind.skills) {
 					SaveSkillSources(ini, a_section, name, custom.*kind.skills, defaults.*kind.skills, kind.range != nullptr, writeDefaults);
@@ -532,7 +532,7 @@ namespace NLA::Options
 		for (const auto& kind : kAttackKinds) {
 			const std::string_view name = kind.name;
 
-			result.*kind.aiming = ini.GetBoolValue(a_section, fmt::format("b{}Aiming", name).c_str(),result.*kind.aiming);
+			result.*kind.aiming = ini.GetBoolValue(a_section, fmt::format("b{}Aiming", name).c_str(), result.*kind.aiming);
 
 			if (kind.skills) {
 				result.*kind.skills = SkillSources::FromIni(ini, a_section, name, result.*kind.skills);
