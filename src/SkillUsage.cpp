@@ -161,11 +161,24 @@ namespace NLA
 		}
 	}
 
+	float SkillProgress(float min, float max, float skill) {
+		constexpr float shape = 1.8f;
+		constexpr float saturation = 2.7f;
+
+		const float t = std::max(0.0f, skill) / 100.0f;
+		const float progress = (1.0f - std::exp(-saturation * std::pow(t, shape))) / (1.0f - std::exp(-saturation));
+
+		return min + (max - min) * progress;
+	}
+
 	float SkillUsage::SkillFactor(RE::Actor* actor) const {
 		if (!actor || this->skill == RE::ActorValue::kNone)
 			return 1.0f;
-		const auto effectiveSkill = EffectiveSkill(actor);
-		return std::exp(0.025f * (10 - effectiveSkill));
+
+		static const float worst = std::exp(0.25f);
+		static const float best = std::exp(-2.25f);
+
+		return SkillProgress(worst, best, EffectiveSkill(actor));
 	}
 
 	float SkillUsage::LerpSkillFactor(RE::Actor* actor) const {
@@ -175,13 +188,7 @@ namespace NLA
 		if (range->max == range->min)
 			return range->min;
 
-		constexpr float shape = 1.8f;
-		constexpr float saturation = 2.7f;
-
-		const float t = std::max(0.0f, EffectiveSkill(actor)) / 100.0f;
-		const float progress = (1.0f - std::exp(-saturation * std::pow(t, shape))) / (1.0f - std::exp(-saturation));
-
-		return range->min + (range->max - range->min) * progress;
+		return SkillProgress(range->min, range->max, Skill(actor));
 	}
 
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {
