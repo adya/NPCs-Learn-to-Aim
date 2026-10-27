@@ -162,8 +162,8 @@ namespace NLA
 	}
 
 	float SkillProgress(float min, float max, float skill) {
-		constexpr float shape = 1.8f;
-		constexpr float saturation = 2.7f;
+		constexpr float shape = 1.6f;
+		constexpr float saturation = 2.8f;
 
 		const float t = std::max(0.0f, skill) / 100.0f;
 		const float progress = (1.0f - std::exp(-saturation * std::pow(t, shape))) / (1.0f - std::exp(-saturation));
