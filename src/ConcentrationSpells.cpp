@@ -204,6 +204,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
+			static inline void pre_hook() { logger::debug("Installing free beam wander logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed free beam wander logic"); }
 		};
 
@@ -216,6 +217,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
+			static inline void pre_hook() { logger::debug("Installing locked beam wander logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed locked beam wander logic"); }
 		};
 
@@ -236,6 +238,7 @@ namespace NLA::ConcentrationSpells
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 
+			static inline void pre_hook() { logger::debug("Installing concentration beam range scaling logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed concentration beam range scaling logic"); }
 		};
 	}
@@ -251,6 +254,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
+			static inline void pre_hook() { logger::debug("Installing free flame wander logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed free flame wander logic"); }
 		};
 
@@ -263,6 +267,7 @@ namespace NLA::ConcentrationSpells
 			using Proxy = CopyRotation_Proxy<UpdateImpl_CopyRotation>;
 			static inline REL::Relocation<decltype(Proxy::thunk)> func;
 
+			static inline void pre_hook() { logger::debug("Installing locked flame wander logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed locked flame wander logic"); }
 		};
 	}

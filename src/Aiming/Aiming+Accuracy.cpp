@@ -169,6 +169,7 @@ namespace NLA
 			static inline constexpr REL::VariantOffset offset{ 0x103, 0x97, 0x103 };
 			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 84 C0 74" };
 
+			static inline void pre_hook() { logger::debug("Installing Accuracy logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed Accuracy logic"); }
 
 			static void thunk(RE::CombatProjectileAimController* controller, RE::Actor* target) {

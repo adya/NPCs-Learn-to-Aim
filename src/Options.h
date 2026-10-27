@@ -470,6 +470,8 @@ namespace NLA::Options
 	/// Forgets the cached results of `ShouldLearn`. Must be called whenever anything affecting them changes.
 	void InvalidateActorCache();
 
+	spdlog::level::level_enum LogLevel();
+
 	void Load();
 	void Save();
 

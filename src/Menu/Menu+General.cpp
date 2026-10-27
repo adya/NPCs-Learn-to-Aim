@@ -45,6 +45,29 @@ namespace NLA::Menu
 			ShowTooltip(tooltip);
 		}
 
+		void RenderLogLevel() {
+			static constexpr std::array levels{ spdlog::level::trace, spdlog::level::debug, spdlog::level::info, spdlog::level::warn, spdlog::level::err, spdlog::level::critical };
+			static constexpr std::array labels{ "trace", "debug", "info", "warn", "error", "critical" };
+
+			const auto current = spdlog::default_logger()->level();
+			int        index = static_cast<int>(std::ranges::find(levels, current) - levels.begin());
+			index = std::min(index, static_cast<int>(levels.size()) - 1);
+
+			SeparatorText("Logging");
+			AlignTextToFramePadding();
+			Text("Log Level");
+			SameLine();
+			SetNextItemWidth(180);
+			if (Combo("##LogLevel", &index, labels.data(), static_cast<int>(labels.size()))) {
+				const auto logger = spdlog::default_logger();
+				logger->set_level(levels[index]);
+				logger->flush_on(levels[index]);
+				logger::info("Log level changed to '{}'", labels[index]);
+				Options::Save();
+			}
+			ShowTooltip("Controls verbosity of the log file. Use 'debug' to also log which hooks are being installed.");
+		}
+
 		void RenderKeywordFilters() {
 			static KeywordBuffer includeBuffer = "";
 			static KeywordBuffer excludeBuffer = "";
@@ -92,6 +115,8 @@ namespace NLA::Menu
 		});
 		Spacing();
 		RenderKeywordFilters();
+		Spacing();
+		RenderLogLevel();
 	}
 
 	void RenderActionsPage() {

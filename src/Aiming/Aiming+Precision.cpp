@@ -189,6 +189,7 @@ namespace NLA
 			                                         "E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59">
 				signature;
 
+			static inline void pre_hook() { logger::debug("Disabling default arrow deviation logic..."); }
 			static inline void post_hook() { logger::info("🪝 Disabled default arrow deviation logic"); }
 
 			static float thunk(float, float) {
@@ -204,6 +205,7 @@ namespace NLA
 			static inline constexpr REL::VariantOffset offset{ 0x377, 0x354, 0x377 };
 			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 C7 44 24 ?? 00 00 00 00 48 8D" };
 
+			static inline void pre_hook() { logger::debug("Installing spells deviation logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed spells deviation logic"); }
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
@@ -232,6 +234,7 @@ namespace NLA
 			                                         "E8 ?? ?? ?? ?? 48 8D 55 ?? 48 8D 4D ?? E8">
 				signature;
 
+			static inline void pre_hook() { logger::debug("Installing modded arrow deviation logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed modded arrow deviation logic"); }
 
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
@@ -258,6 +261,7 @@ namespace NLA
 			static inline constexpr REL::VariantOffset offset{ 0x201, 0x201, 0x201 };
 			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 8B 87 ?? ?? ?? ?? C1 E8 11 A8 01" };
 
+			static inline void pre_hook() { logger::debug("Installing Player 3rd person projectiles deviation logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed Player 3rd person projectiles deviation logic"); }
 
 			static void thunk(RE::PlayerCharacter* player, RE::Projectile* projectile, RE::NiNode* fireNode, float* angleZ, float* angleX, RE::NiPoint3* defaultOrigin, float tiltZ, float tiltX) {

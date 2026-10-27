@@ -21,6 +21,7 @@ namespace NLA::Draw
 		static inline constexpr REL::VariantOffset offset{ 0x29, 0x29, 0x29 };
 		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 8B 44 24 50" };
 
+		static inline void pre_hook() { logger::debug("Installing draw speed skill scaling..."); }
 		static inline void post_hook() { logger::info("🪝 Installed draw speed skill scaling."); }
 
 		static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
@@ -55,6 +56,7 @@ namespace NLA::Draw
 		static inline constexpr REL::VariantOffset offset{ 0x5F9, 0x5CB, 0x5F9 };
 		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 0F 28 C8 0F 28 C6 E8 ?? ?? ?? ?? F3 0F 11 83" };
 
+		static inline void pre_hook() { logger::debug("Installing scaled draw speed power check..."); }
 		static inline void post_hook() { logger::info("🪝 Installed scaled draw speed power check."); }
 
 		using Proxy = ScaledWeaponSpeed_Proxy<Projectile_Launch_GetWeaponSpeed>;
@@ -73,6 +75,7 @@ namespace NLA::Draw
 		                                         "E8 ?? ?? ?? ?? 0F 28 C8 0F 28 C6 E8 ?? ?? ?? ?? 0F 2F 05 ?? ?? ?? ??">
 			signature;
 
+		static inline void pre_hook() { logger::debug("Installing scaled draw speed ranged kill-cam power check..."); }
 		static inline void post_hook() { logger::info("🪝 Installed scaled draw speed ranged kill-cam power check."); }
 
 		using Proxy = ScaledWeaponSpeed_Proxy<Actor_ProcessVATSAttack_GetWeaponSpeed>;

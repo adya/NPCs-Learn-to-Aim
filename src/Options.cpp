@@ -380,6 +380,13 @@ namespace NLA::Options
 			ini.SetUnicode();
 			ini.LoadFile(kIniPath.string().c_str());
 
+			const auto logLevel = spdlog::level::to_string_view(spdlog::default_logger()->level());
+			if (writeDefaults || logLevel != spdlog::level::to_string_view(spdlog::level::info)) {
+				ini.SetValue("Log", "sLogLevel", std::string(logLevel.data(), logLevel.size()).c_str());
+			} else {
+				ini.Delete("Log", "sLogLevel", true);
+			}
+
 			SaveConfig(ini, "NPC", NPC, NPCConfig::defaultConfig, writeDefaults);
 			SaveConfig(ini, "Player", Player, PlayerConfig::defaultConfig, writeDefaults);
 
@@ -427,6 +434,17 @@ namespace NLA::Options
 	void InvalidateActorCache() {
 		RE::BSSpinLockGuard lock{ learnersLock };
 		learners.clear();
+	}
+
+	spdlog::level::level_enum LogLevel() {
+		CSimpleIniA ini{};
+		ini.SetUnicode();
+		if (ini.LoadFile(kIniPath.string().c_str()) < 0) {
+			return spdlog::level::info;
+		}
+
+		const auto level = spdlog::level::from_str(ini.GetValue("Log", "sLogLevel", "info"));
+		return level == spdlog::level::off ? spdlog::level::info : level;
 	}
 
 	void Load() {

@@ -31,7 +31,7 @@ namespace NLA::ChargeTime
 
 		static inline REL::Relocation<decltype(thunk)> func;
 
-		static inline void pre_hook() { logger::info("   Installing ChargeTime hook..."); }
+		static inline void pre_hook() { logger::debug("Installing ChargeTime hook..."); }
 		static inline void post_hook() { logger::info("🪝 Installed ChargeTime hook."); }
 	};
 

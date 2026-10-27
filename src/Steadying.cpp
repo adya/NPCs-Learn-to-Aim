@@ -131,6 +131,7 @@ namespace NLA::Steadying
 		static inline constexpr REL::Module::Runtime runtime{ REL::Module::Runtime::AE };
 		static inline constexpr Signature            signature{ "E8 ?? ?? ?? ?? 48 89 7C 24 48" };
 
+		static inline void pre_hook() { logger::debug("Installing animation update delta tracking..."); }
 		static inline void post_hook() { logger::info("🪝 Installed animation update delta tracking."); }
 
 		using Proxy = GraphDelta_Proxy<TESObjectREFR_UpdateAnimation_Update>;
@@ -144,6 +145,7 @@ namespace NLA::Steadying
 		static inline constexpr REL::VariantOffset offset{ 0x96, 0x96, 0x96 };
 		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 89 74 24 48" };
 
+		static inline void pre_hook() { logger::debug("Installing animation job delta tracking..."); }
 		static inline void post_hook() { logger::info("🪝 Installed animation job delta tracking."); }
 
 		using Proxy = GraphDelta_Proxy<TESObjectREFR_AnimationJob_Update>;
@@ -161,6 +163,7 @@ namespace NLA::Steadying
 		                                         "E8 ?? ?? ?? ?? 84 C0 0F 84 B4 0C 00 00 40 84 FF">
 			signature;
 
+		static inline void pre_hook() { logger::debug("Installing player animation delta tracking..."); }
 		static inline void post_hook() { logger::info("🪝 Installed player animation delta tracking."); }
 
 		using Proxy = GraphDelta_Proxy<PlayerCharacter_UpdateAnimation_Update>;
@@ -174,6 +177,7 @@ namespace NLA::Steadying
 		static inline constexpr REL::VariantOffset offset{ 0x29, 0x29, 0x29 };
 		static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 48 8B 44 24 50" };
 
+		static inline void pre_hook() { logger::debug("Installing bow/crossbow hold time tracking..."); }
 		static inline void post_hook() { logger::info("🪝 Installed bow/crossbow hold time tracking."); }
 
 		static float thunk(RE::ActorValueOwner* owner, RE::TESObjectWEAP* weapon, bool leftHand) {
@@ -208,6 +212,7 @@ namespace NLA::Steadying
 
 		static inline REL::Relocation<decltype(thunk)> func;
 
+		static inline void pre_hook() { logger::debug("Installing spell hold time tracking..."); }
 		static inline void post_hook() { logger::info("🪝 Installed spell hold time tracking."); }
 	};
 
