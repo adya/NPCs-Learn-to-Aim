@@ -3,42 +3,52 @@
 
 namespace NLA::Fatigue
 {
-	float Threshold(const Options::Config::Fatigue& fatigue, RE::Actor* actor, WeaponType type) {
+	float Threshold(const Options::Config::Fatigue& fatigue, RE::Actor* actor, const Options::AttackKind& kind) {
 		if (!actor)
 			return 0.0f;
 
 		constexpr float baseline = 100.0f;
 		constexpr float exponent = 0.7f;
 
-		const bool  usesStamina = Weapon::IsBowOrCrossbow(type);
-		const auto  attribute = usesStamina ? RE::ActorValue::kStamina : RE::ActorValue::kMagicka;
+		const auto  attribute = !kind.magic ? RE::ActorValue::kStamina : RE::ActorValue::kMagicka;
 		const float ratio = std::max(actor->GetActorValueMax(attribute), 0.0f) / baseline;
 
-		return std::max(0.0f, fatigue.minThreshold + (fatigue.maxThreshold - fatigue.minThreshold) * std::pow(ratio, exponent));
+		return std::max(0.0f, fatigue.threshold.from + (fatigue.threshold.to - fatigue.threshold.from) * std::pow(ratio, exponent));
 	}
 
 	float Progress(float seconds, float halfDuration) {
 		return 1.0f - std::exp2(-seconds / halfDuration);
 	}
 
-	ConcentrationState Concentration(RE::Actor* attacker, WeaponType type, float castSeconds) {
+	ConcentrationState Concentration(RE::Actor* attacker, const Options::AttackKind& kind, float castSeconds) {
 		ConcentrationState state{ .castSeconds = castSeconds };
-		if (type != kSpell && type != kStaff)
+		if (!kind.concentration)
 			return state;
 
-		const auto& fatigue = Options::Config::Fatigue::For(Options::For(attacker), type, true);
-		if (!fatigue.enabled)
-			return state;
+		const auto& options = Options::For(attacker);
+		const auto& steadying = options.For(kind).steadying;
+		const auto& fatigue = options.For(kind).fatigue;
 
-		state.enabled = true;
-		state.threshold = Threshold(fatigue, attacker, type);
-		state.fatigueSeconds = std::max(0.0f, castSeconds - state.threshold);
-		state.progress = Progress(state.fatigueSeconds, fatigue.halfDuration);
-		state.scale = 1.0f + fatigue.maxSpreadMultiplier * state.progress;
+		if (fatigue.enabled) {
+			state.enabled = true;
+			state.threshold = Threshold(fatigue, attacker, kind);
+			state.fatigueSeconds = std::max(0.0f, castSeconds - state.threshold);
+			state.progress = Progress(state.fatigueSeconds, fatigue.halfDuration);
+		}
+
+		if (steadying.enabled && castSeconds > 0.0f) {
+			const float steadyingSeconds = state.enabled ? std::min(castSeconds, state.threshold) : castSeconds;
+			state.steadied = 1.0f - steadying.maxSpreadMultiplier * Progress(steadyingSeconds, steadying.halfDuration);
+		}
+
+		state.scale = state.steadied;
+		if (state.enabled) {
+			state.scale += (1.0f + fatigue.maxSpreadMultiplier - state.steadied) * state.progress;
+		}
 		return state;
 	}
 
-	float ConcentrationScale(RE::Actor* attacker, WeaponType type, float castSeconds) {
-		return Concentration(attacker, type, castSeconds).scale;
+	float ConcentrationScale(RE::Actor* attacker, const Options::AttackKind& kind, float castSeconds) {
+		return Concentration(attacker, kind, castSeconds).scale;
 	}
 }

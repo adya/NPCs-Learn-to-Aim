@@ -57,7 +57,7 @@ namespace NLA
 		}
 
 		float HeadshotChance(RE::Actor* attacker, const SkillUsage& headshotUsage) {
-			return headshotUsage ? headshotUsage.LerpSkillFactor(attacker) : 0.0f;
+			return headshotUsage ? headshotUsage.SkillFactor(attacker) : 0.0f;
 		}
 
 		bool IsGoingForHeadshot(RE::Actor* attacker) {
@@ -102,9 +102,7 @@ namespace NLA
 
 					accuracy = std::visit([&](auto* form) { return SkillUsage(form, attacker, kAccuracy); }, *source);
 
-					if (auto* weapon = std::get_if<RE::TESObjectWEAP*>(&*source)) {
-						headshot = DecideHeadshot(attacker, target, SkillUsage(*weapon, attacker, kHeadshot));
-					}
+					headshot = std::visit([&](auto* form) { return DecideHeadshot(attacker, target, SkillUsage(form, attacker, kHeadshot)); }, *source);
 				}
 
 				using UpdateFunc = void (*)(RE::CombatProjectileAimController*, RE::Actor*);

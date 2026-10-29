@@ -4,17 +4,12 @@
 
 namespace NLA
 {
-	struct SkillUsage
+	struct SkillUsage : Options::SkillBasedValue
 	{
-		struct Range
-		{
-			float min{ 1.0f };
-			float max{ 1.0f };
-		};
+		RE::ActorValue skill{ RE::ActorValue::kNone };
+		const Options::AttackKind* kind{ nullptr };
 
-		RE::ActorValue             skill{ RE::ActorValue::kNone };
-		std::variant<float, Range> multiplier{ 0.0f };
-		WeaponType                 weaponType{ kNone };
+		Options::Bounds bounds{};
 
 		SkillUsage() = default;
 
@@ -28,11 +23,7 @@ namespace NLA
 			return skill != RE::ActorValue::kNone;
 		}
 
-		/// A multiplier that controls how much current skill affects accuracy and precision.
 		float SkillFactor(RE::Actor* actor) const;
-
-		/// An interpolated multiplier for a skill in 0-100 range, controlling the growth of the factor in min-max range.
-		float LerpSkillFactor(RE::Actor* actor) const;
 
 		float Skill(RE::Actor* actor) const {
 			if (!actor || skill == RE::ActorValue::kNone)
@@ -41,8 +32,7 @@ namespace NLA
 		}
 
 		float EffectiveSkill(RE::Actor* actor) const {
-			const float* sensitivity = std::get_if<float>(&multiplier);
-			return Skill(actor) * (sensitivity ? *sensitivity : 1.0f);
+			return Skill(actor) * skillMultiplier;
 		}
 
 		/// Maximum angular deviation (in radians) for the shot, based on the current skill.

@@ -5,13 +5,15 @@ namespace NLA
 {
 	namespace
 	{
+		RE::ActorValue SkillFor(const Options::AttackKind& kind, const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context);
+
 		/// Lowers the multiplier by how blind the attacker is, if blindness affects aiming.
 		float WithBlindness(float multiplier, RE::Actor* attacker, const Options::Config& options, SkillUsageContext context) {
 			if (!options.blindnessAffectsAiming)
 				return multiplier;
 
 			const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
-			return std::max(0.0f, multiplier - (1 - options.MultiplierFor(context).blindness) * blindness);
+			return std::max(0.0f, multiplier - (1 - options.BlindnessFor(context)) * blindness);
 		}
 	}
 
@@ -19,49 +21,44 @@ namespace NLA
 		if (!weapon || !attacker || !Options::ShouldLearn(attacker))
 			return;
 
-		const auto type = Weapon::TypeOf(weapon);
-		if (!type)
+		const auto* weaponKind = Weapon::KindOf(weapon);
+		if (!weaponKind)
 			return;
 
 		const auto& options = Options::For(attacker);
 
-		weaponType = *type;
-		const bool isCrossbow = weaponType == kCrossbow;
+		kind = weaponKind;
 
-		const auto& kind = Options::AttackKind::For(weaponType);
+		const auto& attack = options.For(*kind);
+
+		const auto use = [&](const Options::Bounds& scale, const Options::SkillBasedValue& value) {
+			skill = SkillFor(*kind, nullptr, attacker, context);
+			bounds = scale;
+			static_cast<Options::SkillBasedValue&>(*this) = value;
+		};
 
 		switch (context) {
 		case kChargeTime:
-			{
-				const auto& drawSpeed = options.*kind.speed;
-				if (drawSpeed.enabled) {
-					skill = RE::ActorValue::kArchery;
-					multiplier = Range{ drawSpeed.minMultiplier, drawSpeed.maxMultiplier };
-				}
-				break;
+			if (attack.speed.enabled) {
+				use(attack.speed.bounds, attack.speed);
 			}
-		case kHeadshot:
-			{
-				// Headshots are an NPC-only feature.
-				if (attacker->IsPlayerRef())
-					break;
+			break;
 
-				const auto& headshots = Options::NPC.headshots;
-				if (isCrossbow ? headshots.crossbow : headshots.bow) {
-					skill = RE::ActorValue::kArchery;
-					multiplier = isCrossbow ? Range{ headshots.crossbowMinChance, headshots.crossbowMaxChance } : Range{ headshots.bowMinChance, headshots.bowMaxChance };
-				}
-				break;
+		case kHeadshot:
+			// Headshots are an NPC-only feature.
+			if (!attacker->IsPlayerRef() && attack.headshot.enabled) {
+				use(attack.headshot.bounds, attack.headshot);
 			}
+			break;
+
 		case kAccuracy:
 		case kPrecision:
-			{
-				if (options.*kind.aiming) {
-					skill = RE::ActorValue::kArchery;
-					multiplier = WithBlindness(options.MultiplierFor(context).*kind.multiplier, attacker, options, context);
-				}
-				break;
+			if (attack.aiming) {
+				const auto& aim = attack.AimFor(context);
+				use(aim.spreadMultiplier, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
 			}
+			break;
+
 		default:
 			break;
 		}
@@ -77,13 +74,14 @@ namespace NLA
 			});
 		}
 
+		/// `spell` is null for weapons.
 		RE::ActorValue SkillFor(const Options::AttackKind& kind, const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context) {
-			const auto& sources = Options::For(caster).*kind.skills;
+			const auto& sources = (Options::For(caster).*kind.config).skills;
 
 			Options::SkillSource source;
 			switch (context) {
 			case kChargeTime:
-				source = sources.chargeSpeed;
+				source = sources.speed;
 				break;
 			case kRange:
 				source = sources.range;
@@ -96,9 +94,15 @@ namespace NLA
 			switch (source) {
 			case Options::SkillSource::kEnchanting:
 				return RE::ActorValue::kEnchanting;
+			case Options::SkillSource::kArchery:
+				return RE::ActorValue::kArchery;
 			case Options::SkillSource::kHighest:
 				return HighestMagicSkill(caster);
 			default:
+				// A weapon has no magic school.
+				if (!spell)
+					return RE::ActorValue::kArchery;
+
 				if (auto effect = spell->GetCostliestEffectItem(); effect) {
 					if (auto base = effect->baseEffect; base) {
 						if (auto skill = base->GetMagickSkill(); skill != RE::ActorValue::kNone) {
@@ -116,43 +120,52 @@ namespace NLA
 		if (!spell || !attacker || !Options::ShouldLearn(attacker))
 			return;
 
-		const auto* kind = Options::AttackKind::For(spell);
-		if (!kind)
+		const auto* spellKind = Options::AttackKind::For(spell);
+		if (!spellKind)
 			return;
 
 		const auto castingType = spell->GetCastingType();
-		if (kind->type != kScroll && castingType != RE::MagicSystem::CastingType::kFireAndForget && castingType != RE::MagicSystem::CastingType::kConcentration)
+		if (spellKind != &Options::AttackKind::kScroll && castingType != RE::MagicSystem::CastingType::kFireAndForget && castingType != RE::MagicSystem::CastingType::kConcentration)
 			return;
 
 		const auto& options = Options::For(attacker);
 		const bool  isAimed = spell->GetDelivery() == RE::MagicSystem::Delivery::kAimed;
 
-		weaponType = kind->type;
+		kind = spellKind;
 
-		const auto use = [&](std::variant<float, Range> value) {
+		const auto& attack = options.For(*kind);
+
+		const auto use = [&](const Options::Bounds& scale, const Options::SkillBasedValue& value) {
 			skill = SkillFor(*kind, spell, attacker, context);
-			multiplier = value;
+			bounds = scale;
+			static_cast<Options::SkillBasedValue&>(*this) = value;
 		};
 
 		switch (context) {
 		case kChargeTime:
-			if (const auto& speed = options.*kind->speed; speed.enabled) {
-				use(Range{ speed.minMultiplier, speed.maxMultiplier });
+			if (attack.speed.enabled) {
+				use(attack.speed.bounds, attack.speed);
 			}
 			break;
 
 		case kRange:
-			if (isAimed && kind->range) {
-				if (const auto& range = options.*kind->range; range.enabled) {
-					use(Range{ range.minMultiplier, range.maxMultiplier });
-				}
+			if (isAimed && kind->range && attack.range.enabled) {
+				use(attack.range.bounds, attack.range);
+			}
+			break;
+
+		case kHeadshot:
+			// Headshots are an NPC-only feature.
+			if (isAimed && !attacker->IsPlayerRef() && attack.headshot.enabled) {
+				use(attack.headshot.bounds, attack.headshot);
 			}
 			break;
 
 		case kAccuracy:
 		case kPrecision:
-			if (isAimed && options.*kind->aiming) {
-				use(WithBlindness(options.MultiplierFor(context).*kind->multiplier, attacker, options, context));
+			if (isAimed && attack.aiming) {
+				const auto& aim = attack.AimFor(context);
+				use(aim.spreadMultiplier, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
 			}
 			break;
 
@@ -172,23 +185,12 @@ namespace NLA
 	}
 
 	float SkillUsage::SkillFactor(RE::Actor* actor) const {
-		if (!actor || this->skill == RE::ActorValue::kNone)
+		if (!actor || skill == RE::ActorValue::kNone)
 			return 1.0f;
+		if (bounds.from == bounds.to)
+			return bounds.from;
 
-		static const float worst = std::exp(0.25f);
-		static const float best = std::exp(-2.25f);
-
-		return SkillProgress(worst, best, EffectiveSkill(actor));
-	}
-
-	float SkillUsage::LerpSkillFactor(RE::Actor* actor) const {
-		const Range* range = std::get_if<Range>(&multiplier);
-		if (!range)
-			return 1.0f;
-		if (range->max == range->min)
-			return range->min;
-
-		return SkillProgress(range->min, range->max, Skill(actor));
+		return SkillProgress(bounds.from, bounds.to, EffectiveSkill(actor));
 	}
 
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {

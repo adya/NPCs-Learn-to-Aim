@@ -36,13 +36,14 @@ namespace NLA
 			/// Final spread scale, combining steadying and fatigue.
 			float scale{ 1.0f };
 
-			static SteadyingModifier For(RE::Actor* attacker, WeaponType type, float holdSeconds) {
+			static SteadyingModifier For(RE::Actor* attacker, const Options::AttackKind& kind, float holdSeconds) {
 				const auto& options = Options::For(attacker);
-				return { attacker, holdSeconds, type, Options::Config::Steadying::For(options, type), Options::Config::Fatigue::For(options, type) };
+				const auto& attack = options.For(kind);
+				return { attacker, holdSeconds, kind, attack.steadying, attack.fatigue };
 			}
 
-			SteadyingModifier(RE::Actor* attacker, float holdSeconds, WeaponType type, const Options::Config::Spread& steadying, const Options::Config::Fatigue& fatigue) :
-				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigue.enabled ? Fatigue::Threshold(fatigue, attacker, type) : 0.0f) {
+			SteadyingModifier(RE::Actor* attacker, float holdSeconds, const Options::AttackKind& kind, const Options::Config::Spread& steadying, const Options::Config::Fatigue& fatigue) :
+				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigue.enabled ? Fatigue::Threshold(fatigue, attacker, kind) : 0.0f) {
 				if (holdSeconds <= 0.0f)
 					return;
 
@@ -86,7 +87,7 @@ namespace NLA
 
 				const float holdSeconds = Steadying::SpellDuration(attacker, source);
 				if (modifier.precision) {
-					modifier.steadying = SteadyingModifier::For(attacker, modifier.precision.weaponType, holdSeconds);
+					modifier.steadying = SteadyingModifier::For(attacker, *modifier.precision.kind, holdSeconds);
 				}
 				return modifier;
 			}
@@ -94,8 +95,8 @@ namespace NLA
 			static ShotModifier ForWeapon(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
 				ShotModifier modifier{ attacker, weapon, SkillUsage(weapon, attacker, kPrecision) };
 
-				if (auto type = Weapon::TypeOf(weapon); type) {
-					modifier.steadying = SteadyingModifier::For(attacker, *type, Steadying::FullDrawDuration(attacker));
+				if (auto kind = Weapon::KindOf(weapon); kind) {
+					modifier.steadying = SteadyingModifier::For(attacker, *kind, Steadying::FullDrawDuration(attacker));
 				}
 				return modifier;
 			}

@@ -87,10 +87,10 @@ namespace NLA::ConcentrationSpells
 		}
 
 		/// Fatigue from casting the concentration spell continuously for longer than the caster's fatigue threshold.
-		Fatigue::ConcentrationState FatigueState(RE::Projectile* projectile, RE::Actor* attacker, WeaponType type) {
+		Fatigue::ConcentrationState FatigueState(RE::Projectile* projectile, RE::Actor* attacker, const Options::AttackKind& kind) {
 			auto& runtimeData = projectile->GetProjectileRuntimeData();
 
-			return Fatigue::Concentration(attacker, type, Steadying::SpellDuration(attacker, runtimeData.castingSource));
+			return Fatigue::Concentration(attacker, kind, Steadying::SpellDuration(attacker, runtimeData.castingSource));
 		}
 
 #ifndef NDEBUG
@@ -103,6 +103,7 @@ namespace NLA::ConcentrationSpells
 			logger::info("\tSkill: {:.1f} (base: {:.1f}), factor: {:.4f}", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker), skillUsage.SkillFactor(attacker));
 			logger::info("\tCharge speed: x{:.3f}", ChargeTime::SpeedMultiplier(attacker, spell));
 			logger::info("\tConcentrating for: {:.3f}s", fatigue.castSeconds);
+			logger::info("\tSteadying: x{:.3f}", fatigue.steadied);
 
 			if (fatigue.enabled) {
 				logger::info("\tFatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", fatigue.threshold, fatigue.fatigueSeconds, fatigue.progress * 100.0f);
@@ -147,7 +148,7 @@ namespace NLA::ConcentrationSpells
 				return;
 
 			if (auto base = projectile->GetProjectileBase(); base) {
-				float rangeMult = skillUsage.LerpSkillFactor(attacker);
+				float rangeMult = skillUsage.SkillFactor(attacker);
 
 				runtimeData.range = base->data.range * rangeMult;
 				//logger::debug("Scaling range from {} to {} (multiplier: {})", base->data.range, runtimeData.range, rangeMult);
@@ -165,7 +166,7 @@ namespace NLA::ConcentrationSpells
 					if (auto attacker = GetAttacker(projectile); attacker) {
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
-							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, skillUsage, FatigueState(projectile, attacker, skillUsage.weaponType));
+							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, skillUsage, FatigueState(projectile, attacker, *skillUsage.kind));
 							localContext = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);

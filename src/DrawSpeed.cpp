@@ -7,7 +7,7 @@ namespace NLA::Draw
 {
 	float SpeedMultiplier(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
 		if (auto skillUsage = SkillUsage(weapon, attacker, kChargeTime); skillUsage) {
-			return skillUsage.LerpSkillFactor(attacker);
+			return skillUsage.SkillFactor(attacker);
 		}
 		return 1.0f;
 	}

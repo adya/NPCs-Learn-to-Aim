@@ -28,27 +28,22 @@ struct std::hash<NLA::TrackingKey>
 
 namespace NLA::Weapon
 {
-	inline std::optional<WeaponType> ToType(RE::WEAPON_TYPE type) {
-		switch (type) {
-		case RE::WEAPON_TYPE::kBow:
-			return kBow;
-		case RE::WEAPON_TYPE::kCrossbow:
-			return kCrossbow;
-		default:
-			return std::nullopt;
-		}
-	}
+	inline const Options::AttackKind* KindOf(const RE::TESObjectWEAP* weapon) {
+		if (!weapon)
+			return nullptr;
 
-	inline std::optional<WeaponType> TypeOf(const RE::TESObjectWEAP* weapon) {
-		return weapon ? ToType(weapon->GetWeaponType()) : std::nullopt;
+		switch (weapon->GetWeaponType()) {
+		case RE::WEAPON_TYPE::kBow:
+			return &Options::AttackKind::kBow;
+		case RE::WEAPON_TYPE::kCrossbow:
+			return &Options::AttackKind::kCrossbow;
+		default:
+			return nullptr;
+		}
 	}
 
 	inline bool IsBowOrCrossbow(RE::WEAPON_TYPE type) {
 		return type == RE::WEAPON_TYPE::kBow || type == RE::WEAPON_TYPE::kCrossbow;
-	}
-
-	inline bool IsBowOrCrossbow(WeaponType type) {
-		return type == kBow || type == kCrossbow;
 	}
 
 	inline bool IsFullyDrawn(RE::ATTACK_STATE_ENUM state) {

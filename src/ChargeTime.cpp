@@ -7,7 +7,7 @@ namespace NLA::ChargeTime
 {
 	float SpeedMultiplier(RE::Actor* actor, const RE::MagicItem* spell) {
 		if (auto skillUsage = SkillUsage(spell, actor, kChargeTime); skillUsage) {
-			return skillUsage.LerpSkillFactor(actor);
+			return skillUsage.SkillFactor(actor);
 		}
 		return 1.0f;
 	}
