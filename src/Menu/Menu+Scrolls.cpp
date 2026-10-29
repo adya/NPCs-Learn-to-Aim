@@ -4,31 +4,31 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr AttackKind<SpeedRows, SpreadRows, FatigueRows> kScrolls{
+		constexpr AttackKind<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kScrolls{
 			{
 				.id = "Scrolls",
 				.label = kScaleAimLabel,
 				.tooltip = "When enabled, corresponding Magic skill will affect aiming with scrolls.",
-				.aiming = &Config::scrollAiming,
-				.multiplier = &Config::SkillMultiplier::scroll,
+				.kind = Options::AttackKind::kScroll,
 				.accuracyTooltip = "How much the skill contributes to Accuracy with scrolls. The higher this multiplier is the easier it is to aim.",
 				.precisionTooltip = "How much the skill contributes to Precision with scrolls. The higher this multiplier is the easier it is to hit the target.",
 				.resetLabel = "Reset Scrolls to Default",
-				.aimSkill = AimingSkill(&Config::scrollSkills),
 			},
+			HeadshotRows{
+				"Scroll Headshots",
+				"When enabled, sufficiently skilled mages have a chance to aim scrolls at the head instead of the chest.",
+				"mage",
+				"aiming skill" },
 			SpeedRows{
-				&Config::scrollChargeSpeed,
 				kScaleChargeSpeedLabel,
 				"When enabled, corresponding skill also affects how fast scrolls charge/cast. (the higher the skill the faster the cast)",
-				kChargeSpeedGroup,
-				ChargeSpeedSkill(&Config::scrollSkills) },
+				kChargeSpeedGroup },
 			SpreadRows{
-				&Config::scrollSteadying,
 				kSteadyingLabel,
 				"When enabled, holding a fully charged scroll before releasing it tightens its spread. The longer it's held, the steadier the shot, with diminishing returns.",
 				"The most spread that holding can remove, approached the longer the scroll is held. 50% means the spread can at best be halved.",
 				"Duration of holding a fully charged scroll to get roughly half of the max spread reduction. Lower means the aim steadies faster. 1 sec with 50% reduction means that in 1 second spread will be reduced by 25%." },
-			CastFatigue(&Config::scrollFatigue, "When enabled, holding a scroll charged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the caster's max Magicka."),
+			CastFatigue("When enabled, holding a scroll charged for too long tires the caster's arm, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the caster's max Magicka."),
 		};
 	}
 

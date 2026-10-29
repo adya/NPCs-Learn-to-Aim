@@ -12,18 +12,19 @@ namespace NLA::Menu
 
 		void RenderBlindnessRows(Config& cfg, const Config& defaults) {
 			PushID("Blindness");
+			HeaderRow("Accuracy", "Precision");
 			TableNextRow();
 			ToggleColumn("Blindness Affects Aim", cfg.blindnessAffectsAiming, "When enabled, being blinded further affects aiming.");
 			{
 				DisabledIf off{ !cfg.blindnessAffectsAiming };
-				SliderColumn("##Accuracy", cfg.accuracyMultipliers.blindness, "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.", Options::Limits::kBlindnessMultiplier);
-				SliderColumn("##Precision", cfg.precisionMultipliers.blindness, "How much the blindness affects general precision. The higher this multiplier is the easier it is to hit the target.", Options::Limits::kBlindnessMultiplier);
+				SliderColumn("##Accuracy", cfg.accuracyBlindness, "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.", Options::Limits::kBlindnessMultiplier);
+				SliderColumn("##Precision", cfg.precisionBlindness, "How much the blindness affects general precision. The higher this multiplier is the easier it is to hit the target.", Options::Limits::kBlindnessMultiplier);
 			}
 
 			if (ResetButton("Reset Blindness to Default")) {
 				cfg.blindnessAffectsAiming = defaults.blindnessAffectsAiming;
-				cfg.accuracyMultipliers.blindness = defaults.accuracyMultipliers.blindness;
-				cfg.precisionMultipliers.blindness = defaults.precisionMultipliers.blindness;
+				cfg.accuracyBlindness = defaults.accuracyBlindness;
+				cfg.precisionBlindness = defaults.precisionBlindness;
 				Options::Save();
 			}
 			EmptyRow();
@@ -110,7 +111,7 @@ namespace NLA::Menu
 		if (!ctx.isNPC) {
 			return;
 		}
-		RenderTable("Table", true, [&] {
+		RenderTable("Table", [&] {
 			RenderBlindnessRows(ctx.cfg, ctx.defaults);
 		});
 		Spacing();

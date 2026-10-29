@@ -7,166 +7,135 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		void RenderSkillSource(const PageContext& ctx, const SkillSourceRef& ref, const char* label, const char* what) {
-			if (!ref.sources) {
+		constexpr const char* kSkillMultiplierHeader = "Skill Mult";
+
+		void RenderSkillSource(const KindContext& kind, Options::SkillSource Config::SkillSources::*field, const char* label, const char* what) {
+			if (!kind.info.magic) {
 				return;
 			}
 			const auto tooltip = fmt::format("The skill that affects {}. Spell's Magic Skill uses the skill of the spell's Magic school, Highest Magic Skill uses the highest of the Magic skills regardless of the spell, Enchanting uses the Enchanting skill.", what);
-			SkillSourceRow(label, (ctx.cfg.*ref.sources).*ref.field, tooltip.c_str());
+			SkillSourceRow(label, kind.cfg.skills.*field, tooltip.c_str());
 		}
 
-		void ResetSkillSource(const PageContext& ctx, const SkillSourceRef& ref) {
-			if (ref.sources) {
-				(ctx.cfg.*ref.sources).*ref.field = (ctx.defaults.*ref.sources).*ref.field;
-			}
-		}
-
-		template <typename T>
-		void ResetMember(const PageContext& ctx, T Config::*member) {
-			ctx.cfg.*member = ctx.defaults.*member;
+		/// `what` is the thing the skill drives, e.g. "draw speed".
+		std::string SkillMultiplierTooltip(std::string_view what) {
+			return fmt::format("Multiplies the skill before it affects {}. Above 1.0 the skill counts for more, below 1.0 for less.", what);
 		}
 	}
 
-	void HeadshotRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
-		if (!ctx.isNPC || !sections.Section(nullptr)) {
+	void HeadshotRows::Render(const KindContext& kind, TableSections& sections) const {
+		if (!kind.page.isNPC || !sections.Section(nullptr)) {
 			return;
 		}
-		auto& headshots = Options::NPC.headshots;
-		auto& on = headshots.*enabled;
+		auto& headshot = kind.cfg.headshot;
 
-		HeaderRow("Min Chance", "Max Chance");
+		HeaderRow(kSkillMultiplierHeader, "Min Chance", "Max Chance");
 		TableNextRow();
-		ToggleColumn(label, on, tooltip);
-		DisabledIf off{ !on };
-		PercentSliderColumn("##MinHeadshotChance", headshots.*minChance, fmt::format("Chance for a skilled {} to go for a headshot at 0 effective Archery skill.", shooter).c_str(), Options::Limits::kHeadshotChance);
-		PercentSliderColumn("##MaxHeadshotChance", headshots.*maxChance, fmt::format("Chance for a skilled {} to go for a headshot at 100 effective Archery skill.", shooter).c_str(), Options::Limits::kHeadshotChance);
+		ToggleColumn(label, headshot.enabled, tooltip);
+		DisabledIf off{ !headshot.enabled };
+		SliderColumn("##HeadshotSkillMultiplier", headshot.skillMultiplier, SkillMultiplierTooltip("the headshot chance").c_str());
+		PercentSliderColumn("##MinHeadshotChance", headshot.bounds.from, fmt::format("Chance for a skilled {} to go for a headshot at 0 effective {}.", shooter, skill).c_str(), Options::Limits::kHeadshotChance);
+		PercentSliderColumn("##MaxHeadshotChance", headshot.bounds.to, fmt::format("Chance for a skilled {} to go for a headshot at 100 effective {}.", shooter, skill).c_str(), Options::Limits::kHeadshotChance);
 	}
 
-	void HeadshotRows::Reset(const PageContext& ctx) const {
-		if (!ctx.isNPC) {
-			return;
-		}
-		auto&       headshots = Options::NPC.headshots;
-		const auto& defaults = Options::NPCConfig::defaultConfig.headshots;
-		headshots.*enabled = defaults.*enabled;
-		headshots.*minChance = defaults.*minChance;
-		headshots.*maxChance = defaults.*maxChance;
-	}
-
-	void RangeRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
+	void RangeRows::Render(const KindContext& kind, TableSections& sections) const {
 		if (!sections.Section(group)) {
 			return;
 		}
-		auto& range = ctx.cfg.*options;
+		auto& range = kind.cfg.range;
 
-		HeaderRow("Min Range", "Max Range");
+		HeaderRow(kSkillMultiplierHeader, "Min Range", "Max Range");
 		TableNextRow();
 		ToggleColumn("Scale Range With Skill", range.enabled, tooltip);
 		DisabledIf off{ !range.enabled };
-		SliderColumn("##MinRange", range.minMultiplier, minTooltip, Options::Limits::kRangeMultiplier);
-		SliderColumn("##MaxRange", range.maxMultiplier, maxTooltip, Options::Limits::kRangeMultiplier);
-		RenderSkillSource(ctx, skill, "Range Skill", "how far the spell reaches");
+		SliderColumn("##RangeSkillMultiplier", range.skillMultiplier, SkillMultiplierTooltip("how far the spell reaches").c_str());
+		SliderColumn("##MinRange", range.bounds.from, minTooltip, Options::Limits::kRangeMultiplier);
+		SliderColumn("##MaxRange", range.bounds.to, maxTooltip, Options::Limits::kRangeMultiplier);
+		RenderSkillSource(kind, &Config::SkillSources::range, "Range Skill", "how far the spell reaches");
 	}
 
-	void RangeRows::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, options);
-		ResetSkillSource(ctx, skill);
-	}
-
-	void SpeedRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
+	void SpeedRows::Render(const KindContext& kind, TableSections& sections) const {
 		if (!sections.Section(group)) {
 			return;
 		}
-		auto& speed = ctx.cfg.*options;
+		auto& speed = kind.cfg.speed;
 
-		HeaderRow("Min Speed", "Max Speed");
+		HeaderRow(kSkillMultiplierHeader, "Min Speed", "Max Speed");
 		TableNextRow();
 		ToggleColumn(label, speed.enabled, tooltip);
 		DisabledIf off{ !speed.enabled };
-		SliderColumn("##MinSpeed", speed.minMultiplier, "Speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
-		SliderColumn("##MaxSpeed", speed.maxMultiplier, "Speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
-		RenderSkillSource(ctx, skill, "Speed Skill", "how fast the spell charges/casts");
+		SliderColumn("##SpeedSkillMultiplier", speed.skillMultiplier, SkillMultiplierTooltip("the speed").c_str());
+		SliderColumn("##MinSpeed", speed.bounds.from, "Speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
+		SliderColumn("##MaxSpeed", speed.bounds.to, "Speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
+		RenderSkillSource(kind, &Config::SkillSources::speed, "Speed Skill", "how fast the spell charges/casts");
 	}
 
-	void SpeedRows::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, options);
-		ResetSkillSource(ctx, skill);
-	}
-
-	void SpreadRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
+	void SpreadRows::Render(const KindContext& kind, TableSections& sections) const {
 		if (!sections.Section("Steadying")) {
 			return;
 		}
-		auto& spread = ctx.cfg.*options;
+		auto& spread = kind.cfg.steadying;
 
-		HeaderRow("Max Reduction", "Half Duration");
+		HeaderRow(nullptr, "Max Reduction", "Half Duration");
 		TableNextRow();
 		ToggleColumn(label, spread.enabled, tooltip);
 		DisabledIf off{ !spread.enabled };
+		EmptyColumn();
 		PercentSliderColumn("##MaxReduction", spread.maxSpreadMultiplier, maxReductionTooltip, Options::Limits::kSteadyingReduction);
 		SecondsSliderColumn("##SpreadHalfDuration", spread.halfDuration, halfDurationTooltip, Options::Limits::kHalfDuration);
 	}
 
-	void SpreadRows::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, options);
-	}
-
-	void FatigueRows::Render(const PageContext& ctx, bool, TableSections& sections) const {
+	void FatigueRows::Render(const KindContext& kind, TableSections& sections) const {
 		if (!sections.Section("Fatigue")) {
 			return;
 		}
-		auto& fatigue = ctx.cfg.*options;
+		auto& fatigue = kind.cfg.fatigue;
 
-		HeaderRow("Min Threshold", "Max Threshold");
+		HeaderRow(nullptr, "Min Threshold", "Max Threshold");
 		TableNextRow();
 		ToggleColumn(label, fatigue.enabled, tooltip);
 		{
 			DisabledIf off{ !fatigue.enabled };
-			SecondsSliderColumn("##MinThreshold", fatigue.minThreshold, minThresholdTooltip, Options::Limits::kFatigueThreshold);
-			SecondsSliderColumn("##MaxThreshold", fatigue.maxThreshold, maxThresholdTooltip, Options::Limits::kFatigueThreshold);
+			EmptyColumn();
+			SecondsSliderColumn("##MinThreshold", fatigue.threshold.from, minThresholdTooltip, Options::Limits::kFatigueThreshold);
+			SecondsSliderColumn("##MaxThreshold", fatigue.threshold.to, maxThresholdTooltip, Options::Limits::kFatigueThreshold);
 		}
 
-		HeaderRow("Max Fatigue", "Half Duration");
+		HeaderRow(nullptr, "Max Fatigue", "Half Duration");
 		TableNextRow();
 		TableNextColumn();
 		DisabledIf off{ !fatigue.enabled };
+		EmptyColumn();
 		PercentSliderColumn("##MaxPenalty", fatigue.maxSpreadMultiplier, maxPenaltyTooltip, Options::Limits::kFatiguePenalty);
 		SecondsSliderColumn("##FatigueHalfDuration", fatigue.halfDuration, "Seconds past the fatigue threshold to regrow roughly half of the max fatigue penalty. Lower duration means the aim shakes apart faster once fatigue sets in.", Options::Limits::kHalfDuration);
 	}
 
-	void FatigueRows::Reset(const PageContext& ctx) const {
-		ResetMember(ctx, options);
-	}
-
-	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts) {
-		auto& cfg = ctx.cfg;
-		auto& aiming = cfg.*kind.aiming;
+	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(const KindContext&, TableSections&)>& renderParts) {
+		const auto& info = kind.kind;
+		auto&       attack = ctx.cfg.*info.config;
+		KindContext context{ ctx, attack, info };
 
 		PushID(kind.id);
 		{
-			TableSections sections{ ctx.isNPC };
+			TableSections sections;
 			if (sections.Section(separator)) {
+				HeaderRow(kSkillMultiplierHeader);
 				TableNextRow();
-				ToggleColumn(kind.label, aiming, kind.tooltip);
-				DisabledIf off{ !aiming };
+				ToggleColumn(kind.label, attack.aiming, kind.tooltip);
+				DisabledIf off{ !attack.aiming };
+				// The Player aims by hand, so accuracy only applies to NPCs.
 				if (ctx.isNPC) {
-					SliderColumn("##Accuracy", cfg.accuracyMultipliers.*kind.multiplier, kind.accuracyTooltip);
-				} else {
-					NotApplicableColumn();
+					SkillMultiplierRow("Accuracy", "##Accuracy", attack.accuracy.skillMultiplier, kind.accuracyTooltip);
 				}
-				SliderColumn("##Precision", cfg.precisionMultipliers.*kind.multiplier, kind.precisionTooltip);
-				RenderSkillSource(ctx, kind.aimSkill, "Aiming Skill", "aiming");
+				SkillMultiplierRow("Precision", "##Precision", attack.precision.skillMultiplier, kind.precisionTooltip);
+				RenderSkillSource(context, &Config::SkillSources::aiming, "Aiming Skill", "aiming");
 			}
 
-			renderParts(aiming, sections);
+			renderParts(context, sections);
 
 			// The last section is still open, so the button lands in its first column.
 			if (sections.Section(nullptr) && ResetButton(kind.resetLabel)) {
-				ResetMember(ctx, kind.aiming);
-				cfg.accuracyMultipliers.*kind.multiplier = ctx.defaults.accuracyMultipliers.*kind.multiplier;
-				cfg.precisionMultipliers.*kind.multiplier = ctx.defaults.precisionMultipliers.*kind.multiplier;
-				ResetSkillSource(ctx, kind.aimSkill);
-				resetParts();
+				attack = ctx.defaults.*info.config;
 				Options::Save();
 			}
 			if (sections.Section(nullptr)) {

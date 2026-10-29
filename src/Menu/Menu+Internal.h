@@ -5,7 +5,6 @@
 namespace NLA::Menu
 {
 	using Config = Options::Config;
-	using HeadshotSettings = Options::NPCConfig::HeadshotSettings;
 
 	// ---- Pages ----
 
@@ -52,19 +51,18 @@ namespace NLA::Menu
 
 	void ShowTooltip(const char* text);
 
-	/// Begins a 3-column table with a fixed-width label column, optionally followed by the Accuracy/Precision header.
-	/// Call EndTable() if it returns true.
-	bool BeginPageTable(const char* id, bool hasAccuracy, bool withHeader);
+	/// Begins a 4-column table: a fixed-width label column followed by three slider columns. Call EndTable() if it returns true.
+	bool BeginPageTable(const char* id);
 
-	/// Begins a table with the (empty)/Accuracy/Precision header, renders `rows` and ends it.
-	void RenderTable(const char* id, bool hasAccuracy, const std::function<void()>& rows);
+	/// Begins a table, renders `rows` and ends it.
+	void RenderTable(const char* id, const std::function<void()>& rows);
 
 	/// Lays an attack kind out as consecutive tables, each titled by a separator. The label column has a fixed width,
-	/// so sliders line up across tables, and only the first table has the Accuracy/Precision header.
+	/// so sliders line up across tables.
 	class TableSections
 	{
 	public:
-		explicit TableSections(bool hasAccuracy);
+		TableSections() = default;
 		~TableSections();
 		TableSections(const TableSections&) = delete;
 		TableSections& operator=(const TableSections&) = delete;
@@ -74,12 +72,12 @@ namespace NLA::Menu
 		bool Section(const char* separator);
 
 	private:
-		bool hasAccuracy;
 		bool open = false;
 		int  count = 0;
 	};
 
-	void HeaderRow(const char* first, const char* second);
+	/// A row with headers over the slider columns. Null or empty headers leave their column blank.
+	void HeaderRow(const char* first, const char* second = nullptr, const char* third = nullptr);
 	void EmptyRow();
 
 	/// Starts a new row with the button in the first column.
@@ -92,89 +90,76 @@ namespace NLA::Menu
 	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip);
 	/// Shows `value` as a percentage; `limit` is in the same fractional units as the value (1.0 is 100%).
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
-	void NotApplicableColumn();
+	/// A row with `label` and a skill multiplier slider in the first slider column.
+	void SkillMultiplierRow(const char* label, const char* id, float& value, const char* tooltip);
+	/// Leaves the next column blank.
+	void EmptyColumn();
 
 	// ---- Attack kind parts ----
-	// Each part renders and resets its own rows. `aiming` is the state of the attack kind's "Learn X" toggle.
+	// Each part renders its own rows.
 
-	/// Points at one of a spell type's skill sources; renders as a drop-down row inside the section it belongs to.
-	struct SkillSourceRef
+	/// What a part needs to render a kind: the page, and the kind's options.
+	struct KindContext
 	{
-		Config::SkillSources Config::*sources = nullptr;
-		Options::SkillSource Config::SkillSources::*field = nullptr;
+		const PageContext&         page;
+		Options::Config::Attack&   cfg;
+		const Options::AttackKind& info;
 	};
-
-	constexpr SkillSourceRef AimingSkill(Config::SkillSources Config::*sources) { return { sources, &Config::SkillSources::aiming }; }
-	constexpr SkillSourceRef ChargeSpeedSkill(Config::SkillSources Config::*sources) { return { sources, &Config::SkillSources::chargeSpeed }; }
-	constexpr SkillSourceRef RangeSkill(Config::SkillSources Config::*sources) { return { sources, &Config::SkillSources::range }; }
 
 	struct HeadshotRows
 	{
-		bool HeadshotSettings::*enabled;
-		float HeadshotSettings::*minChance;
-		float HeadshotSettings::*maxChance;
-		const char*              label;
-		const char*              tooltip;
-		const char*              shooter;
+		const char* label;
+		const char* tooltip;
+		const char* shooter;
 
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
+		/// The skill that drives the chance, as worded in tooltips (e.g. "Archery skill").
+		const char* skill;
+
+		void Render(const KindContext& kind, TableSections& sections) const;
 	};
 
 	struct RangeRows
 	{
-		Config::Scaling Config::*options;
-		const char*                     tooltip;
-		const char*                     minTooltip;
-		const char*                     maxTooltip;
+		const char* tooltip;
+		const char* minTooltip;
+		const char* maxTooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
 
-		SkillSourceRef skill{};
-
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
+		void Render(const KindContext& kind, TableSections& sections) const;
 	};
 
 	struct SpeedRows
 	{
-		Config::Scaling Config::*options;
-		const char*                     label;
-		const char*                     tooltip;
+		const char* label;
+		const char* tooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
 
-		SkillSourceRef skill{};
-
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
+		void Render(const KindContext& kind, TableSections& sections) const;
 	};
 
 	struct SpreadRows
 	{
-		Config::Spread Config::*options;
-		const char*                    label;
-		const char*                    tooltip;
-		const char*                    maxReductionTooltip;
-		const char*                    halfDurationTooltip;
+		const char* label;
+		const char* tooltip;
+		const char* maxReductionTooltip;
+		const char* halfDurationTooltip;
 
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
+		void Render(const KindContext& kind, TableSections& sections) const;
 	};
 
 	struct FatigueRows
 	{
-		Config::Fatigue Config::*options;
-		const char*                     label;
-		const char*                     tooltip;
-		const char*                     minThresholdTooltip;
-		const char*                     maxThresholdTooltip;
-		const char*                     maxPenaltyTooltip;
+		const char* label;
+		const char* tooltip;
+		const char* minThresholdTooltip;
+		const char* maxThresholdTooltip;
+		const char* maxPenaltyTooltip;
 
-		void Render(const PageContext& ctx, bool aiming, TableSections& sections) const;
-		void Reset(const PageContext& ctx) const;
+		void Render(const KindContext& kind, TableSections& sections) const;
 	};
 
 	// ---- Attack kinds ----
@@ -185,12 +170,12 @@ namespace NLA::Menu
 		const char* id;
 		const char* label;
 		const char* tooltip;
-		bool Config::*aiming;
-		float Config::SkillMultiplier::*multiplier;
-		const char*                     accuracyTooltip;
-		const char*                     precisionTooltip;
-		const char*                     resetLabel;
-		SkillSourceRef                  aimSkill{};
+
+		const Options::AttackKind& kind;
+
+		const char* accuracyTooltip;
+		const char* precisionTooltip;
+		const char* resetLabel;
 	};
 
 	/// Parts are rendered below the "Learn X" row in the order they are listed.
@@ -198,7 +183,7 @@ namespace NLA::Menu
 	struct AttackKind : AttackKindBase, Parts...
 	{};
 
-	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(bool aiming, TableSections& sections)>& renderParts, const std::function<void()>& resetParts);
+	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(const KindContext&, TableSections&)>& renderParts);
 
 	/// Renders the attack kind below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
 	/// a new section with their title; the rest stay in the section of the "Learn X" row.
@@ -208,8 +193,7 @@ namespace NLA::Menu
 			kind,
 			ctx,
 			separator,
-			[&](bool aiming, TableSections& sections) { (static_cast<const Parts&>(kind).Render(ctx, aiming, sections), ...); },
-			[&] { (static_cast<const Parts&>(kind).Reset(ctx), ...); });
+			[&](const KindContext& context, TableSections& sections) { (static_cast<const Parts&>(kind).Render(context, sections), ...); });
 	}
 
 	inline constexpr const char* kScaleAimLabel = "Scale Aim With Skill";
@@ -221,9 +205,8 @@ namespace NLA::Menu
 	inline constexpr const char* kRangeGroup = "Range";
 
 	/// Shared by spells, staves and scrolls; only the toggle's tooltip differs.
-	constexpr FatigueRows CastFatigue(Config::Fatigue Config::*options, const char* tooltip) {
+	constexpr FatigueRows CastFatigue(const char* tooltip) {
 		return {
-			options,
 			"Holding Charge Fatigues Aim",
 			tooltip,
 			"Seconds a spell/staff/scroll can be held charged before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",

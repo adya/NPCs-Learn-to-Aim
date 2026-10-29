@@ -8,11 +8,9 @@ namespace NLA::Menu
 	namespace
 	{
 		constexpr float       kSliderWidth = 160.0f;
-		constexpr const char* kAccuracyHeader = "Accuracy";
-		constexpr const char* kPrecisionHeader = "Precision";
-		constexpr const char* kNotApplicableText = "N/A";
 		constexpr std::array kSkillSourceLabels{ "Spell's Magic Skill", "Highest Magic Skill", "Enchanting" };
-		static_assert(kSkillSourceLabels.size() == static_cast<std::size_t>(Options::SkillSource::kTotal));
+		// Only the magic skills are offered, so Archery and everything after it is left out.
+		static_assert(kSkillSourceLabels.size() == static_cast<std::size_t>(Options::SkillSource::kArchery));
 
 		constexpr const char* kWidestLabel = kScaleChargeSpeedLabel;
 
@@ -68,41 +66,25 @@ namespace NLA::Menu
 		}
 	}
 
-	bool BeginPageTable(const char* id, bool hasAccuracy, bool withHeader) {
-		if (!BeginTable(id, 3, ImGuiTableFlags_SizingFixedFit)) {
+	bool BeginPageTable(const char* id) {
+		if (!BeginTable(id, 4, ImGuiTableFlags_SizingFixedFit)) {
 			return false;
 		}
 		// Sized for the longest label, so that every table of a page lines up.
 		const float labelWidth = CalcTextSize(kWidestLabel).x + GetFrameHeight() * 1.5f;
 		TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, labelWidth);
-		TableSetupColumn(kAccuracyHeader, ImGuiTableColumnFlags_WidthFixed, kSliderWidth);
-		TableSetupColumn(kPrecisionHeader, ImGuiTableColumnFlags_WidthFixed, kSliderWidth);
-
-		if (withHeader) {
-			TableNextRow();
-			TableSetColumnIndex(1);
-			CenteredHeaderCell(kAccuracyHeader, !hasAccuracy);
-			ShowTooltip(hasAccuracy ?
-			                "How accurately NPCs can aim their shots at a target. The higher the skill the more likely they can aim at the target." :
-			                "Not applicable to the Player: you use your mouse/controller to aim :)");
-			TableSetColumnIndex(2);
-			CenteredHeaderCell(kPrecisionHeader);
-			ShowTooltip(hasAccuracy ?
-			                "How precisely NPCs can hit their target in the aimed point. The higher the skill the more precisely they can hit desired spot." :
-			                "How precisely you can hit the target in the aimed point. The higher the skill the more precisely you can hit the desired spot.");
+		for (int i = 0; i < 3; ++i) {
+			TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, kSliderWidth);
 		}
 		return true;
 	}
 
-	void RenderTable(const char* id, bool hasAccuracy, const std::function<void()>& rows) {
-		if (BeginPageTable(id, hasAccuracy, true)) {
+	void RenderTable(const char* id, const std::function<void()>& rows) {
+		if (BeginPageTable(id)) {
 			rows();
 			EndTable();
 		}
 	}
-
-	TableSections::TableSections(bool hasAccuracy) :
-		hasAccuracy(hasAccuracy) {}
 
 	TableSections::~TableSections() {
 		if (open) {
@@ -118,18 +100,21 @@ namespace NLA::Menu
 			if (separator) {
 				SeparatorText(separator);
 			}
-			open = BeginPageTable(fmt::format("Table{}", count).c_str(), hasAccuracy, count == 0);
+			open = BeginPageTable(fmt::format("Table{}", count).c_str());
 			++count;
 		}
 		return open;
 	}
 
-	void HeaderRow(const char* first, const char* second) {
+	void HeaderRow(const char* first, const char* second, const char* third) {
 		TableNextRow();
-		TableSetColumnIndex(1);
-		CenteredHeaderCell(first);
-		TableSetColumnIndex(2);
-		CenteredHeaderCell(second);
+		const char* headers[] = { first, second, third };
+		for (int i = 0; i < 3; ++i) {
+			if (headers[i] && *headers[i]) {
+				TableSetColumnIndex(i + 1);
+				CenteredHeaderCell(headers[i]);
+			}
+		}
 	}
 
 	void EmptyRow() {
@@ -170,9 +155,9 @@ namespace NLA::Menu
 		TextUnformatted(label);
 		TableNextColumn();
 
-		// The drop-down spans both slider columns, which must stay empty in this row.
+		// The drop-down spans all three slider columns, which must stay empty in this row.
 		const ImVec2 cell = GetCursorScreenPos();
-		const float  width = 2 * kSliderWidth + GetStyle()->CellPadding.x * 2;
+		const float  width = 3 * kSliderWidth + GetStyle()->CellPadding.x * 4;
 		PushClipRect(cell, ImVec2(cell.x + width, cell.y + GetFrameHeightWithSpacing()), false);
 		SetNextItemWidth(width);
 
@@ -195,10 +180,15 @@ namespace NLA::Menu
 		SaveAfterEdit(tooltip);
 	}
 
-	void NotApplicableColumn() {
+	void SkillMultiplierRow(const char* label, const char* id, float& value, const char* tooltip) {
+		TableNextRow();
 		TableNextColumn();
-		DisabledIf disabled{ true };
-		CenterCursorForText(kNotApplicableText);
-		TextUnformatted(kNotApplicableText);
+		AlignTextToFramePadding();
+		TextUnformatted(label);
+		SliderColumn(id, value, tooltip);
+	}
+
+	void EmptyColumn() {
+		TableNextColumn();
 	}
 }
