@@ -638,7 +638,7 @@ namespace NLA::Options
 		Aim result = defaults;
 		result.skillMultiplier = ReadClamped(ini, a_section, keys.skillMultiplier, result.skillMultiplier, Limits::kSkillMultiplier);
 		result.spreadMultiplier.from = ReadClamped(ini, a_section, keys.from, result.spreadMultiplier.from, Limits::kAimFactor);
-		result.spreadMultiplier.to = ReadClamped(ini, a_section, keys.to, result.spreadMultiplier.to, Limits::kAimFactor);
+		result.spreadMultiplier.to = ReadClamped(ini, a_section, keys.to, result.spreadMultiplier.to, Limits::ToLimit(Limits::kAimFactor, result.spreadMultiplier.from));
 		return result;
 	}
 
