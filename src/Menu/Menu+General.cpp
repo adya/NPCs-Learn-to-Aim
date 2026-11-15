@@ -1,3 +1,4 @@
+#include "AimDebug.h"
 #include "Menu+Internal.h"
 #include <SKSEMCP/SKSEMenuFramework.hpp>
 #include <fmt/ranges.h>
@@ -40,6 +41,25 @@ namespace NLA::Menu
 			PopID();
 		}
 
+		void RenderSkillShotParts(Config& cfg) {
+			PushID("SkillShotParts");
+			SeparatorText("Skill Shots");
+			TextWrapped("The body parts skilled NPCs may aim for when they take a skill shot. Leave off the ones that make no difference in your game, e.g. when nothing rewards hitting a head or a limb.");
+			Spacing();
+
+			bool changed = false;
+			changed |= Checkbox("Headshots", &cfg.headshots);
+			ShowTooltip("Skill shots may aim for the head. About 60% of the skill shots go to the head when hands or legs are on too, all of them otherwise.");
+			changed |= Checkbox("Arm Shots", &cfg.armshots);
+			ShowTooltip("Skill shots may aim for a hand, left or right. Only targets that have hands, like people, are aimed at this way.");
+			changed |= Checkbox("Leg Shots", &cfg.legshots);
+			ShowTooltip("Skill shots may aim for a leg, left or right. Only targets that have legs, like people, are aimed at this way.");
+			if (changed) {
+				Options::Save();
+			}
+			PopID();
+		}
+
 		void FillBuffer(KeywordBuffer& buffer, const std::vector<std::string>& keywords) {
 			strcpy_s(buffer, fmt::format("{}", fmt::join(keywords, ",")).c_str());
 		}
@@ -54,6 +74,14 @@ namespace NLA::Menu
 			}
 			ShowTooltip(tooltip);
 		}
+
+#ifndef NDEBUG
+		void RenderAimDebug() {
+			SeparatorText("Debug");
+			Checkbox("Show Aim Points", &AimDebug::enabled);
+			ShowTooltip("Draws a marker where each NPC is aiming: yellow for the body, red for the head, blue for a hand and green for a leg. Only available in debug builds.");
+		}
+#endif
 
 		void RenderLogLevel() {
 			static constexpr std::array levels{ spdlog::level::trace, spdlog::level::debug, spdlog::level::info, spdlog::level::warn, spdlog::level::err, spdlog::level::critical };
@@ -124,9 +152,16 @@ namespace NLA::Menu
 			RenderBlindnessRows(ctx.cfg, ctx.defaults, ctx.isNPC);
 		});
 		Spacing();
+		RenderSkillShotParts(ctx.cfg);
+		Spacing();
 		RenderKeywordFilters();
 		Spacing();
 		RenderLogLevel();
+#ifndef NDEBUG
+		if (ctx.isNPC) {
+			RenderAimDebug();
+		}
+#endif
 	}
 
 	void RenderActionsPage() {

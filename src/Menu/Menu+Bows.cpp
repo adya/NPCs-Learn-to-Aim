@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr AttackKind<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kBows{
+		constexpr AttackKind<SkillShotRows, SpeedRows, SpreadRows, FatigueRows> kBows{
 			{
 				.id = "Bows",
 				.label = kScaleAimLabel,
@@ -15,9 +15,9 @@ namespace NLA::Menu
 				.precisionTooltip = "How much Archery skill contributes to Precision with bows. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Bows to Default",
 			},
-			HeadshotRows{
-				"Bow Headshots",
-				"When enabled, sufficiently skilled archers have a chance to aim for the head instead of the chest.",
+			SkillShotRows{
+				"Bow Skill Shots",
+				"When enabled, sufficiently skilled archers take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
 				"archer",
 				"Archery skill" },
 			SpeedRows{

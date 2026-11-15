@@ -44,10 +44,10 @@ namespace NLA
 			}
 			break;
 
-		case kHeadshot:
-			// Headshots are an NPC-only feature.
-			if (!attacker->IsPlayerRef() && attack.headshot.enabled) {
-				use(attack.headshot.bounds, attack.headshot);
+		case kSkillShot:
+			// Skill shots are an NPC-only feature.
+			if (!attacker->IsPlayerRef() && attack.skillShot.enabled) {
+				use(attack.skillShot.bounds, attack.skillShot);
 			}
 			break;
 
@@ -155,10 +155,10 @@ namespace NLA
 			}
 			break;
 
-		case kHeadshot:
-			// Headshots are an NPC-only feature.
-			if (isAimed && !attacker->IsPlayerRef() && attack.headshot.enabled) {
-				use(attack.headshot.bounds, attack.headshot);
+		case kSkillShot:
+			// Skill shots are an NPC-only feature.
+			if (isAimed && !attacker->IsPlayerRef() && attack.skillShot.enabled) {
+				use(attack.skillShot.bounds, attack.skillShot);
 			}
 			break;
 

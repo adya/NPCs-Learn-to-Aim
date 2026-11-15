@@ -23,19 +23,19 @@ namespace NLA::Menu
 		}
 	}
 
-	void HeadshotRows::Render(const KindContext& kind, TableSections& sections) const {
+	void SkillShotRows::Render(const KindContext& kind, TableSections& sections) const {
 		if (!kind.page.isNPC || !sections.Section(nullptr)) {
 			return;
 		}
-		auto& headshot = kind.cfg.headshot;
+		auto& skillShot = kind.cfg.skillShot;
 
 		HeaderRow(kSkillMultiplierHeader, "Min Chance", "Max Chance");
 		TableNextRow();
-		ToggleColumn(label, headshot.enabled, tooltip);
-		DisabledIf off{ !headshot.enabled };
-		SliderColumn("##HeadshotSkillMultiplier", headshot.skillMultiplier, SkillMultiplierTooltip("the headshot chance").c_str());
-		PercentSliderColumn("##MinHeadshotChance", headshot.bounds.from, fmt::format("Chance for a skilled {} to go for a headshot at 0 effective {}.", shooter, skill).c_str(), Options::Limits::kHeadshotChance);
-		PercentSliderColumn("##MaxHeadshotChance", headshot.bounds.to, fmt::format("Chance for a skilled {} to go for a headshot at 100 effective {}.", shooter, skill).c_str(), Options::Limits::kHeadshotChance);
+		ToggleColumn(label, skillShot.enabled, tooltip);
+		DisabledIf off{ !skillShot.enabled };
+		SliderColumn("##SkillShotSkillMultiplier", skillShot.skillMultiplier, SkillMultiplierTooltip("the skill shot chance").c_str());
+		PercentSliderColumn("##MinSkillShotChance", skillShot.bounds.from, fmt::format("Share of shots that a skilled {} takes as skill shots at 0 effective {}. Out of every 10 shots this many aim at a specific body part.", shooter, skill).c_str(), Options::Limits::kSkillShotChance);
+		PercentSliderColumn("##MaxSkillShotChance", skillShot.bounds.to, fmt::format("Share of shots that a skilled {} takes as skill shots at 100 effective {}. Out of every 10 shots this many aim at a specific body part.", shooter, skill).c_str(), Options::Limits::kSkillShotChance);
 	}
 
 	void RangeRows::Render(const KindContext& kind, TableSections& sections) const {

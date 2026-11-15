@@ -61,7 +61,7 @@ namespace NLA::Menu
 				}
 			}
 			ShowTooltip(isNPC ?
-			                "Reset all NPC settings, including filters and headshots, to their defaults." :
+			                "Reset all NPC settings, including filters and skill shots, to their defaults." :
 			                "Reset all Player settings to their defaults.");
 		}
 		PopID();

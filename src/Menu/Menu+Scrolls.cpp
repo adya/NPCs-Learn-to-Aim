@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr AttackKind<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kScrolls{
+		constexpr AttackKind<SkillShotRows, SpeedRows, SpreadRows, FatigueRows> kScrolls{
 			{
 				.id = "Scrolls",
 				.label = kScaleAimLabel,
@@ -15,9 +15,9 @@ namespace NLA::Menu
 				.precisionTooltip = "How much the skill contributes to Precision with scrolls. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Scrolls to Default",
 			},
-			HeadshotRows{
-				"Scroll Headshots",
-				"When enabled, sufficiently skilled mages have a chance to aim scrolls at the head instead of the chest.",
+			SkillShotRows{
+				"Scroll Skill Shots",
+				"When enabled, sufficiently skilled mages take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
 				"mage",
 				"aiming skill" },
 			SpeedRows{

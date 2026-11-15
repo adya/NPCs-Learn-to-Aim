@@ -106,7 +106,7 @@ namespace NLA::Menu
 		const Options::AttackKind& info;
 	};
 
-	struct HeadshotRows
+	struct SkillShotRows
 	{
 		const char* label;
 		const char* tooltip;

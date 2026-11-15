@@ -1,3 +1,4 @@
+#include "AimDebug.h"
 #include "Hooks.h"
 #include "Menu/Menu.h"
 #include "Options.h"
@@ -8,6 +9,12 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
 		NLA::Install();
 		NLA::Options::Load();
 		NLA::Menu::Register();
+#ifndef NDEBUG
+		NLA::AimDebug::Install();
+#endif
+		break;
+	case SKSE::MessagingInterface::kDataLoaded:
+		NLA::ListenForEvents();
 		break;
 	case SKSE::MessagingInterface::kPreLoadGame:
 	case SKSE::MessagingInterface::kNewGame:
@@ -59,7 +66,7 @@ SKSE_EXPORT bool SKSEPlugin_Load(const SKSE::LoadInterface* a_skse) {
 #endif
 
 	// Pre-allocate trampoline space upfront. Each write_call<5> hook needs 14 bytes.
-	SKSE::AllocTrampoline(14 * 40);
+	SKSE::AllocTrampoline(14 * 25);
 
 	SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 

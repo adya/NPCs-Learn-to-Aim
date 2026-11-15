@@ -12,3 +12,6 @@
 [submodule "extern/SKSEHooking"]
 	path = extern/SKSEHooking
 	url = https://github.com/adya/SKSEHooking.git
+[submodule "extern/Randomness"]
+	path = extern/Randomness
+	url = https://github.com/adya/randomness.git

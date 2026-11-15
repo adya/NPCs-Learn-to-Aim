@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr AttackKind<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kCrossbows{
+		constexpr AttackKind<SkillShotRows, SpeedRows, SpreadRows, FatigueRows> kCrossbows{
 			{
 				.id = "Crossbows",
 				.label = kScaleAimLabel,
@@ -15,9 +15,9 @@ namespace NLA::Menu
 				.precisionTooltip = "How much Archery skill contributes to Precision with crossbows. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Crossbows to Default",
 			},
-			HeadshotRows{
-				"Crossbow Headshots",
-				"When enabled, sufficiently skilled crossbowmen have a chance to aim for the head instead of the chest.",
+			SkillShotRows{
+				"Crossbow Skill Shots",
+				"When enabled, sufficiently skilled crossbowmans take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
 				"crossbowman",
 				"Archery skill" },
 			SpeedRows{

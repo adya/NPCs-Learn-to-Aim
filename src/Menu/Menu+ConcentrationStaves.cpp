@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr AttackKind<HeadshotRows, RangeRows, SpeedRows, SpreadRows, FatigueRows> kConcentrationStaves{
+		constexpr AttackKind<SkillShotRows, RangeRows, SpeedRows, SpreadRows, FatigueRows> kConcentrationStaves{
 			{
 				.id = "ConcentrationStaves",
 				.label = kScaleAimLabel,
@@ -15,9 +15,9 @@ namespace NLA::Menu
 				.precisionTooltip = "How much the skill contributes to Precision with concentration staves. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Concentration Staves to Default",
 			},
-			HeadshotRows{
-				"Concentration Staff Headshots",
-				"When enabled, sufficiently skilled mages have a chance to aim concentration staves at the head instead of the chest.",
+			SkillShotRows{
+				"Concentration Staff Skill Shots",
+				"When enabled, sufficiently skilled mages take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
 				"mage",
 				"aiming skill" },
 			RangeRows{

@@ -4,7 +4,7 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr AttackKind<HeadshotRows, SpeedRows, SpreadRows, FatigueRows> kSpells{
+		constexpr AttackKind<SkillShotRows, SpeedRows, SpreadRows, FatigueRows> kSpells{
 			{
 				.id = "Spells",
 				.label = kScaleAimLabel,
@@ -15,9 +15,9 @@ namespace NLA::Menu
 				.precisionTooltip = "How much the skill contributes to Precision with fire-and-forget spells. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Spells to Default",
 			},
-			HeadshotRows{
-				"Spell Headshots",
-				"When enabled, sufficiently skilled mages have a chance to aim spells at the head instead of the chest.",
+			SkillShotRows{
+				"Spell Skill Shots",
+				"When enabled, sufficiently skilled mages take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
 				"mage",
 				"aiming skill" },
 			SpeedRows{

@@ -19,9 +19,13 @@ namespace NLA
 		Steadying::Install();
 	}
 
+	void ListenForEvents() {
+		Skillshots::ListenForCombat();
+	}
+
 	void Reset() {
 		Options::InvalidateActorCache();
-		Accuracy::Reset();
+		Skillshots::Reset();
 		ConcentrationSpells::Reset();
 		Steadying::Reset();
 	}

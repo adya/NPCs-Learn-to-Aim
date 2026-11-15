@@ -145,8 +145,8 @@ namespace NLA::Options
 					SaveScaling(ini, a_section, keys.range, attack.range, defaultAttack.range, writeDefaults);
 				}
 				SaveScaling(ini, a_section, keys.speed, attack.speed, defaultAttack.speed, writeDefaults);
-				if (defaultAttack.headshot != Config::Scaling::kNone) {
-					SaveScaling(ini, a_section, keys.headshot, attack.headshot, defaultAttack.headshot, writeDefaults);
+				if (defaultAttack.skillShot != Config::Scaling::kNone) {
+					SaveScaling(ini, a_section, keys.skillShot, attack.skillShot, defaultAttack.skillShot, writeDefaults);
 				}
 				SaveSteadying(ini, a_section, keys.steadying, attack.steadying, defaultAttack.steadying, writeDefaults);
 				SaveFatigue(ini, a_section, keys.fatigue, attack.fatigue, defaultAttack.fatigue, writeDefaults);
@@ -309,16 +309,27 @@ namespace NLA::Options
 			}
 		}
 
-		void LogHeadshots(std::string_view actor, const Config& cfg) {
+		void LogSkillShots(std::string_view actor, const Config& cfg) {
+			std::vector<std::string_view> parts;
+			if (cfg.headshots) {
+				parts.emplace_back("the head");
+			}
+			if (cfg.armshots) {
+				parts.emplace_back("the hands");
+			}
+			if (cfg.legshots) {
+				parts.emplace_back("the legs");
+			}
+
 			bool any = false;
 			for (const AttackKind& kind : AttackKind::kAll) {
-				if (const auto& headshot = (cfg.*kind.config).headshot; headshot.enabled) {
+				if (const auto& skillShot = (cfg.*kind.config).skillShot; skillShot.enabled && !parts.empty()) {
 					any = true;
-					logger::info("\tSkilled {} with {} may go for headshots ({:.0f}%-{:.0f}% chance)", actor, Wording::For(kind).plural, headshot.bounds.from * 100, headshot.bounds.to * 100);
+					logger::info("	Skilled {} with {} take skill shots at {} ({:.0f}%-{:.0f}% of shots)", actor, Wording::For(kind).plural, fmt::join(parts, ", "), skillShot.bounds.from * 100, skillShot.bounds.to * 100);
 				}
 			}
 			if (!any) {
-				logger::info("\t{} always aim for the chest", actor);
+				logger::info("	{} always aim for the chest", actor);
 			}
 		}
 
@@ -346,7 +357,7 @@ namespace NLA::Options
 				aiming(Wording::For(kind).plural, (cfg.*kind.config).aiming);
 			}
 			if (isNPC) {
-				LogHeadshots(actor, cfg);
+				LogSkillShots(actor, cfg);
 
 				logger::info("");
 				LogSkillMultipliers(actor, "Aim", cfg, kAim);
@@ -590,10 +601,10 @@ namespace NLA::Options
 			}
 			attack.speed = Scaling::FromIni(ini, a_section, keys.speed, attack.speed, Limits::kSpeedMultiplier);
 
-			if (defaultAttack.headshot != Config::Scaling::kNone) {
-				attack.headshot = Scaling::FromIni(ini, a_section, keys.headshot, attack.headshot, Limits::kHeadshotChance);
+			if (defaultAttack.skillShot != Config::Scaling::kNone) {
+				attack.skillShot = Scaling::FromIni(ini, a_section, keys.skillShot, attack.skillShot, Limits::kSkillShotChance);
 			} else {
-				WarnUnsupported(ini, a_section, keys.headshot.All(), kUnsupported);
+				WarnUnsupported(ini, a_section, keys.skillShot.All(), kUnsupported);
 			}
 
 			attack.steadying = Spread::FromIni(ini, a_section, keys.steadying, attack.steadying);
