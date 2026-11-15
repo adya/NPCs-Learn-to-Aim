@@ -11,8 +11,8 @@ namespace NLA
 	void Install() {
 		logger::info("{:*^40}", "HOOKS");
 
-		Accuracy::Install();
-		Precision::Install();
+		Aim::Install();
+		Skillshots::Install();
 		ConcentrationSpells::Install();
 		ChargeTime::Install();
 		Draw::Install();

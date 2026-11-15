@@ -69,7 +69,12 @@ namespace NLA
 		{
 			RE::Actor*         attacker{ nullptr };
 			const RE::TESForm* source{ nullptr };
-			SkillUsage         precision{};
+
+			/// How far the shot may deviate from the aim (max spread).
+			SkillUsage accuracy{};
+
+			/// How the shots are distributed within that radius (focus).
+			SkillUsage precision{};
 
 			std::optional<SteadyingModifier> steadying{};
 
@@ -83,17 +88,17 @@ namespace NLA
 			ShotModifier() = default;
 
 			static ShotModifier ForSpell(RE::Actor* attacker, const RE::MagicItem* spell, RE::MagicSystem::CastingSource source) {
-				ShotModifier modifier{ attacker, spell, SkillUsage(spell, attacker, kPrecision) };
+				ShotModifier modifier{ attacker, spell, SkillUsage(spell, attacker, kAccuracy), SkillUsage(spell, attacker, kPrecision) };
 
 				const float holdSeconds = Steadying::SpellDuration(attacker, source);
-				if (modifier.precision) {
-					modifier.steadying = SteadyingModifier::For(attacker, *modifier.precision.kind, holdSeconds);
+				if (modifier.accuracy) {
+					modifier.steadying = SteadyingModifier::For(attacker, *modifier.accuracy.kind, holdSeconds);
 				}
 				return modifier;
 			}
 
 			static ShotModifier ForWeapon(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
-				ShotModifier modifier{ attacker, weapon, SkillUsage(weapon, attacker, kPrecision) };
+				ShotModifier modifier{ attacker, weapon, SkillUsage(weapon, attacker, kAccuracy), SkillUsage(weapon, attacker, kPrecision) };
 
 				if (auto kind = Weapon::KindOf(weapon); kind) {
 					modifier.steadying = SteadyingModifier::For(attacker, *kind, Steadying::FullDrawDuration(attacker));
@@ -103,11 +108,11 @@ namespace NLA
 
 			/// Adds a random spread to the given launch angles.
 			void Apply(float* angleX, float* angleZ) {
-				if (!attacker || !precision)
+				if (!attacker || !accuracy)
 					return;
 
 				originalAngles = { *angleX, *angleZ };
-				rawOffset = precision.RandomSpreadOffset(attacker);
+				rawOffset = RandomSpreadOffset(accuracy, precision, attacker);
 				offset = rawOffset * (steadying ? steadying->scale : 1.0f);
 
 				*angleX += offset.x;  // add random deviation to the launch angles.
@@ -117,8 +122,8 @@ namespace NLA
 			}
 
 		private:
-			ShotModifier(RE::Actor* attacker, const RE::TESForm* source, SkillUsage precision) :
-				attacker(attacker), source(source), precision(precision) {}
+			ShotModifier(RE::Actor* attacker, const RE::TESForm* source, SkillUsage accuracy, SkillUsage precision) :
+				attacker(attacker), source(source), accuracy(accuracy), precision(precision) {}
 		};
 
 		void LogShot([[maybe_unused]] const ShotModifier& modifier) {
@@ -136,18 +141,18 @@ namespace NLA
 			logger::info("");
 			logger::info("Shooting: {} with {}", *attacker, modifier.source ? modifier.source->GetName() : "?");
 
-			if (const auto& precision = modifier.precision; precision) {
-				logger::info("\tSkill: {:.1f} (base: {:.1f}), factor: {:.4f}", precision.EffectiveSkill(attacker), precision.Skill(attacker), precision.SkillFactor(attacker));
+			if (const auto& accuracy = modifier.accuracy; accuracy) {
+				logger::info("\tSkill: {:.1f} (base: {:.1f}), accuracy: {:.4f}, focus: {:.3f}", accuracy.EffectiveSkill(attacker), accuracy.Skill(attacker), accuracy.SkillFactor(attacker), SpreadFocus(modifier.precision, attacker));
 			}
 
-			if (auto accuracy = weapon ? SkillUsage(weapon, attacker, kAccuracy) : SkillUsage(spell, attacker, kAccuracy); accuracy) {
-				const float variance = Accuracy::AimVariance(accuracy, attacker);
+			if (auto aim = weapon ? SkillUsage(weapon, attacker, kAim) : SkillUsage(spell, attacker, kAim); aim) {
+				const float variance = Aim::AimVariance(aim, attacker);
 				const float aimOffset = Settings::fCombatAimProjectileRandomOffset();
 				logger::info("\tAim variance: {:.4f} (max aim offset: {:.2f}, base: {:.2f})", variance, aimOffset * variance, aimOffset);
 			}
 
-			if (auto headshotUsage = SkillUsage(weapon, attacker, kHeadshot); headshotUsage) {
-				logger::info("\tHeadshot chance: {:.0f}% ({})", Accuracy::HeadshotChance(attacker, headshotUsage) * 100.0f, Accuracy::IsGoingForHeadshot(attacker) ? "going for a headshot" : "aiming at the body");
+			if (const auto skillShotUsage = weapon ? SkillUsage(weapon, attacker, kSkillShot) : SkillUsage(spell, attacker, kSkillShot); skillShotUsage) {
+				logger::info("\tSkill shot chance: {:.0f}% (aiming at: {})", Skillshots::SkillShotChance(attacker, skillShotUsage) * 100.0f, Skillshots::CurrentSkillShot(attacker));
 			}
 
 			const float speed = weapon ? Draw::SpeedMultiplier(attacker, weapon) : ChargeTime::SpeedMultiplier(attacker, spell);
@@ -166,17 +171,37 @@ namespace NLA
 				logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", steadying.scale, (steadying.scale - 1.0f) * 100.0f);
 			}
 
-			if (const auto& precision = modifier.precision; precision) {
-				logger::info("\tSpread: {:.4f} -> {:.4f} (max: {:.4f})", modifier.rawOffset.Length(), modifier.offset.Length(), precision.MaxSpread(attacker));
-				logger::info("\tAngleX: {:.4f} -> {:.4f}", modifier.originalAngles.x, modifier.angles.x);
-				logger::info("\tAngleZ: {:.4f} -> {:.4f}", modifier.originalAngles.y, modifier.angles.y);
+			if (const auto& accuracy = modifier.accuracy; accuracy) {
+				logger::info("\tSpread: {:.3f}° -> {:.3f}° (max: {:.3f}°)", RE::rad_to_deg(modifier.rawOffset.Length()), RE::rad_to_deg(modifier.offset.Length()), RE::rad_to_deg(accuracy.MaxSpread(attacker)));
+				logger::info("\tAngleX: {:.3f}° -> {:.3f}°", RE::rad_to_deg(modifier.originalAngles.x), RE::rad_to_deg(modifier.angles.x));
+				logger::info("\tAngleZ: {:.3f}° -> {:.3f}°", RE::rad_to_deg(modifier.originalAngles.y), RE::rad_to_deg(modifier.angles.y));
 			}
+#endif
+		}
+
+		/// Logs what the engine actually did with the launch angles of a projectile that was just launched.
+		void LogLaunched([[maybe_unused]] const RE::ProjectileHandle& handle, [[maybe_unused]] const ShotModifier& modifier) {
+#ifndef NDEBUG
+			if (!modifier.accuracy)
+				return;
+
+			const auto projectile = handle.get();
+			if (!projectile)
+				return;
+
+			const auto& runtimeData = projectile->GetProjectileRuntimeData();
+			logger::info("\tLaunched at: AngleX {:.3f}°, AngleZ {:.3f}° (requested: {:.3f}°, {:.3f}°)", RE::rad_to_deg(projectile->GetAngleX()), RE::rad_to_deg(projectile->GetAngleZ()), RE::rad_to_deg(modifier.angles.x), RE::rad_to_deg(modifier.angles.y));
+			logger::info("\tHoming: desiredTarget {}, unk140 {}", runtimeData.desiredTarget.get() ? "set" : "none", runtimeData.unk140 ? "set" : "none");
 #endif
 		}
 	}
 
-	namespace Precision
+	namespace Aim
 	{
+		float AimVariance(const SkillUsage& aimUsage, RE::Actor* attacker) {
+			return 2.0f * Settings::fCombatRangedAimVariance() * aimUsage.SkillFactor(attacker);
+		}
+
 		/// Disable original random offset for arrows.
 		/// This allows replacing randomization logic with our own.
 		/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.
@@ -212,14 +237,22 @@ namespace NLA
 			static void thunk(RE::ProjectileHandle& projectile, RE::Projectile::LaunchData& launchData) {
 				auto attacker = launchData.shooter ? launchData.shooter->As<RE::Actor>() : nullptr;
 
+				ShotModifier modifier{};
+
 				// PlayerAutoAim will handle 3rd person aim.
 				if (!IsHandledByPlayerAutoAim(attacker)) {
-					auto modifier = ShotModifier::ForSpell(attacker, launchData.spell, launchData.castingSource);
+					modifier = ShotModifier::ForSpell(attacker, launchData.spell, launchData.castingSource);
 					modifier.Apply(&launchData.angleX, &launchData.angleZ);
 					LogShot(modifier);
 				}
 
 				func(projectile, launchData);
+				LogLaunched(projectile, modifier);
+
+				// The shot is fired, the next one takes a new marble from the bag. A concentration spell keeps its pick for as long as it is cast.
+				if (!Spell::IsConcentration(launchData.spell)) {
+					Skillshots::ClearSkillShot(attacker);
+				}
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
@@ -248,7 +281,7 @@ namespace NLA
 					LogShot(modifier);
 				}
 
-				Accuracy::ClearHeadshot(attacker);
+				Skillshots::ClearSkillShot(attacker);
 
 				func(projectile, launchData);
 			}
@@ -283,7 +316,7 @@ namespace NLA
 					modifier = ShotModifier::ForWeapon(player, weapon);
 				}
 
-				if (modifier.precision) {
+				if (modifier.accuracy) {
 					// we need to preserve calculated tilt angles and only apply random spread to the launch angles.
 					*angleZ -= tiltZ;
 					*angleX -= tiltX;

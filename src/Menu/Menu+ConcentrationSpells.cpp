@@ -10,8 +10,9 @@ namespace NLA::Menu
 				.label = kScaleAimLabel,
 				.tooltip = "When enabled, corresponding Magic skill will affect aiming with concentration spells (flames/sparks/frost/etc). Stream/Beam will wander around the aimed point.",
 				.kind = Options::AttackKind::kConcentrationSpell,
-				.accuracyTooltip = "How much the skill contributes to Accuracy with concentration spells. The higher this multiplier is the easier it is to aim.",
-				.precisionTooltip = "How much the skill contributes to Precision with concentration spells. The higher this multiplier is the easier it is to hit the target.",
+				.aimTooltip = "How much the skill contributes to Aim with concentration spells. The higher this multiplier is the easier it is to aim at the target.",
+				.accuracyTooltip = "How much the skill contributes to Accuracy with concentration spells. The higher this multiplier is the smaller the widest miss can be.",
+				.precisionTooltip = "How much the skill contributes to Precision with concentration spells. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Concentration Spells to Default",
 			},
 			HeadshotRows{

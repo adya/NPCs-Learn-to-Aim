@@ -10,19 +10,28 @@ namespace NLA::Menu
 	{
 		using KeywordBuffer = char[512];
 
-		void RenderBlindnessRows(Config& cfg, const Config& defaults) {
+		void RenderBlindnessRows(Config& cfg, const Config& defaults, bool isNPC) {
 			PushID("Blindness");
-			HeaderRow("Accuracy", "Precision");
+			// The Player aims by hand, so aim blindness only applies to NPCs.
+			if (isNPC) {
+				HeaderRow("Aim", "Accuracy", "Precision");
+			} else {
+				HeaderRow("Accuracy", "Precision");
+			}
 			TableNextRow();
 			ToggleColumn("Blindness Affects Aim", cfg.blindnessAffectsAiming, "When enabled, being blinded further affects aiming.");
 			{
 				DisabledIf off{ !cfg.blindnessAffectsAiming };
-				SliderColumn("##Accuracy", cfg.accuracyBlindness, "How much the blindness affects general accuracy. The higher this multiplier is the easier it is to aim.", Options::Limits::kBlindnessMultiplier);
-				SliderColumn("##Precision", cfg.precisionBlindness, "How much the blindness affects general precision. The higher this multiplier is the easier it is to hit the target.", Options::Limits::kBlindnessMultiplier);
+				if (isNPC) {
+					SliderColumn("##Aim", cfg.aimBlindness, "How much the blindness affects the NPC's aim. The higher this multiplier is the easier it is to aim.", Options::Limits::kBlindnessMultiplier);
+				}
+				SliderColumn("##Accuracy", cfg.accuracyBlindness, "How much the blindness affects accuracy. The higher this multiplier is the smaller the widest miss can be.", Options::Limits::kBlindnessMultiplier);
+				SliderColumn("##Precision", cfg.precisionBlindness, "How much the blindness affects precision. The higher this multiplier is the more shots land close to the aim.", Options::Limits::kBlindnessMultiplier);
 			}
 
 			if (ResetButton("Reset Blindness to Default")) {
 				cfg.blindnessAffectsAiming = defaults.blindnessAffectsAiming;
+				cfg.aimBlindness = defaults.aimBlindness;
 				cfg.accuracyBlindness = defaults.accuracyBlindness;
 				cfg.precisionBlindness = defaults.precisionBlindness;
 				Options::Save();
@@ -112,7 +121,7 @@ namespace NLA::Menu
 			return;
 		}
 		RenderTable("Table", [&] {
-			RenderBlindnessRows(ctx.cfg, ctx.defaults);
+			RenderBlindnessRows(ctx.cfg, ctx.defaults, ctx.isNPC);
 		});
 		Spacing();
 		RenderKeywordFilters();

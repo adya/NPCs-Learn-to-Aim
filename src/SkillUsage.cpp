@@ -51,11 +51,12 @@ namespace NLA
 			}
 			break;
 
+		case kAim:
 		case kAccuracy:
 		case kPrecision:
 			if (attack.aiming) {
 				const auto& aim = attack.AimFor(context);
-				use(aim.spreadMultiplier, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
+				use(aim.bounds, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
 			}
 			break;
 
@@ -161,11 +162,12 @@ namespace NLA
 			}
 			break;
 
+		case kAim:
 		case kAccuracy:
 		case kPrecision:
 			if (isAimed && attack.aiming) {
 				const auto& aim = attack.AimFor(context);
-				use(aim.spreadMultiplier, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
+				use(aim.bounds, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
 			}
 			break;
 
@@ -198,15 +200,26 @@ namespace NLA
 		return SkillFactor(actor) * Settings::fBowNPCSpreadAngle() * toRadians;
 	}
 
-	RE::NiPoint2 SkillUsage::RandomSpreadOffset(RE::Actor* actor) const {
-		const float maxSpread = MaxSpread(actor);
+	RE::NiPoint2 RandomSpreadOffset(float maxSpread, float focus) {
+		// The floor keeps `pow` finite and the distribution a valid one when the skill curve overshoots a decreasing focus.
+		constexpr float minFocus = 0.05f;
 
 		std::uniform_real_distribution<float> angleRND(0, 2 * std::numbers::pi_v<float>);
-		std::normal_distribution<float>       spreadRND(0, 0.7f * maxSpread);
+		std::uniform_real_distribution<float> radiusRND(0, 1);
 
-		float spread = std::abs(spreadRND(rnd));
+		// `focus` 0.5 spreads shots evenly over the disc, higher pulls them towards the center and lower pushes them to the edge.
+		float spread = maxSpread * std::pow(radiusRND(rnd), std::max(focus, minFocus));
 		float angle = angleRND(rnd);  // pick a random direction on a circle.
 
 		return { std::sin(angle) * spread, std::cos(angle) * spread };
+	}
+
+	float SpreadFocus(const SkillUsage& precision, RE::Actor* actor) {
+		constexpr float evenFocus = 0.5f;
+		return precision ? precision.SkillFactor(actor) : evenFocus;
+	}
+
+	RE::NiPoint2 RandomSpreadOffset(const SkillUsage& accuracy, const SkillUsage& precision, RE::Actor* actor) {
+		return RandomSpreadOffset(accuracy.MaxSpread(actor), SpreadFocus(precision, actor));
 	}
 }

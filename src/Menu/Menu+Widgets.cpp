@@ -180,12 +180,17 @@ namespace NLA::Menu
 		SaveAfterEdit(tooltip);
 	}
 
-	void SkillMultiplierRow(const char* label, const char* id, float& value, const char* tooltip) {
+	void AimRow(const char* label, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit, const char* format) {
 		TableNextRow();
 		TableNextColumn();
 		AlignTextToFramePadding();
 		TextUnformatted(label);
-		SliderColumn(id, value, tooltip);
+		SliderColumn(id, aim.skillMultiplier, tooltip);
+
+		const auto minId = fmt::format("{}Min", id);
+		const auto maxId = fmt::format("{}Max", id);
+		SliderColumn(minId.c_str(), aim.bounds.from, minTooltip, limit, format);
+		SliderColumn(maxId.c_str(), aim.bounds.to, maxTooltip, Options::Limits::ToLimit(limit, aim.bounds.from), format);
 	}
 
 	void EmptyColumn() {

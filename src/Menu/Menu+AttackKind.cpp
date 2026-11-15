@@ -119,15 +119,23 @@ namespace NLA::Menu
 		{
 			TableSections sections;
 			if (sections.Section(separator)) {
-				HeaderRow(kSkillMultiplierHeader);
+				HeaderRow(kSkillMultiplierHeader, "At 0 Skill", "At 100 Skill");
 				TableNextRow();
 				ToggleColumn(kind.label, attack.aiming, kind.tooltip);
 				DisabledIf off{ !attack.aiming };
-				// The Player aims by hand, so accuracy only applies to NPCs.
+				// The Player aims by hand, so aim only applies to NPCs.
 				if (ctx.isNPC) {
-					SkillMultiplierRow("Accuracy", "##Accuracy", attack.accuracy.skillMultiplier, kind.accuracyTooltip);
+					AimRow("Aim", "##Aim", attack.aim, kind.aimTooltip,
+					       "How far the NPC's aim point can stray from the target at 0 effective skill (worst aim). Higher means a worse aim.",
+					       "How far the NPC's aim point can stray from the target at 100 effective skill (best aim). Higher means a worse aim.");
 				}
-				SkillMultiplierRow("Precision", "##Precision", attack.precision.skillMultiplier, kind.precisionTooltip);
+				AimRow("Accuracy", "##Accuracy", attack.accuracy, kind.accuracyTooltip,
+				       "The widest angle a shot can deviate from the aim at 0 effective skill (worst accuracy), as a multiplier of the base spread angle. No shot goes further than this.",
+				       "The widest angle a shot can deviate from the aim at 100 effective skill (best accuracy), as a multiplier of the base spread angle. No shot goes further than this.");
+				AimRow("Precision", "##Precision", attack.precision, kind.precisionTooltip,
+				       "How shots are distributed within the accuracy radius at 0 effective skill. 0.5 spreads them evenly over the whole circle, higher values pull them towards the center, lower ones push them to the edge.",
+				       "How shots are distributed within the accuracy radius at 100 effective skill. 0.5 spreads them evenly over the whole circle, higher values pull them towards the center, lower ones push them to the edge.",
+				       Options::Limits::kFocus, "%.2f");
 				RenderSkillSource(context, &Config::SkillSources::aiming, "Aiming Skill", "aiming");
 			}
 

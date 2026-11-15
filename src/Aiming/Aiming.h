@@ -4,23 +4,16 @@ namespace NLA
 {
 	struct SkillUsage;
 
-	namespace Accuracy
+	/// How well the shooter's shot goes where it was aimed: the aim of the controller and the spread of the launch angles.
+	namespace Aim
 	{
 		void Install();
-#ifndef NDEBUG
-		float AimVariance(const SkillUsage& accuracyUsage, RE::Actor* attacker);
 
-		float HeadshotChance(RE::Actor* attacker, const SkillUsage& headshotUsage);
-
-		bool IsGoingForHeadshot(RE::Actor* attacker);
-#endif
-		void ClearHeadshot(RE::Actor* attacker);
-
-		/// Forgets all headshot decisions, e.g. when a different save is loaded.
-		void Reset();
+		float AimVariance(const SkillUsage& aimUsage, RE::Actor* attacker);
 	}
 
-	namespace Precision
+	/// Which part of the target the shooter aims at on purpose.
+	namespace Skillshots
 	{
 		void Install();
 	}

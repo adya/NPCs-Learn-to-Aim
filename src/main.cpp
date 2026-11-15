@@ -59,7 +59,7 @@ SKSE_EXPORT bool SKSEPlugin_Load(const SKSE::LoadInterface* a_skse) {
 #endif
 
 	// Pre-allocate trampoline space upfront. Each write_call<5> hook needs 14 bytes.
-	SKSE::AllocTrampoline(14 * 20);
+	SKSE::AllocTrampoline(14 * 40);
 
 	SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 

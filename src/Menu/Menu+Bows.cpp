@@ -10,8 +10,9 @@ namespace NLA::Menu
 				.label = kScaleAimLabel,
 				.tooltip = "When enabled, Archery skill will affect aiming with bows.",
 				.kind = Options::AttackKind::kBow,
-				.accuracyTooltip = "How much Archery skill contributes to Accuracy with bows. The higher this multiplier is the easier it is to aim.",
-				.precisionTooltip = "How much Archery skill contributes to Precision with bows. The higher this multiplier is the easier it is to hit the target.",
+				.aimTooltip = "How much Archery skill contributes to Aim with bows. The higher this multiplier is the easier it is to aim at the target.",
+				.accuracyTooltip = "How much Archery skill contributes to Accuracy with bows. The higher this multiplier is the smaller the widest miss can be.",
+				.precisionTooltip = "How much Archery skill contributes to Precision with bows. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Bows to Default",
 			},
 			HeadshotRows{

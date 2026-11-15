@@ -30,12 +30,12 @@ namespace NLA::ConcentrationSpells
 			/// Time that beam would stay at the same point before starting to glide to the next one.
 			constexpr static std::uint32_t pauseTicks = 20;
 
-			bool Advance(RE::Actor* attacker, const SkillUsage& skillUsage) {
+			bool Advance(RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision) {
 #ifndef NDEBUG
 				retargeted = false;
 #endif
 
-				if (skillUsage.MaxSpread(attacker) <= 0.0f) {
+				if (accuracy.MaxSpread(attacker) <= 0.0f) {
 					return false;
 				}
 
@@ -45,7 +45,7 @@ namespace NLA::ConcentrationSpells
 				} else if (paused && elapsedTicks >= pauseTicks) {
 					start = finish;
 
-					finish = skillUsage.RandomSpreadOffset(attacker);
+					finish = RandomSpreadOffset(accuracy, precision, attacker);
 
 					paused = false;
 					elapsedTicks = 0;
@@ -94,13 +94,13 @@ namespace NLA::ConcentrationSpells
 		}
 
 #ifndef NDEBUG
-		void LogWander(RE::Projectile* projectile, RE::Actor* attacker, const SkillUsage& skillUsage, const Fatigue::ConcentrationState& fatigue, const WanderAnimation& anim, const RE::NiPoint2& offset) {
+		void LogWander(RE::Projectile* projectile, RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const Fatigue::ConcentrationState& fatigue, const WanderAnimation& anim, const RE::NiPoint2& offset) {
 			const auto& runtimeData = projectile->GetProjectileRuntimeData();
 			const auto* spell = runtimeData.spell ? runtimeData.spell->As<RE::MagicItem>() : nullptr;
 
 			logger::info("");
 			logger::info("Concentrating: {} with {}", *attacker, spell ? spell->GetName() : "?");
-			logger::info("\tSkill: {:.1f} (base: {:.1f}), factor: {:.4f}", skillUsage.EffectiveSkill(attacker), skillUsage.Skill(attacker), skillUsage.SkillFactor(attacker));
+			logger::info("	Skill: {:.1f} (base: {:.1f}), accuracy: {:.4f}, focus: {:.3f}", accuracy.EffectiveSkill(attacker), accuracy.Skill(attacker), accuracy.SkillFactor(attacker), SpreadFocus(precision, attacker));
 			logger::info("\tCharge speed: x{:.3f}", ChargeTime::SpeedMultiplier(attacker, spell));
 			logger::info("\tConcentrating for: {:.3f}s", fatigue.castSeconds);
 			logger::info("\tSteadying: x{:.3f}", fatigue.steadied);
@@ -111,21 +111,21 @@ namespace NLA::ConcentrationSpells
 				logger::info("\tFatigue: disabled");
 			}
 			logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", fatigue.scale, (fatigue.scale - 1.0f) * 100.0f);
-			logger::info("\tSpread: {:.4f} -> {:.4f} (max: {:.4f})", anim.current.Length(), offset.Length(), skillUsage.MaxSpread(attacker));
-			logger::info("\tAngleX: {:.4f}", offset.x);
-			logger::info("\tAngleZ: {:.4f}", offset.y);
+			logger::info("	Spread: {:.3f}° -> {:.3f}° (max: {:.3f}°)", RE::rad_to_deg(anim.current.Length()), RE::rad_to_deg(offset.Length()), RE::rad_to_deg(accuracy.MaxSpread(attacker)));
+			logger::info("	AngleX: {:.3f}°", RE::rad_to_deg(offset.x));
+			logger::info("	AngleZ: {:.3f}°", RE::rad_to_deg(offset.y));
 		}
 #endif
 
-		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Projectile* projectile, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& skillUsage, const Fatigue::ConcentrationState& fatigue) {
+		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Projectile* projectile, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& accuracy, const SkillUsage& precision, const Fatigue::ConcentrationState& fatigue) {
 			auto& anim = wanderAnimations[TrackingKey::ForCaster(attacker, source)];
-			anim.Advance(attacker, skillUsage);
+			anim.Advance(attacker, accuracy, precision);
 
 			const RE::NiPoint2 offset = anim.current * fatigue.scale;
 
 #ifndef NDEBUG
 			if (anim.retargeted) {
-				LogWander(projectile, attacker, skillUsage, fatigue, anim, offset);
+				LogWander(projectile, attacker, accuracy, precision, fatigue, anim, offset);
 			}
 #endif
 
@@ -165,8 +165,9 @@ namespace NLA::ConcentrationSpells
 				if (projectile && rotation) {
 					if (auto attacker = GetAttacker(projectile); attacker) {
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
-						if (auto skillUsage = SkillUsage(runtimeData.spell, attacker, kPrecision); skillUsage) {
-							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, skillUsage, FatigueState(projectile, attacker, *skillUsage.kind));
+						if (auto accuracy = SkillUsage(runtimeData.spell, attacker, kAccuracy); accuracy) {
+							const auto precision = SkillUsage(runtimeData.spell, attacker, kPrecision);
+							auto       offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, FatigueState(projectile, attacker, *accuracy.kind));
 							localContext = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);

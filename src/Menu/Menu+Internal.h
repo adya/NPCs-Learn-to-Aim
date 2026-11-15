@@ -90,8 +90,8 @@ namespace NLA::Menu
 	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip);
 	/// Shows `value` as a percentage; `limit` is in the same fractional units as the value (1.0 is 100%).
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
-	/// A row with `label` and a skill multiplier slider in the first slider column.
-	void SkillMultiplierRow(const char* label, const char* id, float& value, const char* tooltip);
+	/// A row with `label`, the skill multiplier slider and the multiplier bounds (at 0 and at 100 skill) in the slider columns.
+	void AimRow(const char* label, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit = Options::Limits::kAimFactor, const char* format = "x%.2f");
 	/// Leaves the next column blank.
 	void EmptyColumn();
 
@@ -173,6 +173,7 @@ namespace NLA::Menu
 
 		const Options::AttackKind& kind;
 
+		const char* aimTooltip;
 		const char* accuracyTooltip;
 		const char* precisionTooltip;
 		const char* resetLabel;
