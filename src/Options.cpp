@@ -108,9 +108,9 @@ namespace NLA::Options
 			}
 		}
 
-		/// Whether the config has aim at all: the Player aims by hand, so it doesn't.
-		bool SupportsAim(const Config& config) {
-			return std::ranges::any_of(AttackKind::kAll, [&](const AttackKind& kind) { return (config.*kind.config).aim != Config::Aim::kNone; });
+		/// Whether the config has skill shots at all: the Player aims by hand, so it doesn't.
+		bool SupportsSkillShots(const Config& config) {
+			return std::ranges::any_of(AttackKind::kAll, [&](const AttackKind& kind) { return (config.*kind.config).skillShot != Config::Scaling::kNone; });
 		}
 
 		/// Options that are `kNone` in the defaults are not supported and are skipped.
@@ -118,8 +118,7 @@ namespace NLA::Options
 			SetOrDeleteValue(ini, a_section, "bEnabled", custom.enabled, defaults.enabled, writeDefaults);
 
 			SetOrDeleteValue(ini, a_section, "bBlindnessAffectsAiming", custom.blindnessAffectsAiming, defaults.blindnessAffectsAiming, writeDefaults);
-			if (SupportsAim(defaults)) {
-				SetOrDeleteValue(ini, a_section, "fBlindnessAimSkillMultiplier", custom.aimBlindness, defaults.aimBlindness, writeDefaults);
+			if (SupportsSkillShots(defaults)) {
 				SetOrDeleteValue(ini, a_section, "bHeadshots", custom.headshots, defaults.headshots, writeDefaults);
 				SetOrDeleteValue(ini, a_section, "bArmshots", custom.armshots, defaults.armshots, writeDefaults);
 				SetOrDeleteValue(ini, a_section, "bLegshots", custom.legshots, defaults.legshots, writeDefaults);
@@ -134,9 +133,6 @@ namespace NLA::Options
 
 				SetOrDeleteValue(ini, a_section, keys.aiming.c_str(), attack.aiming, defaultAttack.aiming, writeDefaults);
 
-				if (defaultAttack.aim != Config::Aim::kNone) {
-					SaveAim(ini, a_section, keys.aim, attack.aim, defaultAttack.aim, writeDefaults);
-				}
 				SaveAim(ini, a_section, keys.accuracy, attack.accuracy, defaultAttack.accuracy, writeDefaults);
 				SaveAim(ini, a_section, keys.precision, attack.precision, defaultAttack.precision, writeDefaults);
 
@@ -216,12 +212,12 @@ namespace NLA::Options
 			}
 		}
 
-		/// Logs how every weapon type's multiplier changes the difficulty of `stage` (Aim/Accuracy/Precision).
+		/// Logs how every weapon type's multiplier changes the difficulty of `stage` (Accuracy/Precision).
 		void LogSkillMultipliers(std::string_view actor, std::string_view stage, const Config& cfg, SkillUsageContext context) {
 			for (const AttackKind& kind : AttackKind::kAll) {
 				LogSkillMultiplier(actor, Wording::For(kind).plural, stage, (cfg.*kind.config).AimFor(context).skillMultiplier);
 			}
-			const char* noun = context == kAim ? "aim" : (context == kAccuracy ? "accuracy" : "precision");
+			const char* noun = context == kAccuracy ? "accuracy" : "precision";
 			if (cfg.blindnessAffectsAiming) {
 				LogBlindnessSkillMultiplier(actor, noun, cfg.BlindnessFor(context));
 			} else {
@@ -348,7 +344,7 @@ namespace NLA::Options
 			}
 		}
 
-		/// Logs everything the config changes. Aim and skill shots are NPC-only: the Player aims by hand.
+		/// Logs everything the config changes. Skill shots are NPC-only: the Player aims by hand.
 		void LogConfig(std::string_view actor, const Config& cfg, bool isNPC) {
 			const auto aiming = [&](std::string_view weapon, bool enabled) {
 				logger::info("\t{} {} with {}", actor, enabled ? "will learn to aim" : (isNPC ? "have perfect aim" : "has perfect aim"), weapon);
@@ -358,14 +354,12 @@ namespace NLA::Options
 			}
 			if (isNPC) {
 				LogSkillShots(actor, cfg);
+			}
 
-				logger::info("");
-				LogSkillMultipliers(actor, "Aim", cfg, kAim);
-				}
-				logger::info("");
-				LogSkillMultipliers(actor, "Accuracy", cfg, kAccuracy);
-				logger::info("");
-				LogSkillMultipliers(actor, "Precision", cfg, kPrecision);
+			logger::info("");
+			LogSkillMultipliers(actor, "Accuracy", cfg, kAccuracy);
+			logger::info("");
+			LogSkillMultipliers(actor, "Precision", cfg, kPrecision);
 
 			logger::info("");
 			for (const AttackKind& kind : AttackKind::kAll) {
@@ -566,13 +560,12 @@ namespace NLA::Options
 		result.enabled = ini.GetBoolValue(a_section, "bEnabled", result.enabled);
 
 		result.blindnessAffectsAiming = ini.GetBoolValue(a_section, "bBlindnessAffectsAiming", result.blindnessAffectsAiming);
-		if (SupportsAim(defaults)) {
-			result.aimBlindness = ReadClamped(ini, a_section, "fBlindnessAimSkillMultiplier", result.aimBlindness, Limits::kBlindnessMultiplier);
+		if (SupportsSkillShots(defaults)) {
 			result.headshots = ini.GetBoolValue(a_section, "bHeadshots", result.headshots);
 			result.armshots = ini.GetBoolValue(a_section, "bArmshots", result.armshots);
 			result.legshots = ini.GetBoolValue(a_section, "bLegshots", result.legshots);
 		} else {
-			WarnUnsupported(ini, a_section, std::array{ Key{ "fBlindnessAimSkillMultiplier" }, Key{ "bHeadshots" }, Key{ "bArmshots" }, Key{ "bLegshots" } }, kUnsupported);
+			WarnUnsupported(ini, a_section, std::array{ Key{ "bHeadshots" }, Key{ "bArmshots" }, Key{ "bLegshots" } }, kUnsupported);
 		}
 		result.accuracyBlindness = ReadClamped(ini, a_section, "fBlindnessAccuracySkillMultiplier", result.accuracyBlindness, Limits::kBlindnessMultiplier);
 		result.precisionBlindness = ReadClamped(ini, a_section, "fBlindnessPrecisionSkillMultiplier", result.precisionBlindness, Limits::kBlindnessMultiplier);
@@ -584,12 +577,7 @@ namespace NLA::Options
 
 			attack.aiming = ini.GetBoolValue(a_section, keys.aiming.c_str(), attack.aiming);
 
-			if (defaultAttack.aim != Config::Aim::kNone) {
-				attack.aim = Aim::FromIni(ini, a_section, keys.aim, attack.aim, Limits::kAimFactor);
-			} else {
-				WarnUnsupported(ini, a_section, keys.aim.All(), kUnsupported);
-			}
-			attack.accuracy = Aim::FromIni(ini, a_section, keys.accuracy, attack.accuracy, Limits::kAimFactor);
+			attack.accuracy = Aim::FromIni(ini, a_section, keys.accuracy, attack.accuracy, Limits::kAccuracyFactor);
 			attack.precision = Aim::FromIni(ini, a_section, keys.precision, attack.precision, Limits::kFocus);
 
 			attack.skills = SkillSources::FromIni(ini, a_section, keys.skills, attack.skills);

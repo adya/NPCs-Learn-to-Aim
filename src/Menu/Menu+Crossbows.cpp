@@ -10,7 +10,6 @@ namespace NLA::Menu
 				.label = kScaleAimLabel,
 				.tooltip = "When enabled, Archery skill will affect aiming with crossbows.",
 				.kind = Options::AttackKind::kCrossbow,
-				.aimTooltip = "How much Archery skill contributes to Aim with crossbows. The higher this multiplier is the easier it is to aim at the target.",
 				.accuracyTooltip = "How much Archery skill contributes to Accuracy with crossbows. The higher this multiplier is the smaller the widest miss can be.",
 				.precisionTooltip = "How much Archery skill contributes to Precision with crossbows. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Crossbows to Default",

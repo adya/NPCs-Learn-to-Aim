@@ -145,12 +145,6 @@ namespace NLA
 				logger::info("\tSkill: {:.1f} (base: {:.1f}), accuracy: {:.4f}, focus: {:.3f}", accuracy.EffectiveSkill(attacker), accuracy.Skill(attacker), accuracy.SkillFactor(attacker), SpreadFocus(modifier.precision, attacker));
 			}
 
-			if (auto aim = weapon ? SkillUsage(weapon, attacker, kAim) : SkillUsage(spell, attacker, kAim); aim) {
-				const float variance = Aim::AimVariance(aim, attacker);
-				const float aimOffset = Settings::fCombatAimProjectileRandomOffset();
-				logger::info("\tAim variance: {:.4f} (max aim offset: {:.2f}, base: {:.2f})", variance, aimOffset * variance, aimOffset);
-			}
-
 			if (const auto skillShotUsage = weapon ? SkillUsage(weapon, attacker, kSkillShot) : SkillUsage(spell, attacker, kSkillShot); skillShotUsage) {
 				logger::info("\tSkill shot chance: {:.0f}% (aiming at: {})", Skillshots::SkillShotChance(attacker, skillShotUsage) * 100.0f, Skillshots::CurrentSkillShot(attacker));
 			}
@@ -198,10 +192,6 @@ namespace NLA
 
 	namespace Aim
 	{
-		float AimVariance(const SkillUsage& aimUsage, RE::Actor* attacker) {
-			return 2.0f * Settings::fCombatRangedAimVariance() * aimUsage.SkillFactor(attacker);
-		}
-
 		/// Disable original random offset for arrows.
 		/// This allows replacing randomization logic with our own.
 		/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.

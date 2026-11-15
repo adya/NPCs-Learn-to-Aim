@@ -123,12 +123,6 @@ namespace NLA::Menu
 				TableNextRow();
 				ToggleColumn(kind.label, attack.aiming, kind.tooltip);
 				DisabledIf off{ !attack.aiming };
-				// The Player aims by hand, so aim only applies to NPCs.
-				if (ctx.isNPC) {
-					AimRow("Aim", "##Aim", attack.aim, kind.aimTooltip,
-					       "How far the NPC's aim point can stray from the target at 0 effective skill (worst aim). Higher means a worse aim.",
-					       "How far the NPC's aim point can stray from the target at 100 effective skill (best aim). Higher means a worse aim.");
-				}
 				AimRow("Accuracy", "##Accuracy", attack.accuracy, kind.accuracyTooltip,
 				       "The widest angle a shot can deviate from the aim at 0 effective skill (worst accuracy), as a multiplier of the base spread angle. No shot goes further than this.",
 				       "The widest angle a shot can deviate from the aim at 100 effective skill (best accuracy), as a multiplier of the base spread angle. No shot goes further than this.");

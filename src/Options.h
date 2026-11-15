@@ -5,8 +5,6 @@ namespace NLA
 {
 	enum SkillUsageContext
 	{
-		/// How well the NPC's aim controller points at the target.
-		kAim,
 		/// The widest angle a projectile may deviate from the aim.
 		kAccuracy,
 		/// How tightly shots cluster towards the aim, within the accuracy radius.
@@ -48,7 +46,7 @@ namespace NLA::Options
 		inline constexpr Limit kSkillShotChance{ 0.0f, 1.0f };
 		inline constexpr Limit kRangeMultiplier{ 0.5f, 5.0f };
 		inline constexpr Limit kSpeedMultiplier{ 0.1f, 3.0f };
-		inline constexpr Limit kAimFactor{ 0.0f, 3.0f };
+		inline constexpr Limit kAccuracyFactor{ 0.0f, 3.0f };
 		/// The exponent of the spread radius distribution: 0.5 spreads shots evenly over the disc, higher pulls them towards the center.
 		inline constexpr Limit kFocus{ 0.25f, 3.0f };
 		inline constexpr Limit kSteadyingReduction{ 0.0f, 1.0f };
@@ -164,7 +162,6 @@ namespace NLA::Options
 
 		Key aiming;
 
-		Aim aim;
 		Aim accuracy;
 		Aim precision;
 
@@ -181,7 +178,6 @@ namespace NLA::Options
 		static constexpr Keys Build(std::string_view name) {
 			return {
 				.aiming = { "b", name, "Aiming" },
-				.aim = AimKeys(name, "Aim"),
 				.accuracy = AimKeys(name, "Accuracy"),
 				.precision = AimKeys(name, "Precision"),
 				.skills = { { "s", name, "AimingSkill" }, { "s", name, "SpeedSkill" }, { "s", name, "RangeSkill" } },
@@ -248,7 +244,7 @@ namespace NLA::Options
 			static SkillSources FromIni(CSimpleIniA& ini, const char* section, const Keys::SkillSources& keys, const SkillSources& defaults);
 		};
 
-		/// A multiplier that shapes the shot and grows better with skill: aim variance (Aim), the widest spread (Accuracy) or the focus of the spread (Precision).
+		/// A multiplier that shapes the shot and grows better with skill: the widest spread (Accuracy) or the focus of the spread (Precision).
 		struct Aim : SkillBasedValue
 		{
 			/// The multiplier at 0 skill and at 100 skill.
@@ -260,8 +256,6 @@ namespace NLA::Options
 				SkillBasedValue{ skillMultiplier }, bounds(bounds) {}
 
 			static Aim FromIni(CSimpleIniA& ini, const char* section, const Keys::Aim& keys, const Aim& defaults, Limit limit);
-
-			static const Aim kNone;
 
 			constexpr bool operator==(const Aim&) const = default;
 		};
@@ -321,8 +315,6 @@ namespace NLA::Options
 		{
 			bool aiming = true;
 
-			/// NPCs only: the Player aims by hand.
-			Aim aim;
 			Aim accuracy;
 			Aim precision;
 
@@ -336,15 +328,8 @@ namespace NLA::Options
 			Fatigue   fatigue;
 
 			inline const Aim& AimFor(SkillUsageContext context) const {
-				assert(context == kAim || context == kAccuracy || context == kPrecision);
-				switch (context) {
-				case kAim:
-					return aim;
-				case kAccuracy:
-					return accuracy;
-				default:
-					return precision;
-				}
+				assert(context == kAccuracy || context == kPrecision);
+				return context == kAccuracy ? accuracy : precision;
 			}
 		};
 
@@ -359,7 +344,6 @@ namespace NLA::Options
 		bool armshots = false;
 		bool legshots = false;
 
-		float aimBlindness = 0.0f;
 		float accuracyBlindness = 0.0f;
 		float precisionBlindness = 0.0f;
 
@@ -375,15 +359,8 @@ namespace NLA::Options
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
 
 		inline float BlindnessFor(SkillUsageContext context) const {
-			assert(context == kAim || context == kAccuracy || context == kPrecision);
-			switch (context) {
-			case kAim:
-				return aimBlindness;
-			case kAccuracy:
-				return accuracyBlindness;
-			default:
-				return precisionBlindness;
-			}
+			assert(context == kAccuracy || context == kPrecision);
+			return context == kAccuracy ? accuracyBlindness : precisionBlindness;
 		}
 
 		const Attack& For(const struct AttackKind& kind) const;
@@ -447,7 +424,6 @@ namespace NLA::Options
 		return kScroll;
 	}
 
-	inline constexpr Config::Aim Config::Aim::kNone{ 0.0f, Bounds{} };
 	inline constexpr Config::Scaling Config::Scaling::kNone{ false, Bounds{}, 0.0f };
 
 	inline const Config::Attack& Config::For(const AttackKind& kind) const {
@@ -480,13 +456,13 @@ namespace NLA::Options
 			Config config;
 			config.accuracyBlindness = 0.5f;
 			config.precisionBlindness = 0.5f;
-			config.bow = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 1.0f, 0.0784f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.57f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
-			config.crossbow = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 0.5f, 0.16f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.87f, 1.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
-			config.spell = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 0.7f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationSpell = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 0.7f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kSpellSkill }, .speed = Scale(0.35f, 2.0f), .range = Scale(0.8f, 3.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
-			config.staff = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 0.9f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.74f, 1.4f, 1.3f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationStaff = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 0.9f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kEnchanting }, .speed = Scale(0.74f, 1.4f, 1.3f), .range = Scale(1.45f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
-			config.scroll = { .aim = Config::Aim::kNone, .accuracy = { 1.0f, { 0.7f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.bow = { .accuracy = { 1.0f, { 1.0f, 0.0784f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.57f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
+			config.crossbow = { .accuracy = { 1.0f, { 0.5f, 0.16f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.87f, 1.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
+			config.spell = { .accuracy = { 1.0f, { 0.7f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationSpell = { .accuracy = { 1.0f, { 0.7f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kSpellSkill }, .speed = Scale(0.35f, 2.0f), .range = Scale(0.8f, 3.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
+			config.staff = { .accuracy = { 1.0f, { 0.9f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.74f, 1.4f, 1.3f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationStaff = { .accuracy = { 1.0f, { 0.9f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kEnchanting }, .speed = Scale(0.74f, 1.4f, 1.3f), .range = Scale(1.45f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
+			config.scroll = { .accuracy = { 1.0f, { 0.7f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
 			return config;
 		}
 
@@ -495,16 +471,15 @@ namespace NLA::Options
 			using enum SkillSource;
 
 			Config config;
-			config.aimBlindness = 0.2f;
 			config.accuracyBlindness = 1.5f;
 			config.precisionBlindness = 1.5f;
-			config.bow = { .aim = { 1.0f, { 1.2840254f, 0.0784f } }, .accuracy = { 1.0f, { 1.2840254f, 0.0784f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.57f, 2.0f), .skillShot = { true, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
-			config.crossbow = { .aim = { 1.0f, { 0.6f, 0.16f } }, .accuracy = { 1.0f, { 0.6f, 0.16f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.87f, 1.2f), .skillShot = { true, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
-			config.spell = { .aim = { 1.0f, { 0.9f, 0.055f } }, .accuracy = { 1.0f, { 0.9f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationSpell = { .aim = { 1.0f, { 0.9f, 0.055f } }, .accuracy = { 1.0f, { 0.9f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kSpellSkill }, .speed = Scale(0.35f, 2.0f), .range = Scale(0.8f, 3.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
-			config.staff = { .aim = { 1.0f, { 1.1f, 0.12f } }, .accuracy = { 1.0f, { 1.1f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.74f, 1.4f, 1.6f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationStaff = { .aim = { 1.0f, { 1.1f, 0.12f } }, .accuracy = { 1.0f, { 1.1f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kEnchanting }, .speed = Scale(0.74f, 1.4f, 1.6f), .range = Scale(1.45f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
-			config.scroll = { .aim = { 1.0f, { 0.9f, 0.055f } }, .accuracy = { 1.0f, { 0.9f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.bow = { .accuracy = { 1.0f, { 1.2840254f, 0.0784f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.57f, 2.0f), .skillShot = { true, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
+			config.crossbow = { .accuracy = { 1.0f, { 0.6f, 0.16f } }, .precision = Focus(), .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.87f, 1.2f), .skillShot = { true, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
+			config.spell = { .accuracy = { 1.0f, { 0.9f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationSpell = { .accuracy = { 1.0f, { 0.9f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kSpellSkill }, .speed = Scale(0.35f, 2.0f), .range = Scale(0.8f, 3.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
+			config.staff = { .accuracy = { 1.0f, { 1.1f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.74f, 1.4f, 1.6f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationStaff = { .accuracy = { 1.0f, { 1.1f, 0.12f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kEnchanting }, .speed = Scale(0.74f, 1.4f, 1.6f), .range = Scale(1.45f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
+			config.scroll = { .accuracy = { 1.0f, { 0.9f, 0.055f } }, .precision = Focus(), .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
 			return config;
 		}
 	}
@@ -565,22 +540,6 @@ namespace NLA::Options
 
 namespace NLA::Settings
 {
-	inline float fCombatAimProjectileRandomOffset() {
-		auto settings = RE::GameSettingCollection::GetSingleton();
-		if (auto setting = settings->GetSetting("fCombatAimProjectileRandomOffset")) {
-			return setting->data.f;
-		}
-		return 16.0f;
-	}
-
-	inline float fCombatRangedAimVariance() {
-		auto settings = RE::GameSettingCollection::GetSingleton();
-		if (auto setting = settings->GetSetting("fCombatRangedAimVariance")) {
-			return setting->data.f;
-		}
-		return 0.9f;
-	}
-
 	inline float fBowNPCSpreadAngle() {
 		auto settings = RE::GameSettingCollection::GetSingleton();
 		if (auto setting = settings->GetSetting("fBowNPCSpreadAngle")) {

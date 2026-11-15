@@ -10,7 +10,6 @@ namespace NLA::Menu
 				.label = kScaleAimLabel,
 				.tooltip = "When enabled, corresponding Magic skill will affect aiming with scrolls.",
 				.kind = Options::AttackKind::kScroll,
-				.aimTooltip = "How much the skill contributes to Aim with scrolls. The higher this multiplier is the easier it is to aim at the target.",
 				.accuracyTooltip = "How much the skill contributes to Accuracy with scrolls. The higher this multiplier is the smaller the widest miss can be.",
 				.precisionTooltip = "How much the skill contributes to Precision with scrolls. The higher this multiplier is the more shots land close to the aim.",
 				.resetLabel = "Reset Scrolls to Default",

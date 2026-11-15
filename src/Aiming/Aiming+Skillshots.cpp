@@ -366,7 +366,6 @@ namespace NLA
 		struct AimModifier
 		{
 			RE::Actor* attacker{ nullptr };
-			SkillUsage aim{};
 			SkillShot  skillShot{ SkillShot::kNone };
 
 			AimModifier(RE::Actor* attacker, RE::Actor* target, RE::MagicCaster* mcaster) :
@@ -376,21 +375,12 @@ namespace NLA
 				if (!source)
 					return;
 
-				aim = std::visit([&](auto* form) { return SkillUsage(form, attacker, kAim); }, *source);
-
 				skillShot = std::visit([&](auto* form) { return DecideSkillShot(attacker, target, SkillUsage(form, attacker, kSkillShot)); }, *source);
 			}
 
 			using UpdateFunc = void (*)(RE::CombatProjectileAimController*, RE::Actor*);
 
 			void Apply(RE::CombatProjectileAimController* controller, RE::Actor* target, UpdateFunc func) const {
-				// Often when NPC is a magic caster the currentSpell only gets set when NPC starts charging/casting it,
-				// in such cases we can't determine the skill to use and should fallback to default logic.
-				// Frankly, calls to aim in such cases are meaningless anyways, so we're not missing much.
-				if (aim) {
-					controller->radiusMode = Aim::AimVariance(aim, attacker);
-				}
-
 				func(controller, target);
 
 				// A part that can't be found (e.g. its 3D is not loaded) leaves the aim at the chest.

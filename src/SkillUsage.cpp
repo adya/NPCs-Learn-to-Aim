@@ -51,7 +51,6 @@ namespace NLA
 			}
 			break;
 
-		case kAim:
 		case kAccuracy:
 		case kPrecision:
 			if (attack.aiming) {
@@ -162,7 +161,6 @@ namespace NLA
 			}
 			break;
 
-		case kAim:
 		case kAccuracy:
 		case kPrecision:
 			if (isAimed && attack.aiming) {
