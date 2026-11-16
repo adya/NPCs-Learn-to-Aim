@@ -8,6 +8,7 @@ namespace NLA::Menu
 	namespace
 	{
 		constexpr float       kSliderWidth = 160.0f;
+		float                 gPageRight = 0.0f;  // Right edge of the visible page, in screen space.
 		constexpr std::array kSkillSourceLabels{ "Spell's Magic Skill", "Highest Magic Skill", "Enchanting" };
 		// Only the magic skills are offered, so Archery and everything after it is left out.
 		static_assert(kSkillSourceLabels.size() == static_cast<std::size_t>(Options::SkillSource::kArchery));
@@ -67,6 +68,8 @@ namespace NLA::Menu
 	}
 
 	bool BeginPageTable(const char* id) {
+		// Outside the table, the available region is the page itself (scrollbar excluded).
+		gPageRight = GetCursorScreenPos().x + GetContentRegionAvail().x;
 		if (!BeginTable(id, 4, ImGuiTableFlags_SizingFixedFit)) {
 			return false;
 		}
@@ -157,7 +160,11 @@ namespace NLA::Menu
 
 		// The drop-down spans all three slider columns, which must stay empty in this row.
 		const ImVec2 cell = GetCursorScreenPos();
-		const float  width = 3 * kSliderWidth + GetStyle()->CellPadding.x * 4;
+		const auto*  style = GetStyle();
+
+		// Keep the drop-down inside the visible part of the window, even if the table is wider than it.
+		const float fullWidth = 3 * kSliderWidth + style->CellPadding.x * 4;
+		const float width = std::clamp(gPageRight - cell.x - style->CellPadding.x, 60.0f, fullWidth);
 		PushClipRect(cell, ImVec2(cell.x + width, cell.y + GetFrameHeightWithSpacing()), false);
 		SetNextItemWidth(width);
 
