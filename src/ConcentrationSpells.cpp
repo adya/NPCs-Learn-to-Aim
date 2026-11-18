@@ -100,7 +100,7 @@ namespace NLA::ConcentrationSpells
 
 			logger::info("");
 			logger::info("Concentrating: {} with {}", *attacker, spell ? spell->GetName() : "?");
-			logger::info("	Skill: {:.1f} (base: {:.1f}), accuracy: {:.4f}, focus: {:.3f}", accuracy.EffectiveSkill(attacker), accuracy.Skill(attacker), accuracy.SkillFactor(attacker), SpreadFocus(precision, attacker));
+			logger::info("\tSkill: {:.1f} (base: {:.1f}), accuracy: {:.4f}, focus: {:.3f}", accuracy.EffectiveSkill(attacker), accuracy.Skill(attacker), accuracy.SkillFactor(attacker), SpreadFocus(precision, attacker));
 			logger::info("\tCharge speed: x{:.3f}", ChargeTime::SpeedMultiplier(attacker, spell));
 			logger::info("\tConcentrating for: {:.3f}s", fatigue.castSeconds);
 			logger::info("\tSteadying: x{:.3f}", fatigue.steadied);
@@ -111,9 +111,9 @@ namespace NLA::ConcentrationSpells
 				logger::info("\tFatigue: disabled");
 			}
 			logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", fatigue.scale, (fatigue.scale - 1.0f) * 100.0f);
-			logger::info("	Spread: {:.3f}° -> {:.3f}° (max: {:.3f}°)", RE::rad_to_deg(anim.current.Length()), RE::rad_to_deg(offset.Length()), RE::rad_to_deg(accuracy.MaxSpread(attacker)));
-			logger::info("	AngleX: {:.3f}°", RE::rad_to_deg(offset.x));
-			logger::info("	AngleZ: {:.3f}°", RE::rad_to_deg(offset.y));
+			logger::info("\tSpread: {:.3f}° -> {:.3f}° (max: {:.3f}°)", RE::rad_to_deg(anim.current.Length()), RE::rad_to_deg(offset.Length()), RE::rad_to_deg(accuracy.MaxSpread(attacker)));
+			logger::info("\tAngleX: {:.3f}°", RE::rad_to_deg(offset.x));
+			logger::info("\tAngleZ: {:.3f}°", RE::rad_to_deg(offset.y));
 		}
 #endif
 
@@ -167,7 +167,7 @@ namespace NLA::ConcentrationSpells
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto accuracy = SkillUsage(runtimeData.spell, attacker, kAccuracy); accuracy) {
 							const auto precision = SkillUsage(runtimeData.spell, attacker, kPrecision);
-							auto       offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, FatigueState(projectile, attacker, *accuracy.kind));
+							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, FatigueState(projectile, attacker, *accuracy.kind));
 							localContext = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);
@@ -247,14 +247,27 @@ namespace NLA::ConcentrationSpells
 
 	namespace FlameProjectile
 	{
-		struct UpdateImpl_MakeRotation
+		/// Matches raycasting angles to the visual offset of the flame projectile. (This is only relevant for the player)
+		struct UpdateImpl_FreeAimAngle
 		{
 			static inline constexpr REL::RelocationID  relocation{ 42727, 43894 };
-			static inline constexpr REL::VariantOffset offset{ 0x15E, 0x15D, 0x161 };
-			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? 0F 10 44 24 50" };
+			static inline constexpr REL::VariantOffset offset{ 0x146, 0x146, 0x149 };
+			static inline constexpr VariantSignature<
+				"E8 ?? ?? ?? ?? F3 0F 10 5E 48 41 0F 28 D2 F3 0F 10 4E 50",
+				"E8 ?? ?? ?? ?? F3 0F 10 5E 48 0F 57 D2 F3 0F 10 4E 50",
+				"E8 ?? ?? ?? ?? F3 0F 10 5E 48 41 0F 28 D2 F3 0F 10 4E 50">
+				signature;
 
-			using Proxy = MakeRotation_Proxy<UpdateImpl_MakeRotation>;
-			static inline REL::Relocation<decltype(Proxy::thunk)> func;
+			static void thunk(RE::TESObjectREFR* projectile, float pitch) {
+				func(projectile, pitch);
+
+				const auto& context = localContext;
+				if (context.projectile && context.projectile == projectile) {
+					context.projectile->data.angle.x += context.rotation.x;
+					context.projectile->data.angle.z += context.rotation.y;
+				}
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
 
 			static inline void pre_hook() { logger::debug("Installing free flame wander logic..."); }
 			static inline void post_hook() { logger::info("🪝 Installed free flame wander logic"); }
