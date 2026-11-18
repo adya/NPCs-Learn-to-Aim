@@ -287,6 +287,109 @@ namespace NLA::ConcentrationSpells
 		};
 	}
 
+	// When concentration spell's range is extended we also need to let NPC's AI know about it :)
+	namespace CastRange
+	{
+		namespace
+		{
+			const RE::MagicItem* SpellOf(RE::TESForm* form) {
+				if (auto spell = form->As<RE::MagicItem>(); spell)
+					return spell;
+
+				if (auto weapon = form->As<RE::TESObjectWEAP>(); weapon && weapon->GetWeaponType() == RE::WEAPON_TYPE::kStaff && weapon->formEnchanting) {
+					return static_cast<RE::TESForm*>(weapon->formEnchanting)->As<RE::MagicItem>();
+				}
+				return nullptr;
+			}
+
+			template <typename Call>
+			struct Scale_Proxy
+			{
+				/// `optimal` is the distance the AI starts casting from, `max` is the furthest it ever casts.
+				static void thunk(RE::TESObjectREFR* refr, RE::TESForm* form, float* optimal, float* max, RE::TESAmmo* ammo) {
+					Call::func(refr, form, optimal, max, ammo);
+
+					if (!refr || !form || !optimal || !max)
+						return;
+
+					auto caster = refr->As<RE::Actor>();
+					auto spell = SpellOf(form);
+					if (!caster || !Spell::IsConcentration(spell))
+						return;
+
+					auto skillUsage = SkillUsage(spell, caster, kRange);
+					if (!skillUsage)
+						return;
+
+					const float scaledMax = *max * skillUsage.SkillFactor(caster);
+
+					*optimal = std::max(0.0f, *optimal + (scaledMax - *max));
+					*max = scaledMax;
+				}
+			};
+		}
+
+		struct AddRangedItem_GetRanges
+		{
+			static inline constexpr REL::RelocationID  relocation{ 43657, 44890 };
+			static inline constexpr REL::VariantOffset offset{ 0xEC, 0xD0, 0xEC };
+			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? F3 0F 10 9C 24 ?? ?? ?? ?? 4D 8B" };
+
+			using Proxy = Scale_Proxy<AddRangedItem_GetRanges>;
+			static inline REL::Relocation<decltype(Proxy::thunk)> func;
+
+			static inline void pre_hook() { logger::debug("Installing concentration spell cast range scaling (item data creation)..."); }
+			static inline void post_hook() { logger::info("🪝 Installed concentration spell cast range scaling (item data creation)"); }
+		};
+
+		struct AddMagicItem_GetRanges
+		{
+			static inline constexpr REL::RelocationID  relocation{ 43665, 44898 };
+			static inline constexpr REL::VariantOffset offset{ 0x12F, 0x11D, 0x12F };
+			static inline constexpr VariantSignature<
+				"E8 ?? ?? ?? ?? F3 0F 10 5D ?? 44 8B 45 ??",
+				"E8 ?? ?? ?? ?? F3 0F 10 9C 24 ?? ?? ?? ?? 45 8B",
+				"E8 ?? ?? ?? ?? F3 0F 10 5D ?? 44 8B 45 ??">
+				signature;
+
+			using Proxy = Scale_Proxy<AddMagicItem_GetRanges>;
+			static inline REL::Relocation<decltype(Proxy::thunk)> func;
+
+			static inline void pre_hook() { logger::debug("Installing concentration spell cast range scaling (cast item data creation)..."); }
+			static inline void post_hook() { logger::info("🪝 Installed concentration spell cast range scaling (cast item data creation)"); }
+		};
+
+		struct GetRangedWeaponScore_GetRanges
+		{
+			static inline constexpr REL::RelocationID  relocation{ 43813, 45032 };
+			static inline constexpr REL::VariantOffset offset{ 0xB9, 0x99, 0xB9 };
+			static inline constexpr Signature          signature{ "E8 ?? ?? ?? ?? F3 0F 10 9C 24 ?? ?? ?? ?? 4C 8B" };
+
+			using Proxy = Scale_Proxy<GetRangedWeaponScore_GetRanges>;
+			static inline REL::Relocation<decltype(Proxy::thunk)> func;
+
+			static inline void pre_hook() { logger::debug("Installing concentration spell cast range scaling (item scoring)..."); }
+			static inline void post_hook() { logger::info("🪝 Installed concentration spell cast range scaling (item scoring)"); }
+		};
+
+		struct GetMagicItemScore_GetRanges
+		{
+			static inline constexpr REL::RelocationID  relocation{ 43864, 45083 };
+			static inline constexpr REL::VariantOffset offset{ 0xC0, 0x9D, 0xC0 };
+			static inline constexpr VariantSignature<
+				"E8 ?? ?? ?? ?? F3 0F 10 9C 24 ?? ?? ?? ?? 45 8B",
+				"E8 ?? ?? ?? ?? F3 0F 10 9C 24 ?? ?? ?? ?? 44 8B",
+				"E8 ?? ?? ?? ?? F3 0F 10 9C 24 ?? ?? ?? ?? 45 8B">
+				signature;
+
+			using Proxy = Scale_Proxy<GetMagicItemScore_GetRanges>;
+			static inline REL::Relocation<decltype(Proxy::thunk)> func;
+
+			static inline void pre_hook() { logger::debug("Installing concentration spell cast range scaling (item cast scoring)..."); }
+			static inline void post_hook() { logger::info("🪝 Installed concentration spell cast range scaling (item cast scoring)"); }
+		};
+	}
+
 	void Reset() {
 		wanderAnimations.clear();
 	}
@@ -296,6 +399,11 @@ namespace NLA::ConcentrationSpells
 		stl::install_hook<BeamProjectile::UpdateImpl_MakeRotation>();
 		stl::install_hook<BeamProjectile::RunTargetPick>();
 		stl::install_hook<FlameProjectile::UpdateImpl_CopyRotation>();
-		stl::install_hook<FlameProjectile::UpdateImpl_MakeRotation>();
+		stl::install_hook<FlameProjectile::UpdateImpl_FreeAimAngle>();
+
+		stl::install_hook<CastRange::AddRangedItem_GetRanges>();
+		stl::install_hook<CastRange::AddMagicItem_GetRanges>();
+		stl::install_hook<CastRange::GetRangedWeaponScore_GetRanges>();
+		stl::install_hook<CastRange::GetMagicItemScore_GetRanges>();
 	}
 }
