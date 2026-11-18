@@ -61,7 +61,7 @@ SKSE_EXPORT bool SKSEPlugin_Load(const SKSE::LoadInterface* a_skse) {
 
 #ifdef ENABLE_SKYRIM_VR
 	if (REL::Module::IsVR()) {
-		REL::IDDB::get().IsVRAddressLibraryAtLeastVersion("0.288.0", true);
+		REL::IDDB::get().IsVRAddressLibraryAtLeastVersion("0.305.0", true);
 	}
 #endif
 
