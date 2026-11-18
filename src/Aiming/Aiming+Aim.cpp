@@ -173,21 +173,6 @@ namespace NLA
 #endif
 		}
 
-		/// Logs what the engine actually did with the launch angles of a projectile that was just launched.
-		void LogLaunched([[maybe_unused]] const RE::ProjectileHandle& handle, [[maybe_unused]] const ShotModifier& modifier) {
-#ifndef NDEBUG
-			if (!modifier.accuracy)
-				return;
-
-			const auto projectile = handle.get();
-			if (!projectile)
-				return;
-
-			const auto& runtimeData = projectile->GetProjectileRuntimeData();
-			logger::info("\tLaunched at: AngleX {:.3f}°, AngleZ {:.3f}° (requested: {:.3f}°, {:.3f}°)", RE::rad_to_deg(projectile->GetAngleX()), RE::rad_to_deg(projectile->GetAngleZ()), RE::rad_to_deg(modifier.angles.x), RE::rad_to_deg(modifier.angles.y));
-			logger::info("\tHoming: desiredTarget {}, unk140 {}", runtimeData.desiredTarget.get() ? "set" : "none", runtimeData.unk140 ? "set" : "none");
-#endif
-		}
 	}
 
 	namespace Aim
@@ -237,7 +222,6 @@ namespace NLA
 				}
 
 				func(projectile, launchData);
-				LogLaunched(projectile, modifier);
 
 				// The shot is fired, the next one takes a new marble from the bag. A concentration spell keeps its pick for as long as it is cast.
 				if (!Spell::IsConcentration(launchData.spell)) {
