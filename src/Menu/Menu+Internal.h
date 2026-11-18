@@ -33,7 +33,7 @@ namespace NLA::Menu
 	void RenderStavesPage(const PageContext& ctx);
 	void RenderConcentrationStavesPage(const PageContext& ctx);
 	void RenderScrollsPage(const PageContext& ctx);
-	void RenderActionsPage();
+	void RenderGeneralSectionPage();
 
 	// ---- Widgets ----
 

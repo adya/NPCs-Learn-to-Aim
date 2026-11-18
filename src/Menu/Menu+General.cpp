@@ -146,16 +146,9 @@ namespace NLA::Menu
 		RenderSkillShotParts(ctx.cfg);
 		Spacing();
 		RenderKeywordFilters();
-		Spacing();
-		RenderLogLevel();
-#ifndef NDEBUG
-		if (ctx.isNPC) {
-			RenderAimDebug();
-		}
-#endif
 	}
 
-	void RenderActionsPage() {
+	void RenderGeneralSectionPage() {
 		if (Button("Reload Settings", ImVec2(250, 0))) {
 			Options::Load();
 			logger::info("Settings reloaded via menu");
@@ -174,5 +167,11 @@ namespace NLA::Menu
 			logger::info("All settings reset to defaults via menu");
 		}
 		ShowTooltip("Reset all NPC and Player settings to their defaults.");
+
+		Spacing();
+		RenderLogLevel();
+#ifndef NDEBUG
+		RenderAimDebug();
+#endif
 	}
 }

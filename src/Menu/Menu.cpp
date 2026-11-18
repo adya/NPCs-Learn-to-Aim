@@ -76,7 +76,7 @@ namespace NLA::Menu
 		SKSEMenuFramework::SetSection("NPCs Learn to Aim");
 		AddActorItems<true>("NPC");
 		AddActorItems<false>("Player");
-		SKSEMenuFramework::AddSectionItem("Actions", RenderActionsPage);
+		SKSEMenuFramework::AddSectionItem("General", RenderGeneralSectionPage);
 
 		logger::info("Added section to SKSEMenuFramework");
 	}
