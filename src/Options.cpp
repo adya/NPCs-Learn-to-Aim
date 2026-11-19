@@ -135,6 +135,9 @@ namespace NLA::Options
 
 				SaveAim(ini, a_section, keys.accuracy, attack.accuracy, defaultAttack.accuracy, writeDefaults);
 				SaveAim(ini, a_section, keys.precision, attack.precision, defaultAttack.precision, writeDefaults);
+				if (kind.concentration) {
+					SaveAim(ini, a_section, keys.retarget, attack.retarget, defaultAttack.retarget, writeDefaults);
+				}
 
 				SaveSkillSources(ini, a_section, keys.skills, attack.skills, defaultAttack.skills, writeDefaults);
 				if (kind.range) {
@@ -579,6 +582,11 @@ namespace NLA::Options
 
 			attack.accuracy = Aim::FromIni(ini, a_section, keys.accuracy, attack.accuracy, Limits::kAccuracyFactor);
 			attack.precision = Aim::FromIni(ini, a_section, keys.precision, attack.precision, Limits::kFocus);
+			if (kind.concentration) {
+				attack.retarget = Aim::FromIni(ini, a_section, keys.retarget, attack.retarget, Limits::kRetarget);
+			} else {
+				WarnUnsupported(ini, a_section, keys.retarget.All(), "only concentration spells and staves support retargeting");
+			}
 
 			attack.skills = SkillSources::FromIni(ini, a_section, keys.skills, attack.skills);
 

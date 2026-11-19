@@ -130,6 +130,13 @@ namespace NLA::Menu
 				       "How shots are distributed within the accuracy radius at 0 effective skill. 0.5 spreads them evenly over the whole circle, higher values pull them towards the center, lower ones push them to the edge.",
 				       "How shots are distributed within the accuracy radius at 100 effective skill. 0.5 spreads them evenly over the whole circle, higher values pull them towards the center, lower ones push them to the edge.",
 				       Options::Limits::kFocus, "%.2f");
+				if (info.concentration) {
+					AimRow("Retargeting", "##Retarget", attack.retarget,
+					       "How much the skill contributes to Retargeting. The higher this multiplier is the smaller the steps the stream takes when it wanders.",
+					       "How far the stream can move when it picks its next point to wander to at 0 effective skill, as a share of the accuracy radius. 2.00 or more doesn't limit it at all: the stream can jump anywhere within the circle.",
+					       "How far the stream can move when it picks its next point to wander to at 100 effective skill, as a share of the accuracy radius. Lower values make the stream drift in small steps instead of jumping across the circle.",
+					       Options::Limits::kRetarget, "%.2f");
+				}
 				RenderSkillSource(context, &Config::SkillSources::aiming, "Aiming Skill", "aiming");
 			}
 

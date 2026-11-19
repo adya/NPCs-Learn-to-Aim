@@ -161,6 +161,12 @@ namespace NLA
 			}
 			break;
 
+		case kRetarget:
+			if (isAimed && attack.aiming && kind->concentration) {
+				use(attack.retarget.bounds, { attack.retarget.skillMultiplier });
+			}
+			break;
+
 		case kAccuracy:
 		case kPrecision:
 			if (isAimed && attack.aiming) {

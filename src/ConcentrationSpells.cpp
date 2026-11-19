@@ -30,7 +30,27 @@ namespace NLA::ConcentrationSpells
 			/// Time that beam would stay at the same point before starting to glide to the next one.
 			constexpr static std::uint32_t pauseTicks = 20;
 
-			bool Advance(RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision) {
+			/// Picks next point to wander to within the aiming cone, constrained by the retarget's max length.
+			static RE::NiPoint2 NextTarget(const RE::NiPoint2& from, RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget) {
+				const RE::NiPoint2 candidate = RandomSpreadOffset(accuracy, precision, attacker);
+				if (!retarget) {
+					return candidate;
+				}
+
+				const float maxStep = accuracy.MaxSpread(attacker) * retarget.SkillFactor(attacker);
+				RE::NiPoint2 step{ candidate.x - from.x, candidate.y - from.y };
+
+				// The candidate may already be closer than the limit, in which case it's taken as is.
+				if (const float length = step.Length(); length > maxStep && length > 0.0f) {
+					const float shrink = maxStep / length;
+					step.x *= shrink;
+					step.y *= shrink;
+				}
+
+				return { from.x + step.x, from.y + step.y };
+			}
+
+			bool Advance(RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget) {
 #ifndef NDEBUG
 				retargeted = false;
 #endif
@@ -45,7 +65,7 @@ namespace NLA::ConcentrationSpells
 				} else if (paused && elapsedTicks >= pauseTicks) {
 					start = finish;
 
-					finish = RandomSpreadOffset(accuracy, precision, attacker);
+					finish = NextTarget(start, attacker, accuracy, precision, retarget);
 
 					paused = false;
 					elapsedTicks = 0;
@@ -117,9 +137,9 @@ namespace NLA::ConcentrationSpells
 		}
 #endif
 
-		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Projectile* projectile, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& accuracy, const SkillUsage& precision, const Fatigue::ConcentrationState& fatigue) {
+		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Projectile* projectile, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget, const Fatigue::ConcentrationState& fatigue) {
 			auto& anim = wanderAnimations[TrackingKey::ForCaster(attacker, source)];
-			anim.Advance(attacker, accuracy, precision);
+			anim.Advance(attacker, accuracy, precision, retarget);
 
 			const RE::NiPoint2 offset = anim.current * fatigue.scale;
 
@@ -167,7 +187,8 @@ namespace NLA::ConcentrationSpells
 						auto& runtimeData = projectile->GetProjectileRuntimeData();
 						if (auto accuracy = SkillUsage(runtimeData.spell, attacker, kAccuracy); accuracy) {
 							const auto precision = SkillUsage(runtimeData.spell, attacker, kPrecision);
-							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, FatigueState(projectile, attacker, *accuracy.kind));
+							const auto retarget = SkillUsage(runtimeData.spell, attacker, kRetarget);
+							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, retarget, FatigueState(projectile, attacker, *accuracy.kind));
 							localContext = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);
