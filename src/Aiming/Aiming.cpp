@@ -19,6 +19,43 @@ namespace NLA
 			return camera && !camera->IsInFirstPerson();
 		}
 
+		struct PlayerShot
+		{
+			static inline std::unordered_map<TrackingKey, RE::NiPoint2> pending{};
+			static inline RE::BSSpinLock                                lock{};
+
+			static TrackingKey KeyFor(RE::Actor* actor, const RE::MagicItem* spell, RE::MagicSystem::CastingSource source) {
+				return spell ? TrackingKey::ForCaster(actor, source) : TrackingKey::ForWeapon(actor);
+			}
+
+			static void Set(const TrackingKey& key, const RE::NiPoint2& offset) {
+				RE::BSSpinLockGuard guard{ lock };
+				pending[key] = offset;
+			}
+
+			static void Clear(const TrackingKey& key) {
+				RE::BSSpinLockGuard guard{ lock };
+				pending.erase(key);
+			}
+
+			static bool HasPending() {
+				RE::BSSpinLockGuard guard{ lock };
+				return !pending.empty();
+			}
+
+			static std::optional<RE::NiPoint2> Pop(const TrackingKey& key) {
+				RE::BSSpinLockGuard guard{ lock };
+
+				auto it = pending.find(key);
+				if (it == pending.end())
+					return std::nullopt;
+
+				const auto offset = it->second;
+				pending.erase(it);
+				return offset;
+			}
+		};
+
 		struct SteadyingModifier
 		{
 			float holdSeconds{ 0.0f };
@@ -78,6 +115,9 @@ namespace NLA
 
 			std::optional<SteadyingModifier> steadying{};
 
+			/// Where the spread is kept for whoever re-aims the projectile later. Only the player's shots have one.
+			std::optional<TrackingKey> playerShot{};
+
 			RE::NiPoint2 rawOffset{};
 			RE::NiPoint2 offset{};
 
@@ -89,6 +129,8 @@ namespace NLA
 
 			static ShotModifier ForSpell(RE::Actor* attacker, const RE::MagicItem* spell, RE::MagicSystem::CastingSource source) {
 				ShotModifier modifier{ attacker, spell, SkillUsage(spell, attacker, kAccuracy), SkillUsage(spell, attacker, kPrecision) };
+				if (attacker && attacker->IsPlayerRef())
+					modifier.playerShot = PlayerShot::KeyFor(attacker, spell, source);
 
 				const float holdSeconds = Steadying::SpellDuration(attacker, source);
 				if (modifier.accuracy) {
@@ -99,6 +141,8 @@ namespace NLA
 
 			static ShotModifier ForWeapon(RE::Actor* attacker, const RE::TESObjectWEAP* weapon) {
 				ShotModifier modifier{ attacker, weapon, SkillUsage(weapon, attacker, kAccuracy), SkillUsage(weapon, attacker, kPrecision) };
+				if (attacker && attacker->IsPlayerRef())
+					modifier.playerShot = PlayerShot::KeyFor(attacker, nullptr, RE::MagicSystem::CastingSource::kNone);
 
 				if (auto kind = Weapon::KindOf(weapon); kind) {
 					modifier.steadying = SteadyingModifier::For(attacker, *kind, Steadying::FullDrawDuration(attacker));
@@ -108,6 +152,9 @@ namespace NLA
 
 			/// Adds a random spread to the given launch angles.
 			void Apply(float* angleX, float* angleZ) {
+				if (playerShot)
+					PlayerShot::Clear(*playerShot);
+
 				if (!attacker || !accuracy)
 					return;
 
@@ -119,6 +166,9 @@ namespace NLA
 				*angleZ += offset.y;
 
 				angles = { *angleX, *angleZ };
+
+				if (playerShot)
+					PlayerShot::Set(*playerShot, offset);
 			}
 
 		private:
@@ -290,18 +340,86 @@ namespace NLA
 					modifier = ShotModifier::ForWeapon(player, weapon);
 				}
 
-				if (modifier.accuracy) {
-					// we need to preserve calculated tilt angles and only apply random spread to the launch angles.
-					*angleZ -= tiltZ;
-					*angleX -= tiltX;
-					modifier.Apply(angleX, angleZ);
-					*angleZ += tiltZ;
-					*angleX += tiltX;
-					LogShot(modifier);
-				}
+				modifier.Apply(angleX, angleZ);
+				LogShot(modifier);
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
+		/// Points the projectile along the given direction.
+		void Redirect(RE::Projectile* projectile, const RE::NiPoint3& direction) {
+			auto& runtimeData = projectile->GetProjectileRuntimeData();
+			runtimeData.linearVelocity = direction * runtimeData.linearVelocity.Length();
+
+			projectile->data.angle.x = -std::asin(std::clamp(direction.z, -1.0f, 1.0f));
+			projectile->data.angle.z = std::atan2(direction.x, direction.y);
+			if (projectile->data.angle.z < 0.0f)
+				projectile->data.angle.z += RE::NI_TWO_PI;
+
+			if (auto* node = projectile->Get3D2(); node) {
+				const float sb = direction.z;
+				const float cb = std::sqrt(std::max(0.0f, 1.0f - sb * sb));
+				if (cb > 1e-4f) {
+					const float ca = direction.y / cb;
+					const float sa = -direction.x / cb;
+					auto&       m = node->local.rotate;
+					m.entry[0][0] = ca;
+					m.entry[0][1] = direction.x;
+					m.entry[0][2] = sa * sb;
+					m.entry[1][0] = sa;
+					m.entry[1][1] = direction.y;
+					m.entry[1][2] = -ca * sb;
+					m.entry[2][0] = 0.0f;
+					m.entry[2][1] = sb;
+					m.entry[2][2] = cb;
+				}
+			}
+		}
+
+		/// Applies the spread offsets after True Directional Movement auto-aims a projectile.
+		template <class ProjectileType>
+		struct TDMPredictiveAimCompatibility
+		{
+			using Target = ProjectileType;
+
+			static inline constexpr std::size_t index = 0x86;
+
+			static void thunk(RE::Projectile* projectile, RE::NiPoint3& velocity) {
+				if (!projectile || !PlayerShot::HasPending() || projectile->GetProjectileRuntimeData().desiredTarget.native_handle() != 0) {
+					return func(projectile, velocity);
+				}
+
+				const auto& runtimeData = projectile->GetProjectileRuntimeData();
+				const auto  shooter = runtimeData.shooter.get();
+				std::optional<RE::NiPoint2> offset;
+				if (shooter && shooter->IsPlayerRef()) {
+					offset = PlayerShot::Pop(PlayerShot::KeyFor(shooter->As<RE::Actor>(), runtimeData.spell, runtimeData.castingSource));
+				}
+
+				func(projectile, velocity);
+
+				if (!offset)
+					return;
+
+				if (runtimeData.desiredTarget.native_handle() == 0)
+					return;  // TDM sets desiredTarget when it re-aims a projectile, so it didn't: the spread in the launch angles is intact.
+
+				auto direction = runtimeData.linearVelocity;
+				if (direction.SqrLength() < 1e-6f)
+					return;
+				direction.Unitize();
+
+				const float pitch = std::clamp(-std::asin(std::clamp(direction.z, -1.0f, 1.0f)) + offset->x, -RE::NI_HALF_PI, RE::NI_HALF_PI);
+				const float yaw = std::atan2(direction.x, direction.y) + offset->y;
+
+				Redirect(projectile, { std::sin(yaw) * std::cos(pitch), std::cos(yaw) * std::cos(pitch), -std::sin(pitch) });
+				logger::debug("Re-applied spread ({:.3f}°, {:.3f}°) on top of the re-aimed projectile", RE::rad_to_deg(offset->x), RE::rad_to_deg(offset->y));
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static inline void pre_hook() { logger::debug("Installing TDM predictive aim compatibility for {}...", typeid(ProjectileType).name()); }
+			static inline void post_hook() { logger::info("🪝 Installed TDM predictive aim compatibility for {}", typeid(ProjectileType).name()); }
 		};
 
 		void Install() {
@@ -309,6 +427,14 @@ namespace NLA
 			stl::install_hook<LaunchSpellProjectile>();
 			stl::install_hook<WeaponFireProjectile>();
 			stl::install_hook<PlayerAutoAim>();
+
+			if (GetModuleHandleW(L"TrueDirectionalMovement.dll")) {
+				stl::install_hook<TDMPredictiveAimCompatibility<RE::Projectile>>();
+				stl::install_hook<TDMPredictiveAimCompatibility<RE::ArrowProjectile>>();
+				stl::install_hook<TDMPredictiveAimCompatibility<RE::MissileProjectile>>();
+			} else {
+				logger::debug("True Directional Movement is not installed, skipping its predictive aim compatibility");
+			}
 		}
 	}
 }
