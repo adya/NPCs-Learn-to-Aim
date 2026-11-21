@@ -80,6 +80,9 @@ namespace NLA::Menu
 	void HeaderRow(const char* first, const char* second = nullptr, const char* third = nullptr);
 	void EmptyRow();
 
+	/// The width that a table from `BeginPageTable` takes.
+	float PageTableWidth();
+
 	/// Starts a new row with the button in the first column.
 	bool ResetButton(const char* label);
 
@@ -184,6 +187,9 @@ namespace NLA::Menu
 	{};
 
 	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(const KindContext&, TableSections&)>& renderParts);
+
+	/// Shows where shots of the kind land with the current settings, for a skill and distance picked in the pane itself.
+	void RenderSpreadPreview(const KindContext& kind);
 
 	/// Renders the attack kind below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
 	/// a new section with their title; the rest stay in the section of the "Learn X" row.

@@ -9,6 +9,9 @@ namespace NLA::Menu
 	{
 		constexpr const char* kSkillMultiplierHeader = "Skill Mult";
 
+			/// The least width left to the preview next to the settings.
+			constexpr float kMinPreviewWidth = 300.0f;
+
 		void RenderSkillSource(const KindContext& kind, Options::SkillSource Config::SkillSources::*field, const char* label, const char* what) {
 			if (!kind.info.magic) {
 				return;
@@ -116,7 +119,11 @@ namespace NLA::Menu
 		KindContext context{ ctx, attack, info };
 
 		PushID(kind.id);
-		{
+
+		// The settings take the left, as wide as their table, and the preview what is left, so that the effect of a change is visible without leaving the page.
+		const float settingsWidth = std::min(PageTableWidth() + GetStyle()->ScrollbarSize + GetStyle()->WindowPadding.x * 2, std::max(200.0f, GetContentRegionAvail().x - kMinPreviewWidth));
+		const bool  settingsVisible = BeginChild("##Settings", ImVec2(settingsWidth, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+		if (settingsVisible) {
 			TableSections sections;
 			if (sections.Section(separator)) {
 				HeaderRow(kSkillMultiplierHeader, "At 0 Skill", "At 100 Skill");
@@ -151,6 +158,13 @@ namespace NLA::Menu
 				EmptyRow();
 			}
 		}
+		EndChild();
+
+		SameLine();
+		if (BeginChild("##Preview", ImVec2(0, 0), ImGuiChildFlags_Border, 0)) {
+			RenderSpreadPreview(context);
+		}
+		EndChild();
 		PopID();
 	}
 }

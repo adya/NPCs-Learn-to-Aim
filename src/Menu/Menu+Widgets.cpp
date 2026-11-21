@@ -15,6 +15,13 @@ namespace NLA::Menu
 
 		constexpr const char* kWidestLabel = kScaleChargeSpeedLabel;
 
+			constexpr int kSliderColumns = 3;
+
+			/// Sized for the longest label, so that every table of a page lines up.
+			float LabelColumnWidth() {
+				return CalcTextSize(kWidestLabel).x + GetFrameHeight() * 1.5f;
+			}
+
 		float RoundTo2Decimals(float value) {
 			return std::round(value * 100.0f) / 100.0f;
 		}
@@ -73,13 +80,17 @@ namespace NLA::Menu
 		if (!BeginTable(id, 4, ImGuiTableFlags_SizingFixedFit)) {
 			return false;
 		}
-		// Sized for the longest label, so that every table of a page lines up.
-		const float labelWidth = CalcTextSize(kWidestLabel).x + GetFrameHeight() * 1.5f;
-		TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, labelWidth);
-		for (int i = 0; i < 3; ++i) {
+		TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, LabelColumnWidth());
+		for (int i = 0; i < kSliderColumns; ++i) {
 			TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, kSliderWidth);
 		}
 		return true;
+	}
+
+	float PageTableWidth() {
+		// Every column has the cell padding on both sides.
+		constexpr int columns = 1 + kSliderColumns;
+		return LabelColumnWidth() + kSliderColumns * kSliderWidth + GetStyle()->CellPadding.x * 2 * columns;
 	}
 
 	void RenderTable(const char* id, const std::function<void()>& rows) {
