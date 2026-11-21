@@ -39,6 +39,25 @@ namespace NLA
 		float MaxSpread(RE::Actor* actor) const;
 	};
 
+	/// Internals of `SkillUsage` and `RandomSpreadOffset`, open only so that the menu preview can replay the same maths with different settings.
+	/// The live path goes through `SkillUsage`, which also handles a missing actor or skill.
+	namespace Details
+	{
+		/// The skill that a `source` stands for. `spell` is null for weapons, and also when no particular spell is at hand (the menu preview): magic
+		/// (`magic`) then falls back to the caster's best school, like a spell that has none.
+		RE::ActorValue SkillForSource(Options::SkillSource source, const RE::MagicItem* spell, bool magic, RE::Actor* caster);
+
+		/// The value of a skill-scaled option at the given effective skill (the skill times the option's skill multiplier).
+		float SkillFactorFor(const Options::Bounds& bounds, float effectiveSkill);
+
+		/// The widest deviation (in radians) for the given `kAccuracy` skill factor.
+		float MaxSpreadFor(float accuracyFactor);
+
+		/// The deviation for a given roll: `radiusRoll` is a uniform number from 0 to 1, `angle` the direction in radians. This is the maths behind
+		/// `RandomSpreadOffset`.
+		RE::NiPoint2 SpreadOffset(float maxSpread, float focus, float radiusRoll, float angle);
+	}
+
 	/// A random deviation in a random direction, never further than `maxSpread` (radians) from the aim.
 	/// `focus` shapes how the shots are spread within that radius: the radius is `maxSpread * u^focus` for a uniform `u`,
 	/// so 0.5 covers the disc evenly and higher values cluster the shots closer to the center. It is the skill factor of the `kPrecision` usage.

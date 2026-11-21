@@ -60,18 +60,10 @@ namespace NLA
 		{
 			float holdSeconds{ 0.0f };
 
-			/// Spread scale from steadying.
-			float steadied{ 1.0f };
-
 			bool  fatigueEnabled{ false };
 			float fatigueThreshold{ 0.0f };
-			float fatigueSeconds{ 0.0f };
 
-			/// How far the fatigue debuff has progressed towards its max (0-1).
-			float fatigueProgress{ 0.0f };
-
-			/// Final spread scale, combining steadying and fatigue.
-			float scale{ 1.0f };
+			Fatigue::HoldScale hold{};
 
 			static SteadyingModifier For(RE::Actor* attacker, const Options::AttackKind& kind, float holdSeconds) {
 				const auto& options = Options::For(attacker);
@@ -81,24 +73,7 @@ namespace NLA
 
 			SteadyingModifier(RE::Actor* attacker, float holdSeconds, const Options::AttackKind& kind, const Options::Config::Spread& steadying, const Options::Config::Fatigue& fatigue) :
 				holdSeconds(holdSeconds), fatigueEnabled(fatigue.enabled), fatigueThreshold(fatigue.enabled ? Fatigue::Threshold(fatigue, attacker, kind) : 0.0f) {
-				if (holdSeconds <= 0.0f)
-					return;
-
-				const float steadyingSeconds = fatigue.enabled ? std::min(holdSeconds, fatigueThreshold) : holdSeconds;
-
-				if (steadying.enabled) {
-					steadied = 1.0f - steadying.maxSpreadMultiplier * Fatigue::Progress(steadyingSeconds, steadying.halfDuration);
-				}
-				scale = steadied;
-
-				if (!fatigue.enabled)
-					return;
-
-				fatigueSeconds = std::max(0.0f, holdSeconds - fatigueThreshold);
-				fatigueProgress = Fatigue::Progress(fatigueSeconds, fatigue.halfDuration);
-
-				const float fatigueTarget = 1.0f + fatigue.maxSpreadMultiplier;
-				scale = steadied + (fatigueTarget - steadied) * fatigueProgress;
+				hold = Fatigue::Hold(steadying, fatigue, fatigueThreshold, holdSeconds);
 			}
 		};
 
@@ -160,7 +135,7 @@ namespace NLA
 
 				originalAngles = { *angleX, *angleZ };
 				rawOffset = RandomSpreadOffset(accuracy, precision, attacker);
-				offset = rawOffset * (steadying ? steadying->scale : 1.0f);
+				offset = rawOffset * (steadying ? steadying->hold.scale : 1.0f);
 
 				*angleX += offset.x;  // add random deviation to the launch angles.
 				*angleZ += offset.y;
@@ -208,11 +183,11 @@ namespace NLA
 
 			if (modifier.steadying && modifier.steadying->holdSeconds > 0.0f) {
 				const auto& steadying = *modifier.steadying;
-				logger::info("\t{}: {:.3f}s (steadying: x{:.3f})", weapon ? (weapon->IsCrossbow() ? "Held loaded" : "Held at full draw") : "Held charged", steadying.holdSeconds, steadying.steadied);
+				logger::info("\t{}: {:.3f}s (steadying: x{:.3f})", weapon ? (weapon->IsCrossbow() ? "Held loaded" : "Held at full draw") : "Held charged", steadying.holdSeconds, steadying.hold.steadied);
 				if (steadying.fatigueEnabled) {
-					logger::info("\tFatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", steadying.fatigueThreshold, steadying.fatigueSeconds, steadying.fatigueProgress * 100.0f);
+					logger::info("\tFatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", steadying.fatigueThreshold, steadying.hold.fatigueSeconds, steadying.hold.progress * 100.0f);
 				}
-				logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", steadying.scale, (steadying.scale - 1.0f) * 100.0f);
+				logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", steadying.hold.scale, (steadying.hold.scale - 1.0f) * 100.0f);
 			}
 
 			if (const auto& accuracy = modifier.accuracy; accuracy) {

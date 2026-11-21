@@ -91,28 +91,33 @@ namespace NLA
 				break;
 			}
 
-			switch (source) {
-			case Options::SkillSource::kEnchanting:
-				return RE::ActorValue::kEnchanting;
-			case Options::SkillSource::kArchery:
-				return RE::ActorValue::kArchery;
-			case Options::SkillSource::kHighest:
-				return HighestMagicSkill(caster);
-			default:
-				// A weapon has no magic school.
-				if (!spell)
-					return RE::ActorValue::kArchery;
+			return Details::SkillForSource(source, spell, kind.magic, caster);
+		}
+	}
 
-				if (auto effect = spell->GetCostliestEffectItem(); effect) {
-					if (auto base = effect->baseEffect; base) {
-						if (auto skill = base->GetMagickSkill(); skill != RE::ActorValue::kNone) {
-							return skill;
-						}
+	RE::ActorValue Details::SkillForSource(Options::SkillSource source, const RE::MagicItem* spell, bool magic, RE::Actor* caster) {
+		switch (source) {
+		case Options::SkillSource::kEnchanting:
+			return RE::ActorValue::kEnchanting;
+		case Options::SkillSource::kArchery:
+			return RE::ActorValue::kArchery;
+		case Options::SkillSource::kHighest:
+			return HighestMagicSkill(caster);
+		default:
+			if (!spell) {
+				// A weapon has no magic school. Without a spell to take it from, magic aims by the caster's best school.
+				return magic ? HighestMagicSkill(caster) : RE::ActorValue::kArchery;
+			}
+
+			if (auto effect = spell->GetCostliestEffectItem(); effect) {
+				if (auto base = effect->baseEffect; base) {
+					if (auto skill = base->GetMagickSkill(); skill != RE::ActorValue::kNone) {
+						return skill;
 					}
 				}
-				// Spells without a magic school still aim by the caster's best school.
-				return HighestMagicSkill(caster);
 			}
+			// Spells without a magic school still aim by the caster's best school.
+			return HighestMagicSkill(caster);
 		}
 	}
 
@@ -190,32 +195,47 @@ namespace NLA
 		return min + (max - min) * progress;
 	}
 
-	float SkillUsage::SkillFactor(RE::Actor* actor) const {
-		if (!actor || skill == RE::ActorValue::kNone)
-			return 1.0f;
+	float Details::SkillFactorFor(const Options::Bounds& bounds, float effectiveSkill) {
 		if (bounds.from == bounds.to)
 			return bounds.from;
 
-		return SkillProgress(bounds.from, bounds.to, EffectiveSkill(actor));
+		return SkillProgress(bounds.from, bounds.to, effectiveSkill);
+	}
+
+	float SkillUsage::SkillFactor(RE::Actor* actor) const {
+		if (!actor || skill == RE::ActorValue::kNone)
+			return 1.0f;
+
+		return Details::SkillFactorFor(bounds, EffectiveSkill(actor));
+	}
+
+	float Details::MaxSpreadFor(float accuracyFactor) {
+		constexpr float toRadians = std::numbers::pi_v<float> / 180.0f;
+		return accuracyFactor * Settings::fBowNPCSpreadAngle() * toRadians;
 	}
 
 	float SkillUsage::MaxSpread(RE::Actor* actor) const {
-		constexpr float toRadians = std::numbers::pi_v<float> / 180.0f;
-		return SkillFactor(actor) * Settings::fBowNPCSpreadAngle() * toRadians;
+		return Details::MaxSpreadFor(SkillFactor(actor));
 	}
 
-	RE::NiPoint2 RandomSpreadOffset(float maxSpread, float focus) {
+	RE::NiPoint2 Details::SpreadOffset(float maxSpread, float focus, float radiusRoll, float angle) {
 		// The floor keeps `pow` finite and the distribution a valid one when the skill curve overshoots a decreasing focus.
 		constexpr float minFocus = 0.05f;
 
+		// `focus` 0.5 spreads shots evenly over the disc, higher pulls them towards the center and lower pushes them to the edge.
+		const float spread = maxSpread * std::pow(radiusRoll, std::max(focus, minFocus));
+
+		return { std::sin(angle) * spread, std::cos(angle) * spread };
+	}
+
+	RE::NiPoint2 RandomSpreadOffset(float maxSpread, float focus) {
 		std::uniform_real_distribution<float> angleRND(0, 2 * std::numbers::pi_v<float>);
 		std::uniform_real_distribution<float> radiusRND(0, 1);
 
-		// `focus` 0.5 spreads shots evenly over the disc, higher pulls them towards the center and lower pushes them to the edge.
-		float spread = maxSpread * std::pow(radiusRND(rnd), std::max(focus, minFocus));
-		float angle = angleRND(rnd);  // pick a random direction on a circle.
+		const float radiusRoll = radiusRND(rnd);
+		const float angle = angleRND(rnd);  // pick a random direction on a circle.
 
-		return { std::sin(angle) * spread, std::cos(angle) * spread };
+		return Details::SpreadOffset(maxSpread, focus, radiusRoll, angle);
 	}
 
 	float SpreadFocus(const SkillUsage& precision, RE::Actor* actor) {

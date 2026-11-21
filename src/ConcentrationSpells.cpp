@@ -10,87 +10,18 @@ namespace NLA::ConcentrationSpells
 {
 	namespace
 	{
-		struct WanderAnimation
-		{
-			RE::NiPoint2 start{ 0.0f, 0.0f };
-			RE::NiPoint2 finish{ 0.0f, 0.0f };
-			RE::NiPoint2 current{ 0.0f, 0.0f };
-
-			std::uint32_t elapsedTicks = 0;
-			bool          paused = false;
-
-#ifndef NDEBUG
-			/// Set by `Advance` when it picked a new target point, so the log doesn't repeat every tick.
-			bool retargeted = false;
-#endif
-
-			/// Duration in which animation should glide from start to finish.
-			constexpr static std::uint32_t travelTicks = 45;
-
-			/// Time that beam would stay at the same point before starting to glide to the next one.
-			constexpr static std::uint32_t pauseTicks = 20;
-
-			/// Picks next point to wander to within the aiming cone, constrained by the retarget's max length.
-			static RE::NiPoint2 NextTarget(const RE::NiPoint2& from, RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget) {
-				const RE::NiPoint2 candidate = RandomSpreadOffset(accuracy, precision, attacker);
-				if (!retarget) {
-					return candidate;
-				}
-
-				const float maxStep = accuracy.MaxSpread(attacker) * retarget.SkillFactor(attacker);
-				RE::NiPoint2 step{ candidate.x - from.x, candidate.y - from.y };
-
-				// The candidate may already be closer than the limit, in which case it's taken as is.
-				if (const float length = step.Length(); length > maxStep && length > 0.0f) {
-					const float shrink = maxStep / length;
-					step.x *= shrink;
-					step.y *= shrink;
-				}
-
-				return { from.x + step.x, from.y + step.y };
+		/// Picks next point to wander to within the aiming cone, constrained by the retarget's max length.
+		RE::NiPoint2 NextTarget(const RE::NiPoint2& from, RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget) {
+			const RE::NiPoint2 candidate = RandomSpreadOffset(accuracy, precision, attacker);
+			if (!retarget) {
+				return candidate;
 			}
 
-			bool Advance(RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget) {
-#ifndef NDEBUG
-				retargeted = false;
-#endif
-
-				if (accuracy.MaxSpread(attacker) <= 0.0f) {
-					return false;
-				}
-
-				if (!paused && elapsedTicks >= travelTicks) {
-					paused = true;
-					elapsedTicks = 0;
-				} else if (paused && elapsedTicks >= pauseTicks) {
-					start = finish;
-
-					finish = NextTarget(start, attacker, accuracy, precision, retarget);
-
-					paused = false;
-					elapsedTicks = 0;
-#ifndef NDEBUG
-					retargeted = true;
-#endif
-				}
-
-				++elapsedTicks;
-
-				if (paused) {
-					current = finish;
-				} else {
-					float t = static_cast<float>(elapsedTicks) / travelTicks;
-					t = t * t * (3.0f - 2.0f * t);
-					current.x = start.x + (finish.x - start.x) * t;
-					current.y = start.y + (finish.y - start.y) * t;
-				}
-
-				return true;
-			}
-		};
+			return Details::BoundedStep(from, candidate, accuracy.MaxSpread(attacker) * retarget.SkillFactor(attacker));
+		}
 
 		/// One for each hand of each caster. Projectile updates run on the main thread, which is also where the state is reset, so no locking is needed.
-		std::unordered_map<TrackingKey, WanderAnimation> wanderAnimations;
+		std::unordered_map<TrackingKey, Details::Wander> wanderAnimations;
 
 		struct LocalContext
 		{
@@ -114,7 +45,7 @@ namespace NLA::ConcentrationSpells
 		}
 
 #ifndef NDEBUG
-		void LogWander(RE::Projectile* projectile, RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const Fatigue::ConcentrationState& fatigue, const WanderAnimation& anim, const RE::NiPoint2& offset) {
+		void LogWander(RE::Projectile* projectile, RE::Actor* attacker, const SkillUsage& accuracy, const SkillUsage& precision, const Fatigue::ConcentrationState& fatigue, const Details::Wander& anim, const RE::NiPoint2& offset) {
 			const auto& runtimeData = projectile->GetProjectileRuntimeData();
 			const auto* spell = runtimeData.spell ? runtimeData.spell->As<RE::MagicItem>() : nullptr;
 
@@ -123,14 +54,14 @@ namespace NLA::ConcentrationSpells
 			logger::info("\tSkill: {:.1f} (base: {:.1f}), accuracy: {:.4f}, focus: {:.3f}", accuracy.EffectiveSkill(attacker), accuracy.Skill(attacker), accuracy.SkillFactor(attacker), SpreadFocus(precision, attacker));
 			logger::info("\tCharge speed: x{:.3f}", ChargeTime::SpeedMultiplier(attacker, spell));
 			logger::info("\tConcentrating for: {:.3f}s", fatigue.castSeconds);
-			logger::info("\tSteadying: x{:.3f}", fatigue.steadied);
+			logger::info("\tSteadying: x{:.3f}", fatigue.hold.steadied);
 
 			if (fatigue.enabled) {
-				logger::info("\tFatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", fatigue.threshold, fatigue.fatigueSeconds, fatigue.progress * 100.0f);
+				logger::info("\tFatigue: sets in after {:.3f}s, fatigued for {:.3f}s ({:.0f}% of max debuff)", fatigue.threshold, fatigue.hold.fatigueSeconds, fatigue.hold.progress * 100.0f);
 			} else {
 				logger::info("\tFatigue: disabled");
 			}
-			logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", fatigue.scale, (fatigue.scale - 1.0f) * 100.0f);
+			logger::info("\tSpread scale: x{:.3f} ({:+.0f}%)", fatigue.hold.scale, (fatigue.hold.scale - 1.0f) * 100.0f);
 			logger::info("\tSpread: {:.3f}° -> {:.3f}° (max: {:.3f}°)", RE::rad_to_deg(anim.current.Length()), RE::rad_to_deg(offset.Length()), RE::rad_to_deg(accuracy.MaxSpread(attacker)));
 			logger::info("\tAngleX: {:.3f}°", RE::rad_to_deg(offset.x));
 			logger::info("\tAngleZ: {:.3f}°", RE::rad_to_deg(offset.y));
@@ -139,9 +70,9 @@ namespace NLA::ConcentrationSpells
 
 		RE::NiPoint2 ApplyWanderOffset(RE::NiMatrix3* rotation, RE::Projectile* projectile, RE::Actor* attacker, RE::MagicSystem::CastingSource source, const SkillUsage& accuracy, const SkillUsage& precision, const SkillUsage& retarget, const Fatigue::ConcentrationState& fatigue) {
 			auto& anim = wanderAnimations[TrackingKey::ForCaster(attacker, source)];
-			anim.Advance(attacker, accuracy, precision, retarget);
+			anim.Advance(accuracy.MaxSpread(attacker), [&](const RE::NiPoint2& from) { return NextTarget(from, attacker, accuracy, precision, retarget); });
 
-			const RE::NiPoint2 offset = anim.current * fatigue.scale;
+			const RE::NiPoint2 offset = anim.current * fatigue.hold.scale;
 
 #ifndef NDEBUG
 			if (anim.retargeted) {
@@ -409,6 +340,19 @@ namespace NLA::ConcentrationSpells
 			static inline void pre_hook() { logger::debug("Installing concentration spell cast range scaling (item cast scoring)..."); }
 			static inline void post_hook() { logger::info("🪝 Installed concentration spell cast range scaling (item cast scoring)"); }
 		};
+	}
+
+	RE::NiPoint2 Details::BoundedStep(const RE::NiPoint2& from, const RE::NiPoint2& candidate, float maxStep) {
+		RE::NiPoint2 step{ candidate.x - from.x, candidate.y - from.y };
+
+		// The candidate may already be closer than the limit, in which case it's taken as is.
+		if (const float length = step.Length(); length > maxStep && length > 0.0f) {
+			const float shrink = maxStep / length;
+			step.x *= shrink;
+			step.y *= shrink;
+		}
+
+		return { from.x + step.x, from.y + step.y };
 	}
 
 	void Reset() {
