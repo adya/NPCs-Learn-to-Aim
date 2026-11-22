@@ -8,32 +8,30 @@ namespace NLA::Menu
 			{
 				.id = "Crossbows",
 				.label = kScaleAimLabel,
-				.tooltip = "When enabled, Archery skill will affect aiming with crossbows.",
 				.kind = Options::AttackKind::kCrossbow,
-				.accuracyTooltip = "How much Archery skill contributes to Accuracy with crossbows. The higher this multiplier is the smaller the widest miss can be.",
-				.precisionTooltip = "How much Archery skill contributes to Precision with crossbows. The higher this multiplier is the more shots land close to the aim.",
+				.accuracyTooltip = "How strongly Archery skill improves accuracy with crossbows. Higher means smaller misses.",
+				.precisionTooltip = "How strongly Archery skill bunches shots near the aim.",
 				.resetLabel = "Reset Crossbows to Default",
 			},
 			SkillShotRows{
-				"Crossbow Skill Shots",
-				"When enabled, sufficiently skilled crossbowmans take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
+				"Skill Shots",
+				"Skilled crossbow users sometimes aim for a body part instead of the chest. Pick the parts on the General page.",
 				"crossbowman",
 				"Archery skill" },
 			SpeedRows{
 				kScaleDrawSpeedLabel,
-				"When enabled, Archery skill also affects how fast a crossbow is reloaded. (the higher the skill the faster the reload)",
 				kDrawSpeedGroup },
 			SpreadRows{
-				"Holding a Loaded Crossbow Steadies Aim",
-				"When enabled, holding a loaded crossbow before firing tightens its spread, with diminishing returns.",
-				"The most spread that holding a loaded crossbow can remove, approached the longer it's held.",
-				"Duration of holding a loaded crossbow to get roughly half of the max spread reduction. Lower means the aim steadies faster." },
+				"Loaded Crossbow Steadies Aim",
+				"Holding a loaded crossbow makes the aim steadier over time.",
+				"The most spread that holding can remove. It takes a while to get there.",
+				"Time to reach half of the max spread reduction. Shorter means the aim steadies faster." },
 			FatigueRows{
 				"Loaded Crossbow Fatigues Aim",
-				"When enabled, holding a loaded crossbow for too long tires the shooter's arms, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the shooter's max Stamina.",
-				"Seconds a loaded crossbow can be held before fatigue sets in for a shooter with no Stamina. A higher max Stamina extends it.",
-				"Seconds a loaded crossbow can be held before fatigue sets in for a shooter with 100 max Stamina. Max Stamina above that extends it further, with diminishing returns.",
-				"The most spread that fatigue can add. Note, that in fatigued state, the bonus from steadied aim is negated before adding extra spread." },
+				"Holding a loaded crossbow too long tires the shooter and the aim gets worse. More Stamina delays this.",
+				"How long a crossbow can be held before the shooter tires, with no Stamina. More Stamina extends it.",
+				"How long a crossbow can be held before the shooter tires, with 100 max Stamina. More Stamina extends it further.",
+				"The most extra spread that tiring can add. It also cancels any steadying bonus." },
 		};
 	}
 

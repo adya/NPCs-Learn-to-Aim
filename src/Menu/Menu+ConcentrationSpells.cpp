@@ -8,37 +8,34 @@ namespace NLA::Menu
 			{
 				.id = "ConcentrationSpells",
 				.label = kScaleAimLabel,
-				.tooltip = "When enabled, corresponding Magic skill will affect aiming with concentration spells (flames/sparks/frost/etc). Stream/Beam will wander around the aimed point.",
 				.kind = Options::AttackKind::kConcentrationSpell,
-				.accuracyTooltip = "How much the skill contributes to Accuracy with concentration spells. The higher this multiplier is the smaller the widest miss can be.",
-				.precisionTooltip = "How much the skill contributes to Precision with concentration spells. The higher this multiplier is the more shots land close to the aim.",
+				.accuracyTooltip = "How strongly skill improves accuracy with concentration spells. Higher means a narrower wander.",
+				.precisionTooltip = "How strongly skill keeps the beam near the aim.",
 				.resetLabel = "Reset Concentration Spells to Default",
 			},
 			SkillShotRows{
-				"Concentration Spell Skill Shots",
-				"When enabled, sufficiently skilled mages take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
+				"Skill Shots",
+				"Skilled mages sometimes aim for a body part instead of the chest. Pick the parts on the General page.",
 				"mage",
 				"aiming skill" },
 			RangeRows{
-				"When enabled, corresponding Magic skill also affects concentration spells range. (the higher the skill the farther mage can hit)",
-				"Concentration spell range multiplier at 0 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
-				"Concentration spell range multiplier at 100 skill. Note that range also scales spell's visual effects, so setting this too high may produce poor visuals.",
+				"Range at 0 skill, as a multiple of normal. Very high values can look odd.",
+				"Range at 100 skill, as a multiple of normal. Very high values can look odd.",
 				kRangeGroup },
 			SpeedRows{
 				kScaleChargeSpeedLabel,
-				"When enabled, corresponding Magic skill also affects how fast concentration spells charge/cast. (the higher the skill the faster the cast)",
 				kChargeSpeedGroup },
 			SpreadRows{
 				"Casting Steadies Aim",
-				"When enabled, the longer a concentration spell is cast, the steadier the stream/beam wanders, with diminishing returns.",
-				"The most wander that casting can remove, approached the longer the spell is cast. 50% means the wander can at best be halved.",
-				"Duration of casting a concentration spell to get roughly half of the max wander reduction. Lower means the aim steadies faster. 1 sec with 50% reduction means that in 1 second wander will be reduced by 25%." },
+				"The longer a spell is cast, the less the beam wanders.",
+				"The most wander that casting can remove. 50% means at best half as wide.",
+				"Time to reach half of the max spread reduction. Shorter means the beam steadies faster." },
 			FatigueRows{
 				"Prolonged Cast Fatigues Aim",
-				"When enabled, casting a concentration spell continuously for too long tires the caster's arm, making the stream/beam wander wider the longer it's cast past their fatigue threshold. That threshold grows with the caster's max Magicka.",
-				"Seconds a concentration spell can be cast continuously before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",
-				"Seconds a concentration spell can be cast continuously before fatigue sets in for a caster with 100 max Magicka. Max Magicka above that extends it further, with diminishing returns.",
-				"The most extra spread that fatigue can add on top of the normal stream/beam wander. 100% means the wander can grow up to twice as wide." },
+				"Casting too long tires the caster and the beam wanders wider. More Magicka delays this.",
+				"How long a spell can be cast before the caster tires, with no Magicka. More Magicka extends it.",
+				"How long a spell can be cast before the caster tires, with 100 max Magicka. More Magicka extends it further.",
+				"The most extra wander that tiring can add. 100% means up to twice as wide." },
 		};
 	}
 

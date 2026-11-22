@@ -798,11 +798,11 @@ namespace NLA::Menu
 		SetNextItemWidth(100.0f);
 		SliderInt("##PreviewShots", &shared.shots, 1, kMaxShots, "%d");
 		ShowTooltip(info.concentration ?
-		                (shared.interactive ? "How many steps of the stream stay on screen; older ones fade away." : "How many points the stream visits when shown at once.") :
+		                (shared.interactive ? "How many steps of the beam stay on screen; older ones fade away." : "How many points the beam visits when shown at once.") :
 		                (shared.interactive ? "How many shots stay on screen while the target is held; older ones fade away." : "How many shots a click fires."));
 		SameLine();
 		Checkbox("Interactive", &shared.interactive);
-		ShowTooltip(info.concentration ? "On: hold the target to cast live. Off: show a whole stream at once." : "On: hold the target to fire a steady flow of shots. Off: a click fires a batch at once.");
+		ShowTooltip(info.concentration ? "On: hold the target to cast live. Off: show a whole beam at once." : "On: hold the target to fire a steady flow of shots. Off: a click fires a batch at once.");
 
 		AlignTextToFramePadding();
 		TextUnformatted("Target");
@@ -1024,7 +1024,7 @@ namespace NLA::Menu
 				}
 				ShowTooltip(spreadTip.c_str(), true);
 			} else {
-				ShowTooltip("Aiming is off: shots go exactly where aimed.", true);
+				ShowTooltip(info.concentration ? "Aiming is off: the beam goes exactly where aimed." : "Aiming is off: shots go exactly where aimed.", true);
 			}
 			SameLine();
 		}
@@ -1218,7 +1218,7 @@ namespace NLA::Menu
 
 		// ---- Instructions ----
 
-		TextDisabled("The thin circle is the widest a shot can land right now.");
-		TextDisabled("A glow on the edge means shots landed out of view.");
+		TextDisabled(info.concentration ? "The thin circle is the widest the beam can wander right now." : "The thin circle is the widest a shot can land right now.");
+		TextDisabled(info.concentration ? "A glow on the edge means the beam wandered out of view." : "A glow on the edge means shots landed out of view.");
 	}
 }

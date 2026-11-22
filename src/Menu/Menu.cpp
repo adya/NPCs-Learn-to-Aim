@@ -39,8 +39,8 @@ namespace NLA::Menu
 				Options::Save();
 			}
 			ShowTooltip(isNPC ?
-			                "Master switch for NPCs. When disabled, NPCs have vanilla aiming and all settings below are ignored." :
-			                "Master switch for the Player. When disabled, the Player has vanilla aiming and all settings below are ignored.");
+			                "Turns the mod on for NPCs. When off, NPCs aim like vanilla and the settings below are ignored." :
+			                "Turns the mod on for the Player. When off, the Player aims like vanilla and the settings below are ignored.");
 			Spacing();
 		} else if (!enabled) {
 			TextDisabled("%s", isNPC ? "NPC settings are disabled. Enable them by clicking the NPC section." : "Player settings are disabled. Enable them by clicking the Player section.");
@@ -61,7 +61,7 @@ namespace NLA::Menu
 				}
 			}
 			ShowTooltip(isNPC ?
-			                "Reset all NPC settings, including filters and skill shots, to their defaults." :
+			                "Reset all NPC settings, including filters, to their defaults." :
 			                "Reset all Player settings to their defaults.");
 		}
 		PopID();

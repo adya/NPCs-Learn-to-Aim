@@ -7,19 +7,23 @@ namespace NLA::Menu
 {
 	namespace
 	{
-		constexpr float       kSliderWidth = 160.0f;
-		float                 gPageRight = 0.0f;  // Right edge of the visible page, in screen space.
+		constexpr float       kSliderWidth = 110.0f;
 		constexpr std::array kSkillSourceLabels{ "Spell's Magic Skill", "Highest Magic Skill", "Enchanting" };
+		constexpr std::array kSkillSourceDescriptions{ "the skill of the spell's school", "the highest Magic skill", "Enchanting skill" };
 		// Only the magic skills are offered, so Archery and everything after it is left out.
 		static_assert(kSkillSourceLabels.size() == static_cast<std::size_t>(Options::SkillSource::kArchery));
 
-		constexpr const char* kWidestLabel = kScaleChargeSpeedLabel;
+		constexpr const char* kWidestLabel = "Loaded Crossbow Fatigues Aim";  // The longest checkbox label.
+		constexpr const char* kWidestSkill = "Highest Magic Skill";
 
 			constexpr int kSliderColumns = 4;
 
 			/// Sized for the longest label, so that every table of a page lines up.
 			float LabelColumnWidth() {
-				return CalcTextSize(kWidestLabel).x + GetFrameHeight() * 1.5f;
+				const float combo = CalcTextSize(kWidestSkill).x + GetFrameHeight() * 1.5f;
+				const float skillRow = CalcTextSize(kScaleChargeSpeedLabel).x + GetStyle()->ItemSpacing.x * 3.0f + combo;
+				const float toggleRow = CalcTextSize(kWidestLabel).x + GetFrameHeight() * 1.5f;
+				return std::max(skillRow, toggleRow);
 			}
 
 		float RoundTo2Decimals(float value) {
@@ -34,13 +38,11 @@ namespace NLA::Menu
 			}
 		}
 
-		void CenteredHeaderCell(const char* label, bool disabled = false) {
-			CenterCursorForText(label);
-			if (disabled) {
-				TextDisabled("%s", label);
-			} else {
-				Text("%s", label);
-			}
+		void CenteredHeaderCell(const HeaderLabel& header) {
+			// As tall as a checkbox or drop-down in the same row, so that every header row has the same height.
+			AlignTextToFramePadding();
+			CenterCursorForText(header.text);
+			TooltipLabel(header.text, header.tooltip);
 		}
 
 		void SaveAfterEdit(const char* tooltip) {
@@ -65,6 +67,11 @@ namespace NLA::Menu
 	}
 
 	void ShowTooltip(const char* text, bool whileHeld) {
+		// The hand cursor tells that the item has a tooltip to read.
+		if (IsItemHovered(whileHeld ? ImGuiHoveredFlags_AllowWhenBlockedByActiveItem : 0)) {
+			SetMouseCursor(ImGuiMouseCursor_Hand);
+		}
+
 		// Not while the item is being used: a tooltip would only get in the way of dragging a slider or holding a button.
 		// And not right away either: it appears once the mouse has rested on the item for a moment, each item having its own wait.
 		const ImGuiHoveredFlags flags = ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | (whileHeld ? ImGuiHoveredFlags_AllowWhenBlockedByActiveItem : 0);
@@ -77,9 +84,15 @@ namespace NLA::Menu
 		}
 	}
 
+	void TooltipLabel(const char* label, const char* tooltip) {
+		TextUnformatted(label);
+		if (!tooltip) {
+			return;
+		}
+		ShowTooltip(tooltip);
+	}
+
 	bool BeginPageTable(const char* id) {
-		// Outside the table, the available region is the page itself (scrollbar excluded).
-		gPageRight = GetCursorScreenPos().x + GetContentRegionAvail().x;
 		if (!BeginTable(id, 1 + kSliderColumns, ImGuiTableFlags_SizingFixedFit)) {
 			return false;
 		}
@@ -123,15 +136,68 @@ namespace NLA::Menu
 		return open;
 	}
 
-	void HeaderRow(const char* first, const char* second, const char* third, const char* fourth) {
+	void HeaderRow(HeaderLabel first, HeaderLabel second, HeaderLabel third, HeaderLabel fourth) {
 		TableNextRow();
-		const char* headers[] = { first, second, third, fourth };
+		const HeaderLabel headers[] = { first, second, third, fourth };
 		for (int i = 0; i < kSliderColumns; ++i) {
-			if (headers[i] && *headers[i]) {
+			if (headers[i].text && *headers[i].text) {
 				TableSetColumnIndex(i + 1);
 				CenteredHeaderCell(headers[i]);
 			}
 		}
+	}
+
+	void ToggleHeaderRow(const char* label, bool& value, const char* tooltip, HeaderLabel first, HeaderLabel second, HeaderLabel third, HeaderLabel fourth) {
+		HeaderRow(first, second, third, fourth);
+		TableSetColumnIndex(0);
+		if (Checkbox(label, &value)) {
+			Options::Save();
+		}
+		ShowTooltip(tooltip);
+	}
+
+	void SkillHeaderRow(const char* prefix, bool& enabled, Options::SkillSource* source, const char* subject, HeaderLabel first, HeaderLabel second, HeaderLabel third, HeaderLabel fourth) {
+		// Says what the current choice does, so it stays true after the value changes.
+		const auto describe = [&] {
+			if (!enabled) {
+				return fmt::format("{} is unaffected by skill.", subject);
+			}
+			if (source) {
+				return fmt::format("{} scales with {}.", subject, kSkillSourceDescriptions[std::min(static_cast<std::size_t>(*source), kSkillSourceDescriptions.size() - 1)]);
+			}
+			return fmt::format("{} scales with Archery skill.", subject);
+		};
+
+		HeaderRow(first, second, third, fourth);
+		TableSetColumnIndex(0);
+		AlignTextToFramePadding();
+		TooltipLabel(prefix, describe().c_str());
+		SameLine();
+
+		// Without a source to pick, the skill is fixed and the only choice is whether it counts.
+		std::vector<const char*> items;
+		if (source) {
+			items.assign(kSkillSourceLabels.begin(), kSkillSourceLabels.end());
+		} else {
+			items.push_back("Archery");
+		}
+		items.push_back("Nothing");
+		const int nothing = static_cast<int>(items.size()) - 1;
+
+		int current = nothing;
+		if (enabled) {
+			current = source ? std::min(static_cast<int>(*source), nothing - 1) : 0;
+		}
+		SetNextItemWidth(CalcTextSize(kWidestSkill).x + GetFrameHeight() * 1.5f);  // The gap before the sliders comes from the label column's minimum width.
+		if (Combo(fmt::format("##{}", prefix).c_str(), &current, items.data(), static_cast<int>(items.size()))) {
+			enabled = current != nothing;
+			if (enabled && source) {
+				*source = static_cast<Options::SkillSource>(current);
+			}
+			Options::Save();
+		}
+
+		ShowTooltip(describe().c_str());
 	}
 
 	void EmptyRow() {
@@ -142,14 +208,6 @@ namespace NLA::Menu
 		TableNextRow();
 		TableNextColumn();
 		return Button(label);
-	}
-
-	void ToggleColumn(const char* label, bool& value, const char* tooltip) {
-		TableNextColumn();
-		if (Checkbox(label, &value)) {
-			Options::Save();
-		}
-		ShowTooltip(tooltip);
 	}
 
 	void SliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit, const char* format) {
@@ -163,32 +221,6 @@ namespace NLA::Menu
 
 	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit) {
 		SliderColumn(id, value, tooltip, limit, "%.1fs");
-	}
-
-	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip) {
-		TableNextRow();
-		TableNextColumn();
-		AlignTextToFramePadding();
-		TextUnformatted(label);
-		TableNextColumn();
-
-		// The drop-down spans all slider columns, which must stay empty in this row.
-		const ImVec2 cell = GetCursorScreenPos();
-		const auto*  style = GetStyle();
-
-		// Keep the drop-down inside the visible part of the window, even if the table is wider than it.
-		const float fullWidth = kSliderColumns * kSliderWidth + style->CellPadding.x * (kSliderColumns + 1);
-		const float width = std::clamp(gPageRight - cell.x - style->CellPadding.x, 60.0f, fullWidth);
-		PushClipRect(cell, ImVec2(cell.x + width, cell.y + GetFrameHeightWithSpacing()), false);
-		SetNextItemWidth(width);
-
-		int current = static_cast<int>(value);
-		if (Combo(fmt::format("##{}", label).c_str(), &current, kSkillSourceLabels.data(), static_cast<int>(kSkillSourceLabels.size()))) {
-			value = static_cast<Options::SkillSource>(current);
-			Options::Save();
-		}
-		ShowTooltip(tooltip);
-		PopClipRect();
 	}
 
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit) {
@@ -205,8 +237,7 @@ namespace NLA::Menu
 		TableNextRow();
 		TableNextColumn();
 		AlignTextToFramePadding();
-		TextUnformatted(label);
-		ShowTooltip(labelTooltip);
+		TooltipLabel(label, labelTooltip);
 		SliderColumn(id, aim.skillMultiplier, tooltip);
 
 		const auto minId = fmt::format("{}Min", id);

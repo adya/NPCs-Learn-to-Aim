@@ -12,17 +12,15 @@ namespace NLA::Menu
 			/// The least width left to the preview next to the settings.
 			constexpr float kMinPreviewWidth = 300.0f;
 
-		void RenderSkillSource(const KindContext& kind, Options::SkillSource Config::SkillSources::*field, const char* label, const char* what) {
-			if (!kind.info.magic) {
-				return;
-			}
-			const auto tooltip = fmt::format("The skill that affects {}. Spell's Magic Skill uses the skill of the spell's Magic school, Highest Magic Skill uses the highest of the Magic skills regardless of the spell, Enchanting uses the Enchanting skill.", what);
-			SkillSourceRow(label, kind.cfg.skills.*field, tooltip.c_str());
+		/// The header row of a part driven by skill: "`prefix` [skill]". Only magic kinds can pick the skill; "Nothing" turns the part off.
+		/// `subject` is what the skill scales, as the tooltip names it (e.g. "Draw Speed").
+		void SkillHeader(const KindContext& kind, const char* prefix, bool& enabled, Options::SkillSource Config::SkillSources::*field, const char* subject, HeaderLabel first, HeaderLabel second, HeaderLabel third, HeaderLabel fourth = {}) {
+			SkillHeaderRow(prefix, enabled, kind.info.magic ? &(kind.cfg.skills.*field) : nullptr, subject, first, second, third, fourth);
 		}
 
 		/// `what` is the thing the skill drives, e.g. "draw speed".
 		std::string SkillMultiplierTooltip(std::string_view what) {
-			return fmt::format("Multiplies the skill before it affects {}. Above 1.0 the skill counts for more, below 1.0 for less.", what);
+			return fmt::format("How much skill matters for {}. x1.00 is normal, higher makes skill count for more.", what);
 		}
 	}
 
@@ -32,13 +30,14 @@ namespace NLA::Menu
 		}
 		auto& skillShot = kind.cfg.skillShot;
 
-		HeaderRow(kSkillMultiplierHeader, "Min Chance", "Max Chance");
+		EmptyRow();
+		ToggleHeaderRow(label, skillShot.enabled, tooltip, kSkillMultiplierHeader, "Min Chance", "Max Chance");
 		TableNextRow();
-		ToggleColumn(label, skillShot.enabled, tooltip);
+		EmptyColumn();
 		DisabledIf off{ !skillShot.enabled };
 		SliderColumn("##SkillShotSkillMultiplier", skillShot.skillMultiplier, SkillMultiplierTooltip("the skill shot chance").c_str());
-		PercentSliderColumn("##MinSkillShotChance", skillShot.bounds.from, fmt::format("Share of shots that a skilled {} takes as skill shots at 0 effective {}. Out of every 10 shots this many aim at a specific body part.", shooter, skill).c_str(), Options::Limits::kSkillShotChance);
-		PercentSliderColumn("##MaxSkillShotChance", skillShot.bounds.to, fmt::format("Share of shots that a skilled {} takes as skill shots at 100 effective {}. Out of every 10 shots this many aim at a specific body part.", shooter, skill).c_str(), Options::Limits::kSkillShotChance);
+		PercentSliderColumn("##MinSkillShotChance", skillShot.bounds.from, fmt::format("Chance that {} by a {} with 0 {} is a skill shot.", kind.info.concentration ? "a beam cast" : "a shot", shooter, skill).c_str(), Options::Limits::kSkillShotChance);
+		PercentSliderColumn("##MaxSkillShotChance", skillShot.bounds.to, fmt::format("Chance that {} by a {} with 100 {} is a skill shot.", kind.info.concentration ? "a beam cast" : "a shot", shooter, skill).c_str(), Options::Limits::kSkillShotChance);
 	}
 
 	void RangeRows::Render(const KindContext& kind, TableSections& sections) const {
@@ -47,14 +46,13 @@ namespace NLA::Menu
 		}
 		auto& range = kind.cfg.range;
 
-		HeaderRow(kSkillMultiplierHeader, "Min Range", "Max Range");
+		SkillHeader(kind, "Scale with", range.enabled, &Config::SkillSources::range, group ? group : "Range", kSkillMultiplierHeader, "Min Range", "Max Range");
 		TableNextRow();
-		ToggleColumn("Scale Range With Skill", range.enabled, tooltip);
+		EmptyColumn();
 		DisabledIf off{ !range.enabled };
 		SliderColumn("##RangeSkillMultiplier", range.skillMultiplier, SkillMultiplierTooltip("how far the spell reaches").c_str());
 		SliderColumn("##MinRange", range.bounds.from, minTooltip, Options::Limits::kRangeMultiplier);
 		SliderColumn("##MaxRange", range.bounds.to, maxTooltip, Options::Limits::kRangeMultiplier);
-		RenderSkillSource(kind, &Config::SkillSources::range, "Range Skill", "how far the spell reaches");
 	}
 
 	void SpeedRows::Render(const KindContext& kind, TableSections& sections) const {
@@ -63,14 +61,13 @@ namespace NLA::Menu
 		}
 		auto& speed = kind.cfg.speed;
 
-		HeaderRow(kSkillMultiplierHeader, "Min Speed", "Max Speed");
+		SkillHeader(kind, label, speed.enabled, &Config::SkillSources::speed, group ? group : "Speed", kSkillMultiplierHeader, "Min Speed", "Max Speed");
 		TableNextRow();
-		ToggleColumn(label, speed.enabled, tooltip);
+		EmptyColumn();
 		DisabledIf off{ !speed.enabled };
 		SliderColumn("##SpeedSkillMultiplier", speed.skillMultiplier, SkillMultiplierTooltip("the speed").c_str());
-		SliderColumn("##MinSpeed", speed.bounds.from, "Speed multiplier at 0 skill. 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
-		SliderColumn("##MaxSpeed", speed.bounds.to, "Speed multiplier at 100 skill (fastest). 1.0 is vanilla speed, higher is faster.", Options::Limits::kSpeedMultiplier);
-		RenderSkillSource(kind, &Config::SkillSources::speed, "Speed Skill", "how fast the spell charges/casts");
+		SliderColumn("##MinSpeed", speed.bounds.from, "Speed at 0 skill. x1.00 is normal, higher is faster.", Options::Limits::kSpeedMultiplier);
+		SliderColumn("##MaxSpeed", speed.bounds.to, "Speed at 100 skill. x1.00 is normal, higher is faster.", Options::Limits::kSpeedMultiplier);
 	}
 
 	void SpreadRows::Render(const KindContext& kind, TableSections& sections) const {
@@ -79,9 +76,9 @@ namespace NLA::Menu
 		}
 		auto& spread = kind.cfg.steadying;
 
-		HeaderRow(nullptr, "Max Reduction", "Half Duration");
+		ToggleHeaderRow(label, spread.enabled, tooltip, nullptr, "Spread", "Half Time");
 		TableNextRow();
-		ToggleColumn(label, spread.enabled, tooltip);
+		EmptyColumn();
 		DisabledIf off{ !spread.enabled };
 		EmptyColumn();
 		PercentSliderColumn("##MaxReduction", spread.maxSpreadMultiplier, maxReductionTooltip, Options::Limits::kSteadyingReduction);
@@ -94,9 +91,20 @@ namespace NLA::Menu
 		}
 		auto& fatigue = kind.cfg.fatigue;
 
-		HeaderRow(nullptr, "Min Threshold", "Max Threshold");
+		// Bows and crossbows tire the archer's Stamina; every magic kind depends on Magicka.
+		const char* resource = kind.info.magic ? "Magicka" : "Stamina";
+		const auto  minTip = fmt::format("Threshold when max {} is 0.", resource);
+		const auto  maxTip = fmt::format("Threshold when max {} is 100.", resource);
+		const auto  thresholdTip = fmt::format("How long the hold lasts before tiring sets in. It grows evenly with max {0}, and keeps growing past the Max value when there is more than 100 {0}.", resource);
+
+		ToggleHeaderRow(label, fatigue.enabled, tooltip, nullptr, HeaderLabel{ "Min", minTip.c_str() }, HeaderLabel{ "Max", maxTip.c_str() });
 		TableNextRow();
-		ToggleColumn(label, fatigue.enabled, tooltip);
+		TableNextColumn();
+		{
+			DisabledIf rowOff{ !fatigue.enabled };
+			AlignTextToFramePadding();
+			TooltipLabel("Threshold", thresholdTip.c_str());
+		}
 		{
 			DisabledIf off{ !fatigue.enabled };
 			EmptyColumn();
@@ -104,13 +112,13 @@ namespace NLA::Menu
 			SecondsSliderColumn("##MaxThreshold", fatigue.threshold.to, maxThresholdTooltip, Options::Limits::kFatigueThreshold);
 		}
 
-		HeaderRow(nullptr, "Max Fatigue", "Half Duration");
+		HeaderRow(nullptr, "Spread", "Half Time");
 		TableNextRow();
 		TableNextColumn();
 		DisabledIf off{ !fatigue.enabled };
 		EmptyColumn();
 		PercentSliderColumn("##MaxPenalty", fatigue.maxSpreadMultiplier, maxPenaltyTooltip, Options::Limits::kFatiguePenalty);
-		SecondsSliderColumn("##FatigueHalfDuration", fatigue.halfDuration, "Seconds past the fatigue threshold to regrow roughly half of the max fatigue penalty. Lower duration means the aim shakes apart faster once fatigue sets in.", Options::Limits::kHalfDuration);
+		SecondsSliderColumn("##FatigueHalfDuration", fatigue.halfDuration, "Time after tiring sets in to reach half of the max fatigue. Shorter means the aim falls apart faster.", Options::Limits::kHalfDuration);
 	}
 
 	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(const KindContext&, TableSections&)>& renderParts) {
@@ -131,32 +139,31 @@ namespace NLA::Menu
 		if (settingsVisible) {
 			TableSections sections;
 			if (sections.Section(separator)) {
-				HeaderRow(kSkillMultiplierHeader, "At 0 Skill", "At 100 Skill", "When Blind");
-				TableNextRow();
-				ToggleColumn(kind.label, attack.aiming, kind.tooltip);
+				SkillHeader(context, kind.label, attack.aiming, &Config::SkillSources::aiming, "Aiming", kSkillMultiplierHeader, "At 0 Skill", "At 100 Skill", "When Blind");
 				DisabledIf off{ !attack.aiming };
-				AimRow("Accuracy", "How far a shot can miss the aim at most. Skill shrinks it.", "##Accuracy", attack.accuracy, kind.accuracyTooltip,
+				// A beam doesn't miss or fire shots: it wanders around the aim.
+				const bool beam = info.concentration;
+				AimRow("Accuracy", beam ? "How far the beam can wander from the aim at most. Skill shrinks it." : "How far a shot can miss the aim at most. Skill shrinks it.", "##Accuracy", attack.accuracy, kind.accuracyTooltip,
 				       "Accuracy multiplier at 0 skill. Lower is more accurate.",
 				       "Accuracy multiplier at 100 skill. Lower is more accurate.",
 				       Options::Limits::kAccuracyFactor, "x%.2f",
 				       &attack.accuracyBlindness, "Accuracy multiplier at full blindness. Higher is less accurate.",
 				       Options::Limits::kAccuracyBlindness);
-				AimRow("Precision", "How shots are spread within the miss area. Skill bunches them near the aim.", "##Precision", attack.precision, kind.precisionTooltip,
-				       "Precision at 0 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.",
-				       "Precision at 100 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.",
+				AimRow("Precision", beam ? "How the beam's wander is spread within the wander area. Skill keeps it near the aim." : "How shots are spread within the miss area. Skill bunches them near the aim.", "##Precision", attack.precision, kind.precisionTooltip,
+				       beam ? "Precision at 0 skill. 0.50 spreads the wander evenly, higher keeps the beam near the aim, lower pushes it to the edge." : "Precision at 0 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.",
+				       beam ? "Precision at 100 skill. 0.50 spreads the wander evenly, higher keeps the beam near the aim, lower pushes it to the edge." : "Precision at 100 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.",
 				       Options::Limits::kFocus, "%.2f",
 				       &attack.precisionBlindness, "Precision loss at full blindness. x1.50 is 50% less precise, x0.80 is 20% more.",
 				       Options::Limits::kPrecisionBlindness);
-				if (info.concentration) {
-					AimRow("Retargeting", "How far the stream can move in one step. Skill makes it steadier.", "##Retarget", attack.retarget,
-					       "How strongly skill limits the stream's steps. Higher means smaller steps.",
-					       "Step size at 0 skill, as a share of the miss area. 2.00 or more means no limit. Lower is steadier.",
-					       "Step size at 100 skill, as a share of the miss area. Lower is steadier.",
+				if (beam) {
+					AimRow("Retargeting", "How far the beam can move in one step. Skill makes it steadier.", "##Retarget", attack.retarget,
+					       "How strongly skill limits the beam's steps. Higher means smaller steps.",
+					       "Step size at 0 skill, as a share of the wander area. 2.00 or more means no limit. Lower is steadier.",
+					       "Step size at 100 skill, as a share of the wander area. Lower is steadier.",
 					       Options::Limits::kRetarget, "%.2f",
 					       &attack.retargetBlindness, "Step size multiplier at full blindness. Higher is less steady.",
 					       Options::Limits::kRetargetBlindness);
 				}
-				RenderSkillSource(context, &Config::SkillSources::aiming, "Aiming Skill", "aiming");
 			}
 
 			renderParts(context, sections);

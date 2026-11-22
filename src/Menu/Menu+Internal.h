@@ -77,8 +77,26 @@ namespace NLA::Menu
 		int  count = 0;
 	};
 
+	/// Text that has a tooltip, which gets the hand cursor on hover like every item with a tooltip. Without a tooltip it is plain text.
+	void TooltipLabel(const char* label, const char* tooltip);
+
+	/// A column title, with an optional tooltip.
+	struct HeaderLabel
+	{
+		const char* text = nullptr;
+		const char* tooltip = nullptr;
+
+		HeaderLabel() = default;
+		HeaderLabel(const char* text, const char* tooltip = nullptr) :
+			text(text), tooltip(tooltip) {}
+	};
+
 	/// A row with headers over the slider columns. Null or empty headers leave their column blank.
-	void HeaderRow(const char* first, const char* second = nullptr, const char* third = nullptr, const char* fourth = nullptr);
+	void HeaderRow(HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {}, HeaderLabel fourth = {});
+	/// Like `HeaderRow`, with a checkbox in the label column of the same row.
+	void ToggleHeaderRow(const char* label, bool& value, const char* tooltip, HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {}, HeaderLabel fourth = {});
+	/// Like `HeaderRow`, with "`prefix` [skill]" in the label column: a drop-down of the skills (when `source` is given) plus "Nothing", which clears `enabled`.
+	void SkillHeaderRow(const char* prefix, bool& enabled, Options::SkillSource* source, const char* subject, HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {}, HeaderLabel fourth = {});
 	void EmptyRow();
 
 	/// The width that a table from `BeginPageTable` takes.
@@ -87,11 +105,8 @@ namespace NLA::Menu
 	/// Starts a new row with the button in the first column.
 	bool ResetButton(const char* label);
 
-	void ToggleColumn(const char* label, bool& value, const char* tooltip);
 	void SliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit = Options::Limits::kSkillMultiplier, const char* format = "x%.2f");
 	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
-	/// A row with `label` and a drop-down to pick the skill.
-	void SkillSourceRow(const char* label, Options::SkillSource& value, const char* tooltip);
 	/// Shows `value` as a percentage; `limit` is in the same fractional units as the value (1.0 is 100%).
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
 	/// A row with `label`, the skill multiplier slider and the multiplier bounds (at 0 and at 100 skill) in the slider columns.
@@ -126,7 +141,6 @@ namespace NLA::Menu
 
 	struct RangeRows
 	{
-		const char* tooltip;
 		const char* minTooltip;
 		const char* maxTooltip;
 
@@ -139,7 +153,6 @@ namespace NLA::Menu
 	struct SpeedRows
 	{
 		const char* label;
-		const char* tooltip;
 
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
@@ -175,7 +188,6 @@ namespace NLA::Menu
 	{
 		const char* id;
 		const char* label;
-		const char* tooltip;
 
 		const Options::AttackKind& kind;
 
@@ -208,9 +220,9 @@ namespace NLA::Menu
 			[&](const KindContext& context, TableSections& sections) { (static_cast<const Parts&>(kind).Render(context, sections), ...); });
 	}
 
-	inline constexpr const char* kScaleAimLabel = "Scale Aim With Skill";
-	inline constexpr const char* kScaleDrawSpeedLabel = "Scale Draw Speed With Skill";
-	inline constexpr const char* kScaleChargeSpeedLabel = "Scale Charge Speed With Skill";
+	inline constexpr const char* kScaleAimLabel = "Scale with";
+	inline constexpr const char* kScaleDrawSpeedLabel = "Scale with";
+	inline constexpr const char* kScaleChargeSpeedLabel = "Scale with";
 	inline constexpr const char* kSteadyingLabel = "Holding Charge Steadies Aim";
 	inline constexpr const char* kDrawSpeedGroup = "Draw Speed";
 	inline constexpr const char* kChargeSpeedGroup = "Charge Speed";
@@ -221,9 +233,9 @@ namespace NLA::Menu
 		return {
 			"Holding Charge Fatigues Aim",
 			tooltip,
-			"Seconds a spell/staff/scroll can be held charged before fatigue sets in for a caster with no Magicka. A higher max Magicka extends it.",
-			"Seconds a spell/staff/scroll can be held charged before fatigue sets in for a caster with 100 max Magicka. Max Magicka above that extends it further, with diminishing returns.",
-			"The most spread that prolonged fatigue can add. Note, that in fatigued state, the bonus from steadying is negated before adding extra spread."
+			"How long a charge can be held before the caster tires, with no Magicka. More Magicka extends it.",
+			"How long a charge can be held before the caster tires, with 100 max Magicka. More Magicka extends it further.",
+			"The most extra spread that tiring can add. It also cancels any steadying bonus."
 		};
 	}
 }

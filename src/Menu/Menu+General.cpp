@@ -14,16 +14,16 @@ namespace NLA::Menu
 		void RenderSkillShotParts(Config& cfg) {
 			PushID("SkillShotParts");
 			SeparatorText("Skill Shots");
-			TextWrapped("The body parts skilled NPCs may aim for when they take a skill shot. Leave off the ones that make no difference in your game, e.g. when nothing rewards hitting a head or a limb.");
+			TextWrapped("Body parts skilled NPCs may aim for on a skill shot. Turn off any that don't matter in your game.");
 			Spacing();
 
 			bool changed = false;
 			changed |= Checkbox("Headshots", &cfg.headshots);
-			ShowTooltip("Skill shots may aim for the head. About 60% of the skill shots go to the head when hands or legs are on too, all of them otherwise.");
+			ShowTooltip("Skill shots may go for the head.");
 			changed |= Checkbox("Arm Shots", &cfg.armshots);
-			ShowTooltip("Skill shots may aim for a hand, left or right. Only targets that have hands, like people, are aimed at this way.");
+			ShowTooltip("Skill shots may go for a hand. Only used on targets that have hands.");
 			changed |= Checkbox("Leg Shots", &cfg.legshots);
-			ShowTooltip("Skill shots may aim for a leg, left or right. Only targets that have legs, like people, are aimed at this way.");
+			ShowTooltip("Skill shots may go for a leg. Only used on targets that have legs.");
 			if (changed) {
 				Options::Save();
 			}
@@ -45,14 +45,6 @@ namespace NLA::Menu
 			ShowTooltip(tooltip);
 		}
 
-#ifndef NDEBUG
-		void RenderAimDebug() {
-			SeparatorText("Debug");
-			Checkbox("Show Aim Points", &AimDebug::enabled);
-			ShowTooltip("Draws a marker where each NPC is aiming: yellow for the body, red for the head, blue for a hand and green for a leg. Only available in debug builds.");
-		}
-#endif
-
 		void RenderLogLevel() {
 			static constexpr std::array levels{ spdlog::level::trace, spdlog::level::debug, spdlog::level::info, spdlog::level::warn, spdlog::level::err, spdlog::level::critical };
 			static constexpr std::array labels{ "trace", "debug", "info", "warn", "error", "critical" };
@@ -73,7 +65,7 @@ namespace NLA::Menu
 				logger::info("Log level changed to '{}'", labels[index]);
 				Options::Save();
 			}
-			ShowTooltip("Controls verbosity of the log file. Use 'debug' to also log which hooks are being installed.");
+			ShowTooltip("How much detail goes in the log file. Use 'debug' when troubleshooting.");
 		}
 
 		void RenderKeywordFilters() {
@@ -90,7 +82,7 @@ namespace NLA::Menu
 
 			PushID("Filters");
 			SeparatorText("Filters");
-			TextWrapped("Only NPCs matching these keyword rules will learn to aim. Comma-separated keyword EditorIDs.");
+			TextWrapped("Only NPCs that match these keyword rules learn to aim. Separate keywords with commas.");
 			Spacing();
 
 			if (IsWindowAppearing() || buffersGeneration != Options::currentID) {
@@ -99,9 +91,9 @@ namespace NLA::Menu
 
 			static const std::string includeHint = fmt::format("{}", fmt::join(Options::NPCConfig::defaultConfig.includeKeywords, ","));
 
-			KeywordsInput("Include Keywords", "##IncludeKeywords", includeHint.c_str(), includeBuffer, npc.includeKeywords, "Only NPCs with at least one of these keywords (on the NPC or its race) will learn to aim. Leave empty to skip this filter.");
+			KeywordsInput("Include Keywords", "##IncludeKeywords", includeHint.c_str(), includeBuffer, npc.includeKeywords, "NPCs need at least one of these keywords (on the NPC or its race). Leave empty to allow everyone.");
 			Spacing();
-			KeywordsInput("Exclude Keywords", "##ExcludeKeywords", "", excludeBuffer, npc.excludeKeywords, "NPCs with any of these keywords (on the NPC or its race) will never learn to aim.");
+			KeywordsInput("Exclude Keywords", "##ExcludeKeywords", "", excludeBuffer, npc.excludeKeywords, "NPCs with any of these keywords never learn to aim.");
 
 			Spacing();
 			if (Button("Reset Filters to Default")) {
@@ -124,29 +116,27 @@ namespace NLA::Menu
 	}
 
 	void RenderGeneralSectionPage() {
+		SeparatorText("Actions");
 		if (Button("Reload Settings", ImVec2(250, 0))) {
 			Options::Load();
 			logger::info("Settings reloaded via menu");
 		}
-		ShowTooltip("Reload all settings from the INI file, discarding any unsaved in-memory changes.");
+		ShowTooltip("Load settings from the INI file again, dropping unsaved changes.");
 
 		if (Button("Export Settings", ImVec2(250, 0))) {
 			Options::Export();
 			logger::info("Settings exported via menu");
 		}
-		ShowTooltip("Write all current settings, including the ones equal to their defaults, to the INI file.");
+		ShowTooltip("Save all current settings to the INI file, including ones left at default.");
 
 		if (Button("Reset All to Defaults", ImVec2(250, 0))) {
 			Options::ResetNPC();
 			Options::ResetPlayer();
 			logger::info("All settings reset to defaults via menu");
 		}
-		ShowTooltip("Reset all NPC and Player settings to their defaults.");
+		ShowTooltip("Reset all NPC and Player settings to defaults.");
 
 		Spacing();
 		RenderLogLevel();
-#ifndef NDEBUG
-		RenderAimDebug();
-#endif
 	}
 }

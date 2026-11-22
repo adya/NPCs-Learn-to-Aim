@@ -8,32 +8,30 @@ namespace NLA::Menu
 			{
 				.id = "Bows",
 				.label = kScaleAimLabel,
-				.tooltip = "When enabled, Archery skill will affect aiming with bows.",
 				.kind = Options::AttackKind::kBow,
-				.accuracyTooltip = "How much Archery skill contributes to Accuracy with bows. The higher this multiplier is the smaller the widest miss can be.",
-				.precisionTooltip = "How much Archery skill contributes to Precision with bows. The higher this multiplier is the more shots land close to the aim.",
+				.accuracyTooltip = "How strongly Archery skill improves accuracy with bows. Higher means smaller misses.",
+				.precisionTooltip = "How strongly Archery skill bunches shots near the aim.",
 				.resetLabel = "Reset Bows to Default",
 			},
 			SkillShotRows{
-				"Bow Skill Shots",
-				"When enabled, sufficiently skilled archers take skill shots: a share of their shots, set below, aims at a specific body part instead of the chest. Which parts it may pick is set on the General page.",
+				"Skill Shots",
+				"Skilled archers sometimes aim for a body part instead of the chest. Pick the parts on the General page.",
 				"archer",
 				"Archery skill" },
 			SpeedRows{
 				kScaleDrawSpeedLabel,
-				"When enabled, Archery skill also affects how fast a bow reaches full draw. (the higher the skill the faster the draw)",
 				kDrawSpeedGroup },
 			SpreadRows{
 				"Full Draw Steadies Aim",
-				"When enabled, holding a bow at full draw tightens its spread, with diminishing returns.",
-				"The most spread that holding a full draw can remove, approached the longer it's held.",
-				"Duration of holding a full draw to get roughly half of the max spread reduction. Lower means the aim steadies faster." },
+				"Holding a full draw makes the aim steadier over time.",
+				"The most spread that holding can remove. It takes a while to get there.",
+				"Time to reach half of the max spread reduction. Shorter means the aim steadies faster." },
 			FatigueRows{
 				"Full Draw Fatigues Aim",
-				"When enabled, holding a bow at full draw for too long tires the archer's arm, growing spread back the longer it's held past their fatigue threshold. That threshold grows with the archer's max Stamina.",
-				"Seconds a full draw can be held before fatigue sets in for an archer with no Stamina. A higher max Stamina extends it.",
-				"Seconds a full draw can be held before fatigue sets in for an archer with 100 max Stamina. Max Stamina above that extends it further, with diminishing returns.",
-				"The most spread that fatigue can add. Note, that in fatigued state, the bonus from steadied aim is negated before adding extra spread." },
+				"Holding a full draw too long tires the archer and the aim gets worse. More Stamina delays this.",
+				"How long a draw can be held before the archer tires, with no Stamina. More Stamina extends it.",
+				"How long a draw can be held before the archer tires, with 100 max Stamina. More Stamina extends it further.",
+				"The most extra spread that tiring can add. It also cancels any steadying bonus." },
 		};
 	}
 
