@@ -131,23 +131,30 @@ namespace NLA::Menu
 		if (settingsVisible) {
 			TableSections sections;
 			if (sections.Section(separator)) {
-				HeaderRow(kSkillMultiplierHeader, "At 0 Skill", "At 100 Skill");
+				HeaderRow(kSkillMultiplierHeader, "At 0 Skill", "At 100 Skill", "When Blind");
 				TableNextRow();
 				ToggleColumn(kind.label, attack.aiming, kind.tooltip);
 				DisabledIf off{ !attack.aiming };
-				AimRow("Accuracy", "##Accuracy", attack.accuracy, kind.accuracyTooltip,
-				       "The widest angle a shot can deviate from the aim at 0 effective skill (worst accuracy), as a multiplier of the base spread angle. No shot goes further than this.",
-				       "The widest angle a shot can deviate from the aim at 100 effective skill (best accuracy), as a multiplier of the base spread angle. No shot goes further than this.");
-				AimRow("Precision", "##Precision", attack.precision, kind.precisionTooltip,
-				       "How shots are distributed within the accuracy radius at 0 effective skill. 0.5 spreads them evenly over the whole circle, higher values pull them towards the center, lower ones push them to the edge.",
-				       "How shots are distributed within the accuracy radius at 100 effective skill. 0.5 spreads them evenly over the whole circle, higher values pull them towards the center, lower ones push them to the edge.",
-				       Options::Limits::kFocus, "%.2f");
+				AimRow("Accuracy", "How far a shot can miss the aim at most. Skill shrinks it.", "##Accuracy", attack.accuracy, kind.accuracyTooltip,
+				       "Accuracy multiplier at 0 skill. Lower is more accurate.",
+				       "Accuracy multiplier at 100 skill. Lower is more accurate.",
+				       Options::Limits::kAccuracyFactor, "x%.2f",
+				       &attack.accuracyBlindness, "Accuracy multiplier at full blindness. Higher is less accurate.",
+				       Options::Limits::kAccuracyBlindness);
+				AimRow("Precision", "How shots are spread within the miss area. Skill bunches them near the aim.", "##Precision", attack.precision, kind.precisionTooltip,
+				       "Precision at 0 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.",
+				       "Precision at 100 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.",
+				       Options::Limits::kFocus, "%.2f",
+				       &attack.precisionBlindness, "Precision loss at full blindness. x1.50 is 50% less precise, x0.80 is 20% more.",
+				       Options::Limits::kPrecisionBlindness);
 				if (info.concentration) {
-					AimRow("Retargeting", "##Retarget", attack.retarget,
-					       "How much the skill contributes to Retargeting. The higher this multiplier is the smaller the steps the stream takes when it wanders.",
-					       "How far the stream can move when it picks its next point to wander to at 0 effective skill, as a share of the accuracy radius. 2.00 or more doesn't limit it at all: the stream can jump anywhere within the circle.",
-					       "How far the stream can move when it picks its next point to wander to at 100 effective skill, as a share of the accuracy radius. Lower values make the stream drift in small steps instead of jumping across the circle.",
-					       Options::Limits::kRetarget, "%.2f");
+					AimRow("Retargeting", "How far the stream can move in one step. Skill makes it steadier.", "##Retarget", attack.retarget,
+					       "How strongly skill limits the stream's steps. Higher means smaller steps.",
+					       "Step size at 0 skill, as a share of the miss area. 2.00 or more means no limit. Lower is steadier.",
+					       "Step size at 100 skill, as a share of the miss area. Lower is steadier.",
+					       Options::Limits::kRetarget, "%.2f",
+					       &attack.retargetBlindness, "Step size multiplier at full blindness. Higher is less steady.",
+					       Options::Limits::kRetargetBlindness);
 				}
 				RenderSkillSource(context, &Config::SkillSources::aiming, "Aiming Skill", "aiming");
 			}

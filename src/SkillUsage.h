@@ -11,6 +11,11 @@ namespace NLA
 
 		Options::Bounds bounds{};
 
+		SkillUsageContext context{ kAccuracy };
+
+		/// What a fully blind shooter's skill factor is multiplied by. Only Accuracy, Precision and Retarget use it, see `Details::BlindedFactor`.
+		float blindnessMultiplier{ 1.0f };
+
 		SkillUsage() = default;
 
 		SkillUsage(const RE::TESObjectWEAP* weapon, RE::Actor* attacker, SkillUsageContext context);
@@ -49,6 +54,11 @@ namespace NLA
 
 		/// The value of a skill-scaled option at the given effective skill (the skill times the option's skill multiplier).
 		float SkillFactorFor(const Options::Bounds& bounds, float effectiveSkill);
+
+		/// The skill factor of a `kAccuracy`, `kPrecision` or `kRetarget` usage for a shooter that is `blindness` (0 to 1) blind. `multiplier` is what the
+		/// factor is multiplied by at full blindness: the change scales linearly with blindness, so x1.50 makes a fully blind shooter's Accuracy factor
+		/// (the spread) and Retarget factor (the step) 50% bigger and their Precision factor (the focus) 50% smaller. Other usages are returned as they are.
+		float BlindedFactor(SkillUsageContext context, float factor, float multiplier, float blindness);
 
 		/// The widest deviation (in radians) for the given `kAccuracy` skill factor.
 		float MaxSpreadFor(float accuracyFactor);

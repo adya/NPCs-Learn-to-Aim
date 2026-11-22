@@ -15,7 +15,7 @@ namespace NLA::Menu
 
 		constexpr const char* kWidestLabel = kScaleChargeSpeedLabel;
 
-			constexpr int kSliderColumns = 3;
+			constexpr int kSliderColumns = 4;
 
 			/// Sized for the longest label, so that every table of a page lines up.
 			float LabelColumnWidth() {
@@ -80,7 +80,7 @@ namespace NLA::Menu
 	bool BeginPageTable(const char* id) {
 		// Outside the table, the available region is the page itself (scrollbar excluded).
 		gPageRight = GetCursorScreenPos().x + GetContentRegionAvail().x;
-		if (!BeginTable(id, 4, ImGuiTableFlags_SizingFixedFit)) {
+		if (!BeginTable(id, 1 + kSliderColumns, ImGuiTableFlags_SizingFixedFit)) {
 			return false;
 		}
 		TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, LabelColumnWidth());
@@ -123,10 +123,10 @@ namespace NLA::Menu
 		return open;
 	}
 
-	void HeaderRow(const char* first, const char* second, const char* third) {
+	void HeaderRow(const char* first, const char* second, const char* third, const char* fourth) {
 		TableNextRow();
-		const char* headers[] = { first, second, third };
-		for (int i = 0; i < 3; ++i) {
+		const char* headers[] = { first, second, third, fourth };
+		for (int i = 0; i < kSliderColumns; ++i) {
 			if (headers[i] && *headers[i]) {
 				TableSetColumnIndex(i + 1);
 				CenteredHeaderCell(headers[i]);
@@ -172,12 +172,12 @@ namespace NLA::Menu
 		TextUnformatted(label);
 		TableNextColumn();
 
-		// The drop-down spans all three slider columns, which must stay empty in this row.
+		// The drop-down spans all slider columns, which must stay empty in this row.
 		const ImVec2 cell = GetCursorScreenPos();
 		const auto*  style = GetStyle();
 
 		// Keep the drop-down inside the visible part of the window, even if the table is wider than it.
-		const float fullWidth = 3 * kSliderWidth + style->CellPadding.x * 4;
+		const float fullWidth = kSliderColumns * kSliderWidth + style->CellPadding.x * (kSliderColumns + 1);
 		const float width = std::clamp(gPageRight - cell.x - style->CellPadding.x, 60.0f, fullWidth);
 		PushClipRect(cell, ImVec2(cell.x + width, cell.y + GetFrameHeightWithSpacing()), false);
 		SetNextItemWidth(width);
@@ -201,17 +201,21 @@ namespace NLA::Menu
 		SaveAfterEdit(tooltip);
 	}
 
-	void AimRow(const char* label, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit, const char* format) {
+	void AimRow(const char* label, const char* labelTooltip, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit, const char* format, float* blindness, const char* blindnessTooltip, Options::Limit blindnessLimit) {
 		TableNextRow();
 		TableNextColumn();
 		AlignTextToFramePadding();
 		TextUnformatted(label);
+		ShowTooltip(labelTooltip);
 		SliderColumn(id, aim.skillMultiplier, tooltip);
 
 		const auto minId = fmt::format("{}Min", id);
 		const auto maxId = fmt::format("{}Max", id);
 		SliderColumn(minId.c_str(), aim.bounds.from, minTooltip, limit, format);
 		SliderColumn(maxId.c_str(), aim.bounds.to, maxTooltip, Options::Limits::ToLimit(limit, aim.bounds.from), format);
+		if (blindness) {
+			SliderColumn(fmt::format("{}Blindness", id).c_str(), *blindness, blindnessTooltip, blindnessLimit);
+		}
 	}
 
 	void EmptyColumn() {

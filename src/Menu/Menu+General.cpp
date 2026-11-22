@@ -11,27 +11,6 @@ namespace NLA::Menu
 	{
 		using KeywordBuffer = char[512];
 
-		void RenderBlindnessRows(Config& cfg, const Config& defaults) {
-			PushID("Blindness");
-			HeaderRow("Accuracy", "Precision");
-			TableNextRow();
-			ToggleColumn("Blindness Affects Aim", cfg.blindnessAffectsAiming, "When enabled, being blinded further affects aiming.");
-			{
-				DisabledIf off{ !cfg.blindnessAffectsAiming };
-				SliderColumn("##Accuracy", cfg.accuracyBlindness, "How much the blindness affects accuracy. The higher this multiplier is the smaller the widest miss can be.", Options::Limits::kBlindnessMultiplier);
-				SliderColumn("##Precision", cfg.precisionBlindness, "How much the blindness affects precision. The higher this multiplier is the more shots land close to the aim.", Options::Limits::kBlindnessMultiplier);
-			}
-
-			if (ResetButton("Reset Blindness to Default")) {
-				cfg.blindnessAffectsAiming = defaults.blindnessAffectsAiming;
-				cfg.accuracyBlindness = defaults.accuracyBlindness;
-				cfg.precisionBlindness = defaults.precisionBlindness;
-				Options::Save();
-			}
-			EmptyRow();
-			PopID();
-		}
-
 		void RenderSkillShotParts(Config& cfg) {
 			PushID("SkillShotParts");
 			SeparatorText("Skill Shots");
@@ -139,10 +118,6 @@ namespace NLA::Menu
 		if (!ctx.isNPC) {
 			return;
 		}
-		RenderTable("Table", [&] {
-			RenderBlindnessRows(ctx.cfg, ctx.defaults);
-		});
-		Spacing();
 		RenderSkillShotParts(ctx.cfg);
 		Spacing();
 		RenderKeywordFilters();

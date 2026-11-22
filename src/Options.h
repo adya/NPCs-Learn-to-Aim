@@ -44,7 +44,12 @@ namespace NLA::Options
 	namespace Limits
 	{
 		inline constexpr Limit kSkillMultiplier{ 0.01f, 5.0f };
-		inline constexpr Limit kBlindnessMultiplier{ 0.0f, 2.0f };
+		/// How a fully blind shooter's Accuracy (max spread) is scaled: x1.00 is no effect, above it the spread widens, below it narrows.
+		inline constexpr Limit kAccuracyBlindness{ 0.0f, 5.0f };
+		/// How a fully blind shooter's Precision (focus) is scaled: x1.00 is no effect, above it the focus drops, below it grows. At x2.00 it is gone.
+		inline constexpr Limit kPrecisionBlindness{ 0.0f, 2.0f };
+		/// How a fully blind shooter's retarget step (concentration spells/staves) is scaled: above x1.00 the stream jumps further per step.
+		inline constexpr Limit kRetargetBlindness{ 0.0f, 5.0f };
 		inline constexpr Limit kSkillShotChance{ 0.0f, 1.0f };
 		inline constexpr Limit kRangeMultiplier{ 0.5f, 5.0f };
 		inline constexpr Limit kSpeedMultiplier{ 0.1f, 3.0f };
@@ -168,6 +173,11 @@ namespace NLA::Options
 
 		Aim accuracy;
 		Aim precision;
+
+		Key accuracyBlindness;
+		Key precisionBlindness;
+		Key retargetBlindness;
+
 		Aim retarget;
 
 		SkillSources skills;
@@ -185,6 +195,9 @@ namespace NLA::Options
 				.aiming = { "b", name, "Aiming" },
 				.accuracy = AimKeys(name, "Accuracy"),
 				.precision = AimKeys(name, "Precision"),
+				.accuracyBlindness = { "f", name, "AccuracyBlindness" },
+				.precisionBlindness = { "f", name, "PrecisionBlindness" },
+				.retargetBlindness = { "f", name, "RetargetBlindness" },
 				.retarget = AimKeys(name, "Retarget"),
 				.skills = { { "s", name, "AimingSkill" }, { "s", name, "SpeedSkill" }, { "s", name, "RangeSkill" } },
 				.speed = ScalingKeys(name, "Speed"),
@@ -324,6 +337,13 @@ namespace NLA::Options
 			Aim accuracy;
 			Aim precision;
 
+			/// What a fully blind shooter's Accuracy (max spread), Precision (focus) and Retargeting (step size, concentration spells/staves only) are
+			/// multiplied by. x1.00 means blindness doesn't matter, above it aiming gets worse, below it better. Less blindness scales the change
+			/// down linearly. See `Details::BlindedFactor`.
+			float accuracyBlindness = 1.0f;
+			float precisionBlindness = 1.0f;
+			float retargetBlindness = 1.0f;
+
 			Aim retarget;
 
 			SkillSources skills;
@@ -339,21 +359,20 @@ namespace NLA::Options
 				assert(context == kAccuracy || context == kPrecision);
 				return context == kAccuracy ? accuracy : precision;
 			}
+
+			inline float BlindnessFor(SkillUsageContext context) const {
+				assert(context == kAccuracy || context == kPrecision || context == kRetarget);
+				return context == kAccuracy ? accuracyBlindness : context == kPrecision ? precisionBlindness : retargetBlindness;
+			}
 		};
 
 		/// Controls whether the mod works for given characters.
 		bool enabled = true;
 
-		/// If true, being blinded further affects aiming according to the blindness multipliers.
-		bool blindnessAffectsAiming = true;
-
 		/// The body parts a skill shot may aim at. NPCs only. Hands and legs are only offered to targets that have them.
 		bool headshots = true;
 		bool armshots = false;
 		bool legshots = false;
-
-		float accuracyBlindness = 0.0f;
-		float precisionBlindness = 0.0f;
 
 		Attack bow;
 		Attack crossbow;
@@ -365,11 +384,6 @@ namespace NLA::Options
 
 		/// Options that are `kNone` in the defaults are not supported: their keys are ignored with a warning.
 		static Config FromIni(CSimpleIniA& ini, const char* section, const Config& defaults);
-
-		inline float BlindnessFor(SkillUsageContext context) const {
-			assert(context == kAccuracy || context == kPrecision);
-			return context == kAccuracy ? accuracyBlindness : precisionBlindness;
-		}
 
 		const Attack& For(const struct AttackKind& kind) const;
 	};
@@ -457,13 +471,30 @@ namespace NLA::Options
 			return { { { enabled }, maxPenalty, halfDuration }, { minThreshold, maxThreshold } };
 		}
 
+		/// What a fully blind shooter's Accuracy, Precision and (concentration kinds) Retargeting are multiplied by, per kind. Placeholders still to be tuned.
+		/// Sight finds the aim point, so Accuracy suffers most where hands and touch can't make up for it: staves worst, crossbows (mostly a trigger
+		/// pull) and spells (hands) less. Precision is how consistently the shot is made, which touch can even improve. Scrolls auto-aim, and
+		/// concentration kinds lose the sight of how unstable the stream is instead.
+		inline void ApplyBlindnessDefaults(Config& config) {
+			const auto set = [](Config::Attack& attack, float accuracy, float precision, float retarget = 1.0f) {
+				attack.accuracyBlindness = accuracy;
+				attack.precisionBlindness = precision;
+				attack.retargetBlindness = retarget;
+			};
+			set(config.bow, 1.8f, 0.8f);
+			set(config.crossbow, 1.5f, 1.0f);
+			set(config.spell, 1.5f, 0.8f);
+			set(config.staff, 1.8f, 1.3f);
+			set(config.scroll, 1.0f, 1.0f);
+			set(config.concentrationSpell, 1.0f, 1.0f, 1.5f);
+			set(config.concentrationStaff, 1.0f, 1.0f, 1.5f);
+		}
+
 		inline Config Player() {
 			using Skills = Config::SkillSources;
 			using enum SkillSource;
 
 			Config config;
-			config.accuracyBlindness = 0.5f;
-			config.precisionBlindness = 0.5f;
 			config.bow = { .accuracy = { 1.1f, { 1.0272f, 0.0784f } }, .precision = { 1.0f, { 0.75f, 1.75f } }, .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.57f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
 			config.crossbow = { .accuracy = { 1.5f, { 0.32f, 0.3f } }, .precision = { 1.0f, { 0.6f, 0.8f } }, .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.87f, 1.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
 			config.spell = { .accuracy = { 1.0f, { 0.72f, 0.205f } }, .precision = { 1.0f, { 0.5f, 1.0f } }, .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
@@ -471,6 +502,7 @@ namespace NLA::Options
 			config.staff = { .accuracy = { 1.0f, { 0.88f, 0.3f } }, .precision = { 1.0f, { 0.5f, 0.75f } }, .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.74f, 1.4f, 1.3f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
 			config.concentrationStaff = { .accuracy = { 1.0f, { 1.8f, 1.0f } }, .precision = { 1.0f, { 0.3f, 0.5f } }, .retarget = { 1.0f, { 0.6f, 0.2f } }, .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kEnchanting }, .speed = Scale(0.74f, 1.4f, 1.3f), .range = Scale(1.45f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
 			config.scroll = { .accuracy = { 0.01f, { 0.35f, 0.35f } }, .precision = { 0.01f, { 0.8f, 0.8f } }, .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(1.4f, 1.65f), .skillShot = Config::Scaling::kNone, .steadying = { { false }, 0.3f, 2.0f }, .fatigue = Fatigue(true, 5.0f, 1.0f, 1.0f, 3.0f) };
+			ApplyBlindnessDefaults(config);
 			return config;
 		}
 
@@ -479,8 +511,6 @@ namespace NLA::Options
 			using enum SkillSource;
 
 			Config config;
-			config.accuracyBlindness = 1.5f;
-			config.precisionBlindness = 1.5f;
 			config.bow = { .accuracy = { 1.1f, { 1.2840254f, 0.0784f } }, .precision = { 1.0f, { 0.75f, 1.75f } }, .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.57f, 2.0f), .skillShot = { true, { 0.0f, 0.4f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
 			config.crossbow = { .accuracy = { 1.5f, { 0.4f, 0.3f } }, .precision = { 1.0f, { 0.6f, 0.8f } }, .skills = Skills{ .aiming = kArchery, .speed = kArchery, .range = kTotal }, .speed = Scale(0.87f, 1.2f), .skillShot = { true, { 0.0f, 0.2f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
 			config.spell = { .accuracy = { 1.0f, { 0.9f, 0.205f } }, .precision = { 1.0f, { 0.5f, 1.0f } }, .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(0.35f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
@@ -488,6 +518,7 @@ namespace NLA::Options
 			config.staff = { .accuracy = { 1.0f, { 1.1f, 0.3f } }, .precision = { 1.0f, { 0.5f, 0.75f } }, .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kTotal }, .speed = Scale(0.74f, 1.4f, 1.6f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
 			config.concentrationStaff = { .accuracy = { 1.0f, { 2.0f, 1.0f } }, .precision = { 1.0f, { 0.3f, 0.5f } }, .retarget = { 1.0f, { 0.6f, 0.2f } }, .skills = Skills{ .aiming = kHighest, .speed = kEnchanting, .range = kEnchanting }, .speed = Scale(0.74f, 1.4f, 1.6f), .range = Scale(1.45f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
 			config.scroll = { .accuracy = { 0.01f, { 0.35f, 0.35f } }, .precision = { 0.01f, { 0.8f, 0.8f } }, .skills = Skills{ .aiming = kHighest, .speed = kSpellSkill, .range = kTotal }, .speed = Scale(1.4f, 1.65f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = { { false }, 0.3f, 2.0f }, .fatigue = Fatigue(true, 5.0f, 1.0f, 1.0f, 3.0f) };
+			ApplyBlindnessDefaults(config);
 			return config;
 		}
 	}

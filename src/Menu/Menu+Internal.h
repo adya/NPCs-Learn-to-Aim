@@ -78,7 +78,7 @@ namespace NLA::Menu
 	};
 
 	/// A row with headers over the slider columns. Null or empty headers leave their column blank.
-	void HeaderRow(const char* first, const char* second = nullptr, const char* third = nullptr);
+	void HeaderRow(const char* first, const char* second = nullptr, const char* third = nullptr, const char* fourth = nullptr);
 	void EmptyRow();
 
 	/// The width that a table from `BeginPageTable` takes.
@@ -95,7 +95,9 @@ namespace NLA::Menu
 	/// Shows `value` as a percentage; `limit` is in the same fractional units as the value (1.0 is 100%).
 	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
 	/// A row with `label`, the skill multiplier slider and the multiplier bounds (at 0 and at 100 skill) in the slider columns.
-	void AimRow(const char* label, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit = Options::Limits::kAccuracyFactor, const char* format = "x%.2f");
+	/// `labelTooltip` defines what the row is. A non-null `blindness` adds a fourth column with a slider for it.
+	void AimRow(const char* label, const char* labelTooltip, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit = Options::Limits::kAccuracyFactor, const char* format = "x%.2f",
+	            float* blindness = nullptr, const char* blindnessTooltip = nullptr, Options::Limit blindnessLimit = Options::Limits::kAccuracyBlindness);
 	/// Leaves the next column blank.
 	void EmptyColumn();
 

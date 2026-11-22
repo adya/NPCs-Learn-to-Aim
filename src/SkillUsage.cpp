@@ -7,13 +7,8 @@ namespace NLA
 	{
 		RE::ActorValue SkillFor(const Options::AttackKind& kind, const RE::MagicItem* spell, RE::Actor* caster, SkillUsageContext context);
 
-		/// Lowers the multiplier by how blind the attacker is, if blindness affects aiming.
-		float WithBlindness(float multiplier, RE::Actor* attacker, const Options::Config& options, SkillUsageContext context) {
-			if (!options.blindnessAffectsAiming)
-				return multiplier;
-
-			const float blindness = std::clamp(attacker->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
-			return std::max(0.0f, multiplier - (1 - options.BlindnessFor(context)) * blindness);
+		float BlindnessOf(RE::Actor* actor) {
+			return std::clamp(actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlindness), 0.0f, 1.0f);
 		}
 	}
 
@@ -28,6 +23,7 @@ namespace NLA
 		const auto& options = Options::For(attacker);
 
 		kind = weaponKind;
+		this->context = context;
 
 		const auto& attack = options.For(*kind);
 
@@ -55,7 +51,8 @@ namespace NLA
 		case kPrecision:
 			if (attack.aiming) {
 				const auto& aim = attack.AimFor(context);
-				use(aim.bounds, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
+				use(aim.bounds, aim);
+				blindnessMultiplier = attack.BlindnessFor(context);
 			}
 			break;
 
@@ -137,6 +134,7 @@ namespace NLA
 		const bool  isAimed = spell->GetDelivery() == RE::MagicSystem::Delivery::kAimed;
 
 		kind = spellKind;
+		this->context = context;
 
 		const auto& attack = options.For(*kind);
 
@@ -168,7 +166,8 @@ namespace NLA
 
 		case kRetarget:
 			if (isAimed && attack.aiming && kind->concentration) {
-				use(attack.retarget.bounds, { attack.retarget.skillMultiplier });
+				use(attack.retarget.bounds, attack.retarget);
+				blindnessMultiplier = attack.BlindnessFor(context);
 			}
 			break;
 
@@ -176,7 +175,8 @@ namespace NLA
 		case kPrecision:
 			if (isAimed && attack.aiming) {
 				const auto& aim = attack.AimFor(context);
-				use(aim.bounds, { WithBlindness(aim.skillMultiplier, attacker, options, context) });
+				use(aim.bounds, aim);
+				blindnessMultiplier = attack.BlindnessFor(context);
 			}
 			break;
 
@@ -206,7 +206,24 @@ namespace NLA
 		if (!actor || skill == RE::ActorValue::kNone)
 			return 1.0f;
 
-		return Details::SkillFactorFor(bounds, EffectiveSkill(actor));
+		return Details::BlindedFactor(context, Details::SkillFactorFor(bounds, EffectiveSkill(actor)), blindnessMultiplier, BlindnessOf(actor));
+	}
+
+	float Details::BlindedFactor(SkillUsageContext context, float factor, float multiplier, float blindness) {
+		// How much of the multiplier applies: none when sighted, all of it when fully blind.
+		const float effect = 1.0f + (multiplier - 1.0f) * blindness;
+
+		switch (context) {
+		case kAccuracy:
+		case kRetarget:
+			// Both are sizes (the miss area and the stream's step), so more blindness makes them bigger.
+			return std::max(0.0f, factor * effect);
+		case kPrecision:
+			// A lower focus is worse, so the same x1.50 that widens the spread takes half of the focus away.
+			return std::max(0.0f, factor * (2.0f - effect));
+		default:
+			return factor;
+		}
 	}
 
 	float Details::MaxSpreadFor(float accuracyFactor) {
