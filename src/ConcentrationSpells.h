@@ -16,8 +16,8 @@ namespace NLA::ConcentrationSpells
 			RE::NiPoint2 finish{ 0.0f, 0.0f };
 			RE::NiPoint2 current{ 0.0f, 0.0f };
 
-			std::uint32_t elapsedTicks = 0;
-			bool          paused = false;
+			std::uint32_t elapsedTicks = pauseTicks;
+			bool          paused = true;
 
 #ifndef NDEBUG
 			/// Set by `Advance` when it picked a new target point, so the log doesn't repeat every tick.
