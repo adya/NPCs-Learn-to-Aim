@@ -83,10 +83,10 @@ namespace NLA::Menu
 		// ---- What the target is made of ----
 
 		/// The standard archery target: ten rings in five colors of two rings each, from the middle out: gold, red, blue, black and white.
-		/// The target is as tall as an NPC and its gold circle (the two inner rings, of equal width) is as big as an average head; the eight rings outside
+		/// The target is half as tall as an NPC, like the archery targets in the game, and its gold circle (the two inner rings, of equal width) is as big as an average head; the eight rings outside
 		/// the gold are of equal width.
 		constexpr int   kRings = 10;
-		constexpr float kTargetRadius = kNpcHeight * 0.5f;
+		constexpr float kTargetRadius = kNpcHeight * 0.25f;
 		constexpr float kGoldRadius = kHeadHeight * 0.5f;
 
 		struct ZoneStyle
@@ -811,7 +811,7 @@ namespace NLA::Menu
 			preview.ResetAim();
 			preview.ClearShots();
 		}
-		ShowTooltip("A plain archery target, as tall as an NPC.");
+		ShowTooltip("A plain archery target, half as tall as an NPC.");
 		SameLine();
 		if (RadioButton("Humanoid", &preview.shape, kHumanoid)) {
 			preview.ResetAim();
