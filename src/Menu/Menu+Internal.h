@@ -49,7 +49,8 @@ namespace NLA::Menu
 		bool disabled;
 	};
 
-	void ShowTooltip(const char* text);
+	/// `whileHeld` also shows it while another item is held down, for an item that is meant to be read during a hold.
+	void ShowTooltip(const char* text, bool whileHeld = false);
 
 	/// Begins a 4-column table: a fixed-width label column followed by three slider columns. Call EndTable() if it returns true.
 	bool BeginPageTable(const char* id);
@@ -187,6 +188,9 @@ namespace NLA::Menu
 	{};
 
 	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(const KindContext&, TableSections&)>& renderParts);
+
+	/// The width at which the preview is at its biggest. It doesn't grow past it with the window.
+	float PreviewPaneWidth();
 
 	/// Shows where shots of the kind land with the current settings, for a skill and distance picked in the pane itself.
 	void RenderSpreadPreview(const KindContext& kind);

@@ -64,10 +64,11 @@ namespace NLA::Menu
 		}
 	}
 
-	void ShowTooltip(const char* text) {
+	void ShowTooltip(const char* text, bool whileHeld) {
 		// Not while the item is being used: a tooltip would only get in the way of dragging a slider or holding a button.
 		// And not right away either: it appears once the mouse has rested on the item for a moment, each item having its own wait.
-		if (IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay) && !IsItemActive()) {
+		const ImGuiHoveredFlags flags = ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | (whileHeld ? ImGuiHoveredFlags_AllowWhenBlockedByActiveItem : 0);
+		if (IsItemHovered(flags) && !IsItemActive()) {
 			BeginTooltip();
 			PushTextWrapPos(GetFontSize() * 35.0f);
 			TextUnformatted(text);

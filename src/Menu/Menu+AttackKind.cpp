@@ -120,8 +120,13 @@ namespace NLA::Menu
 
 		PushID(kind.id);
 
-		// The settings take the left, as wide as their table, and the preview what is left, so that the effect of a change is visible without leaving the page.
-		const float settingsWidth = std::min(PageTableWidth() + GetStyle()->ScrollbarSize + GetStyle()->WindowPadding.x * 2, std::max(200.0f, GetContentRegionAvail().x - kMinPreviewWidth));
+		// The preview keeps its size however wide the window is, and the settings take the rest, so that the effect of a change is visible without leaving the page.
+		// When the window is narrow the preview gives way first, down to a minimum, so that the settings keep their table.
+		const float spacing = GetStyle()->ItemSpacing.x;
+		const float tableWidth = PageTableWidth() + GetStyle()->ScrollbarSize + GetStyle()->WindowPadding.x * 2;
+		const float available = GetContentRegionAvail().x;
+		const float previewWidth = std::clamp(available - tableWidth - spacing, kMinPreviewWidth, PreviewPaneWidth());
+		const float settingsWidth = std::max(200.0f, available - previewWidth - spacing);
 		const bool  settingsVisible = BeginChild("##Settings", ImVec2(settingsWidth, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
 		if (settingsVisible) {
 			TableSections sections;
@@ -161,7 +166,7 @@ namespace NLA::Menu
 		EndChild();
 
 		SameLine();
-		if (BeginChild("##Preview", ImVec2(0, 0), ImGuiChildFlags_Border, 0)) {
+		if (BeginChild("##Preview", ImVec2(previewWidth, 0), ImGuiChildFlags_Border, 0)) {
 			RenderSpreadPreview(context);
 		}
 		EndChild();
