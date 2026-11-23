@@ -711,7 +711,7 @@ namespace NLA::Menu
 			return;
 		}
 
-		const auto        skillValue = Details::SkillForSource(attack.skills.aiming, nullptr, info.magic, actor);
+		const auto        skillValue = Details::SkillForSource(attack.skills.accuracy, nullptr, info.magic, actor);
 		const char* const skillName = RE::ActorValueList::GetActorValueName(skillValue);
 		const float       actorSkill = actor->AsActorValueOwner()->GetActorValue(skillValue);
 		const auto        attribute = info.magic ? RE::ActorValue::kMagicka : RE::ActorValue::kStamina;
@@ -832,15 +832,19 @@ namespace NLA::Menu
 
 		preview.holdSeconds = preview.holding ? preview.holdSeconds + dt : 0.0f;
 
-		const float skill = shared.simulated ? preview.skill : actorSkill;
+		// Each part scales with its own skill. The Simulated tab has one skill slider, which they all follow.
+		const auto skillOf = [&](Options::SkillSource source) {
+			return shared.simulated ? preview.skill : actor->AsActorValueOwner()->GetActorValue(Details::SkillForSource(source, nullptr, info.magic, actor));
+		};
 		const float maxAttribute = shared.simulated ? preview.maxAttribute : actorMaxAttribute;
-		const float effectiveAccuracy = skill * attack.accuracy.skillMultiplier;
-		const float effectivePrecision = skill * attack.precision.skillMultiplier;
-		const float effectiveRetarget = skill * attack.retarget.skillMultiplier;
+		const float effectiveAccuracy = skillOf(attack.skills.accuracy) * attack.accuracy.skillMultiplier;
+		const float effectivePrecision = skillOf(attack.skills.precision) * attack.precision.skillMultiplier;
+		const float effectiveRetarget = skillOf(attack.skills.retarget) * attack.retarget.skillMultiplier;
 
-		const float maxSpread = attack.aiming ? Details::MaxSpreadFor(Details::SkillFactorFor(attack.accuracy.bounds, effectiveAccuracy)) : 0.0f;
-		const float focus = attack.aiming ? Details::SkillFactorFor(attack.precision.bounds, effectivePrecision) : 0.5f;
-		const float maxStep = maxSpread * Details::SkillFactorFor(attack.retarget.bounds, effectiveRetarget);
+		const float maxSpread = attack.Aims() ? Details::MaxSpreadFor(Details::SkillFactorFor(attack.accuracy.bounds, effectiveAccuracy)) : 0.0f;
+		const float focus = attack.Aims() && attack.precision.enabled ? Details::SkillFactorFor(attack.precision.bounds, effectivePrecision) : 0.5f;
+		// Without Retargeting the beam picks its next point freely.
+		const float maxStep = attack.retarget.enabled ? maxSpread * Details::SkillFactorFor(attack.retarget.bounds, effectiveRetarget) : std::numeric_limits<float>::max();
 
 		const float threshold = attack.fatigue.enabled ? Fatigue::Details::Threshold(attack.fatigue, maxAttribute) : 0.0f;
 		const auto  hold = Fatigue::Hold(attack.steadying, attack.fatigue, threshold, preview.holdSeconds);
@@ -910,7 +914,7 @@ namespace NLA::Menu
 
 			std::uniform_real_distribution<float> unit(0.0f, 1.0f);
 			for (int i = 0; i < fired; ++i) {
-				const auto offset = attack.aiming ? Details::SpreadOffset(maxSpread, focus, unit(Rng()), unit(Rng()) * 2.0f * std::numbers::pi_v<float>) : RE::NiPoint2{ 0.0f, 0.0f };
+				const auto offset = attack.Aims() ? Details::SpreadOffset(maxSpread, focus, unit(Rng()), unit(Rng()) * 2.0f * std::numbers::pi_v<float>) : RE::NiPoint2{ 0.0f, 0.0f };
 				preview.flow.push_back({ OnTarget({ offset.x * preview.shownScale, offset.y * preview.shownScale }, SharedDistance()), ++preview.flowSerial });
 			}
 			while (!preview.flow.empty() && preview.flow.front().tick + shared.shots <= preview.flowSerial) {
@@ -932,7 +936,7 @@ namespace NLA::Menu
 			RE::NiPoint2              previous{ 0.0f, 0.0f };
 			for (int i = 0; i < count; ++i) {
 				const auto& roll = preview.rolls[i];
-				const auto  candidate = attack.aiming ? Details::SpreadOffset(maxSpread, focus, roll.radius, roll.angle) : RE::NiPoint2{ 0.0f, 0.0f };
+				const auto  candidate = attack.Aims() ? Details::SpreadOffset(maxSpread, focus, roll.radius, roll.angle) : RE::NiPoint2{ 0.0f, 0.0f };
 				offsets[i] = info.concentration ? ConcentrationSpells::Details::BoundedStep(previous, candidate, maxStep) : candidate;
 				previous = offsets[i];
 			}
@@ -1014,7 +1018,7 @@ namespace NLA::Menu
 
 			SameLine();
 			Text("%s", fmt::format("Spread x{:.2f}", hold.scale).c_str());
-			if (attack.aiming) {
+			if (attack.Aims()) {
 				std::string spreadTip = fmt::format("Now: x{:.2f}, widest miss {}", hold.scale, angleText(hold.scale));
 				if (steadies) {
 					spreadTip += fmt::format("\nMax steadying: x{:.2f}, widest miss {}", 1.0f - maxBonus, angleText(1.0f - maxBonus));
@@ -1105,7 +1109,7 @@ namespace NLA::Menu
 		AddRectFilled(drawList, origin, corner, IM_COL32(18, 20, 22, 255), 0.0f, 0);
 		DrawFigure(drawList, humanoid, preview.aimX, preview.aimY, preview.aimX, preview.aimY, aim, pxPerMeter, origin.y, corner.y, true);
 
-		if (attack.aiming) {
+		if (attack.Aims()) {
 			AddCircle(drawList, aim, SharedDistance() * std::tan(std::min(widestNow, 1.2f)) * pxPerMeter, IM_COL32(255, 255, 255, 150), 64, 1.0f);
 		}
 

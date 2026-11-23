@@ -7,11 +7,10 @@ namespace NLA::Menu
 		constexpr AttackKind<SkillShotRows, SpeedRows, SpreadRows, FatigueRows> kSpells{
 			{
 				.id = "Spells",
-				.label = kScaleAimLabel,
+				.toggleLabel = "Improve Spells",
 				.kind = Options::AttackKind::kSpell,
 				.accuracyTooltip = "How strongly skill improves accuracy with spells. Higher means smaller misses.",
 				.precisionTooltip = "How strongly skill bunches spells near the aim.",
-				.resetLabel = "Reset Spells to Default",
 			},
 			SkillShotRows{
 				"Skill Shots",
@@ -19,10 +18,8 @@ namespace NLA::Menu
 				"mage",
 				"aiming skill" },
 			SpeedRows{
-				kScaleChargeSpeedLabel,
 				kChargeSpeedGroup },
 			SpreadRows{
-				kSteadyingLabel,
 				"Holding a charged spell makes the aim steadier over time.",
 				"The most spread that holding can remove. 50% means at best half as wide.",
 				"Time to reach half of the max spread reduction. Shorter means the aim steadies faster." },

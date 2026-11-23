@@ -52,21 +52,18 @@ namespace NLA::Menu
 	/// `whileHeld` also shows it while another item is held down, for an item that is meant to be read during a hold.
 	void ShowTooltip(const char* text, bool whileHeld = false);
 
-	/// Begins a 4-column table: a fixed-width label column followed by three slider columns. Call EndTable() if it returns true.
+	/// Begins a 4-column table: a label column followed by three slider columns. Call EndTable() if it returns true.
 	bool BeginPageTable(const char* id);
-
-	/// Begins a table, renders `rows` and ends it.
-	void RenderTable(const char* id, const std::function<void()>& rows);
 
 	/// Lays an attack kind out as consecutive tables, each titled by a separator. The label column has a fixed width,
 	/// so sliders line up across tables.
-	class TableSections
+	class Sections
 	{
 	public:
-		TableSections() = default;
-		~TableSections();
-		TableSections(const TableSections&) = delete;
-		TableSections& operator=(const TableSections&) = delete;
+		Sections() = default;
+		~Sections();
+		Sections(const Sections&) = delete;
+		Sections& operator=(const Sections&) = delete;
 
 		/// Starts a new table below `separator`, or continues the current one when it is null (except for the first call).
 		/// Returns false if the table isn't visible, in which case the rows must be skipped.
@@ -92,29 +89,53 @@ namespace NLA::Menu
 	};
 
 	/// A row with headers over the slider columns. Null or empty headers leave their column blank.
-	void HeaderRow(HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {}, HeaderLabel fourth = {});
-	/// Like `HeaderRow`, with a checkbox in the label column of the same row.
-	void ToggleHeaderRow(const char* label, bool& value, const char* tooltip, HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {}, HeaderLabel fourth = {});
-	/// Like `HeaderRow`, with "`prefix` [skill]" in the label column: a drop-down of the skills (when `source` is given) plus "Nothing", which clears `enabled`.
-	void SkillHeaderRow(const char* prefix, bool& enabled, Options::SkillSource* source, const char* subject, HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {}, HeaderLabel fourth = {});
+	void HeaderRow(HeaderLabel first, HeaderLabel second = {}, HeaderLabel third = {});
 	void EmptyRow();
 
 	/// The width that a table from `BeginPageTable` takes.
 	float PageTableWidth();
 
-	/// Starts a new row with the button in the first column.
-	bool ResetButton(const char* label);
-
-	void SliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit = Options::Limits::kSkillMultiplier, const char* format = "x%.2f");
-	void SecondsSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
-	/// Shows `value` as a percentage; `limit` is in the same fractional units as the value (1.0 is 100%).
-	void PercentSliderColumn(const char* id, float& value, const char* tooltip, Options::Limit limit);
-	/// A row with `label`, the skill multiplier slider and the multiplier bounds (at 0 and at 100 skill) in the slider columns.
-	/// `labelTooltip` defines what the row is. A non-null `blindness` adds a fourth column with a slider for it.
-	void AimRow(const char* label, const char* labelTooltip, const char* id, Options::Config::Aim& aim, const char* tooltip, const char* minTooltip, const char* maxTooltip, Options::Limit limit = Options::Limits::kAccuracyFactor, const char* format = "x%.2f",
-	            float* blindness = nullptr, const char* blindnessTooltip = nullptr, Options::Limit blindnessLimit = Options::Limits::kAccuracyBlindness);
 	/// Leaves the next column blank.
 	void EmptyColumn();
+
+	/// How a field shows its value.
+	enum class ValueFormat : std::uint8_t
+	{
+		kMultiplier,  // x1.25
+		kPercent,     // The value is a fraction: 0.25 shows as 25%.
+		kSeconds,
+		kPlain
+	};
+
+	/// A slider in a column. With no `value` the column is left blank.
+	struct SentenceField
+	{
+		const char*    id = nullptr;
+		float*         value = nullptr;
+		Options::Limit limit{};
+		ValueFormat    format = ValueFormat::kMultiplier;
+		const char*    tooltip = nullptr;
+	};
+
+	/// A row with `label` and up to three sliders, one in each slider column. `labelTooltip` says what the row is.
+	void ValueRow(const char* label, const char* labelTooltip, const SentenceField& first, const SentenceField& second = {}, const SentenceField& third = {});
+
+	/// A row with a checkbox in the label column and up to two sliders in the first two slider columns, greyed out while the box is unchecked. Put a
+	/// `HeaderRow` over it to title the sliders.
+	void ToggleRow(const char* label, bool& value, const char* tooltip, const SentenceField& first, const SentenceField& second = {});
+
+	/// A little air between two groups of rows.
+	void RowGap();
+
+	/// The row that opens a page: the checkbox of the whole kind, lined up with the other checkboxes, and a button that resets the page, which takes
+	/// the two last slider columns. Returns true when the button is clicked. The checkbox label may run into the first slider column.
+	bool KindRow(const char* label, bool& enabled, const char* tooltip);
+
+	/// Two rows for the skill a part scales with. The first is the "Skill Mult" header, and the second has a checkbox with "Scale with" in the label
+	/// column, the skill drop-down across the next two columns and the skill multiplier in the third. With no `enabled` the part has no switch of its own.
+	/// `source` null means the skill is fixed (Archery), as it is for bows and crossbows; only the magic kinds can pick. `subject` is what the skill
+	/// scales, as the tooltip names it.
+	void ScaleRows(const char* id, bool* enabled, const char* enabledTooltip, Options::SkillSource* source, const char* subject, float& skillMultiplier, const char* multiplierTooltip);
 
 	// ---- Attack kind parts ----
 	// Each part renders its own rows.
@@ -136,7 +157,7 @@ namespace NLA::Menu
 		/// The skill that drives the chance, as worded in tooltips (e.g. "Archery skill").
 		const char* skill;
 
-		void Render(const KindContext& kind, TableSections& sections) const;
+		void Render(const KindContext& kind, Sections& sections) const;
 	};
 
 	struct RangeRows
@@ -147,38 +168,34 @@ namespace NLA::Menu
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
 
-		void Render(const KindContext& kind, TableSections& sections) const;
+		void Render(const KindContext& kind, Sections& sections) const;
 	};
 
 	struct SpeedRows
 	{
-		const char* label;
-
 		/// Separator title for the rows; null keeps them in the current group.
 		const char* group = nullptr;
 
-		void Render(const KindContext& kind, TableSections& sections) const;
+		void Render(const KindContext& kind, Sections& sections) const;
 	};
 
 	struct SpreadRows
 	{
-		const char* label;
 		const char* tooltip;
 		const char* maxReductionTooltip;
 		const char* halfDurationTooltip;
 
-		void Render(const KindContext& kind, TableSections& sections) const;
+		void Render(const KindContext& kind, Sections& sections) const;
 	};
 
 	struct FatigueRows
 	{
-		const char* label;
 		const char* tooltip;
 		const char* minThresholdTooltip;
 		const char* maxThresholdTooltip;
 		const char* maxPenaltyTooltip;
 
-		void Render(const KindContext& kind, TableSections& sections) const;
+		void Render(const KindContext& kind, Sections& sections) const;
 	};
 
 	// ---- Attack kinds ----
@@ -187,13 +204,14 @@ namespace NLA::Menu
 	struct AttackKindBase
 	{
 		const char* id;
-		const char* label;
+
+		/// The checkbox that turns the whole kind on and off, e.g. "Improve Bows".
+		const char* toggleLabel;
 
 		const Options::AttackKind& kind;
 
 		const char* accuracyTooltip;
 		const char* precisionTooltip;
-		const char* resetLabel;
 	};
 
 	/// Parts are rendered below the "Learn X" row in the order they are listed.
@@ -201,7 +219,7 @@ namespace NLA::Menu
 	struct AttackKind : AttackKindBase, Parts...
 	{};
 
-	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const char* separator, const std::function<void(const KindContext&, TableSections&)>& renderParts);
+	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const std::function<void(const KindContext&, Sections&)>& renderParts);
 
 	/// The width at which the preview is at its biggest. It doesn't grow past it with the window.
 	float PreviewPaneWidth();
@@ -209,21 +227,16 @@ namespace NLA::Menu
 	/// Shows where shots of the kind land with the current settings, for a skill and distance picked in the pane itself.
 	void RenderSpreadPreview(const KindContext& kind);
 
-	/// Renders the attack kind below `separator`. Parts that have a group of their own (skill source, range, speed, steadying, fatigue) start
-	/// a new section with their title; the rest stay in the section of the "Learn X" row.
+	/// Renders the attack kind: the aim sections (Accuracy, Precision, Retargeting), then its parts. Parts that have a group of their own (skill shots, range, speed, steadying, fatigue) start
+	/// a new section with their title.
 	template <class... Parts>
-	void RenderAttackKind(const AttackKind<Parts...>& kind, const PageContext& ctx, const char* separator = "Aiming") {
+	void RenderAttackKind(const AttackKind<Parts...>& kind, const PageContext& ctx) {
 		RenderAttackKindTable(
 			kind,
 			ctx,
-			separator,
-			[&](const KindContext& context, TableSections& sections) { (static_cast<const Parts&>(kind).Render(context, sections), ...); });
+			[&](const KindContext& context, Sections& sections) { (static_cast<const Parts&>(kind).Render(context, sections), ...); });
 	}
 
-	inline constexpr const char* kScaleAimLabel = "Scale with";
-	inline constexpr const char* kScaleDrawSpeedLabel = "Scale with";
-	inline constexpr const char* kScaleChargeSpeedLabel = "Scale with";
-	inline constexpr const char* kSteadyingLabel = "Holding Charge Steadies Aim";
 	inline constexpr const char* kDrawSpeedGroup = "Draw Speed";
 	inline constexpr const char* kChargeSpeedGroup = "Charge Speed";
 	inline constexpr const char* kRangeGroup = "Range";
@@ -231,7 +244,6 @@ namespace NLA::Menu
 	/// Shared by spells, staves and scrolls; only the toggle's tooltip differs.
 	constexpr FatigueRows CastFatigue(const char* tooltip) {
 		return {
-			"Holding Charge Fatigues Aim",
 			tooltip,
 			"How long a charge can be held before the caster tires, with no Magicka. More Magicka extends it.",
 			"How long a charge can be held before the caster tires, with 100 max Magicka. More Magicka extends it further.",

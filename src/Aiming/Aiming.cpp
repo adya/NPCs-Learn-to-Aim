@@ -119,7 +119,8 @@ namespace NLA
 				if (attacker && attacker->IsPlayerRef())
 					modifier.playerShot = PlayerShot::KeyFor(attacker, nullptr, RE::MagicSystem::CastingSource::kNone);
 
-				if (auto kind = Weapon::KindOf(weapon); kind) {
+				// Without Accuracy there is no spread for steadying or fatigue to scale. That is also how a kind that is switched off stays untouched.
+				if (auto kind = Weapon::KindOf(weapon); kind && modifier.accuracy) {
 					modifier.steadying = SteadyingModifier::For(attacker, *kind, Steadying::FullDrawDuration(attacker));
 				}
 				return modifier;

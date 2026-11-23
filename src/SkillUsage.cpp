@@ -26,6 +26,8 @@ namespace NLA
 		this->context = context;
 
 		const auto& attack = options.For(*kind);
+		if (!attack.enabled)
+			return;
 
 		const auto use = [&](const Options::Bounds& scale, const Options::SkillBasedValue& value) {
 			skill = SkillFor(*kind, nullptr, attacker, context);
@@ -49,7 +51,7 @@ namespace NLA
 
 		case kAccuracy:
 		case kPrecision:
-			if (attack.aiming) {
+			if (attack.aiming && attack.AimFor(context).enabled) {
 				const auto& aim = attack.AimFor(context);
 				use(aim.bounds, aim);
 				blindnessMultiplier = attack.BlindnessFor(context);
@@ -83,8 +85,17 @@ namespace NLA
 			case kRange:
 				source = sources.range;
 				break;
+			case kAccuracy:
+				source = sources.accuracy;
+				break;
+			case kPrecision:
+				source = sources.precision;
+				break;
+			case kRetarget:
+				source = sources.retarget;
+				break;
 			default:
-				source = sources.aiming;
+				source = sources.skillShot;
 				break;
 			}
 
@@ -137,6 +148,8 @@ namespace NLA
 		this->context = context;
 
 		const auto& attack = options.For(*kind);
+		if (!attack.enabled)
+			return;
 
 		const auto use = [&](const Options::Bounds& scale, const Options::SkillBasedValue& value) {
 			skill = SkillFor(*kind, spell, attacker, context);
@@ -165,7 +178,7 @@ namespace NLA
 			break;
 
 		case kRetarget:
-			if (isAimed && attack.aiming && kind->concentration) {
+			if (isAimed && attack.aiming && attack.retarget.enabled && kind->concentration) {
 				use(attack.retarget.bounds, attack.retarget);
 				blindnessMultiplier = attack.BlindnessFor(context);
 			}
@@ -173,7 +186,7 @@ namespace NLA
 
 		case kAccuracy:
 		case kPrecision:
-			if (isAimed && attack.aiming) {
+			if (isAimed && attack.aiming && attack.AimFor(context).enabled) {
 				const auto& aim = attack.AimFor(context);
 				use(aim.bounds, aim);
 				blindnessMultiplier = attack.BlindnessFor(context);

@@ -58,7 +58,11 @@ namespace NLA::Options
 			}
 		}
 
-		void SaveAim(CSimpleIniA& ini, const char* a_section, const Keys::Aim& keys, const Config::Aim& value, const Config::Aim& defaultValue, bool writeDefaults = false) {
+		/// `withToggle` is false for Accuracy, which has no switch of its own: `Attack::aiming` turns it off.
+		void SaveAim(CSimpleIniA& ini, const char* a_section, const Keys::Aim& keys, const Config::Aim& value, const Config::Aim& defaultValue, bool writeDefaults = false, bool withToggle = true) {
+			if (withToggle) {
+				SetOrDeleteValue(ini, a_section, keys.enabled.c_str(), value.enabled, defaultValue.enabled, writeDefaults);
+			}
 			SetOrDeleteValue(ini, a_section, keys.skillMultiplier.c_str(), value.skillMultiplier, defaultValue.skillMultiplier, writeDefaults);
 			SetOrDeleteValue(ini, a_section, keys.from.c_str(), value.bounds.from, defaultValue.bounds.from, writeDefaults);
 			SetOrDeleteValue(ini, a_section, keys.to.c_str(), value.bounds.to, defaultValue.bounds.to, writeDefaults);
@@ -100,8 +104,16 @@ namespace NLA::Options
 			}
 		}
 
-		void SaveSkillSources(CSimpleIniA& ini, const char* a_section, const Keys::SkillSources& keys, const Config::SkillSources& value, const Config::SkillSources& defaultValue, bool writeDefaults = false) {
-			SaveSkillSource(ini, a_section, keys.aiming, value.aiming, defaultValue.aiming, writeDefaults);
+		/// `retarget` and `skillShot` say whether the kind has them: concentration spells and staves retarget, and only NPCs take skill shots.
+		void SaveSkillSources(CSimpleIniA& ini, const char* a_section, const Keys::SkillSources& keys, const Config::SkillSources& value, const Config::SkillSources& defaultValue, bool retarget, bool skillShot, bool writeDefaults = false) {
+			SaveSkillSource(ini, a_section, keys.accuracy, value.accuracy, defaultValue.accuracy, writeDefaults);
+			SaveSkillSource(ini, a_section, keys.precision, value.precision, defaultValue.precision, writeDefaults);
+			if (retarget) {
+				SaveSkillSource(ini, a_section, keys.retarget, value.retarget, defaultValue.retarget, writeDefaults);
+			}
+			if (skillShot) {
+				SaveSkillSource(ini, a_section, keys.skillShot, value.skillShot, defaultValue.skillShot, writeDefaults);
+			}
 			SaveSkillSource(ini, a_section, keys.speed, value.speed, defaultValue.speed, writeDefaults);
 			if (defaultValue.range != SkillSource::kTotal) {
 				SaveSkillSource(ini, a_section, keys.range, value.range, defaultValue.range, writeDefaults);
@@ -128,9 +140,10 @@ namespace NLA::Options
 				const auto&            attack = custom.*kind.config;
 				const auto&            defaultAttack = defaults.*kind.config;
 
+				SetOrDeleteValue(ini, a_section, keys.enabled.c_str(), attack.enabled, defaultAttack.enabled, writeDefaults);
 				SetOrDeleteValue(ini, a_section, keys.aiming.c_str(), attack.aiming, defaultAttack.aiming, writeDefaults);
 
-				SaveAim(ini, a_section, keys.accuracy, attack.accuracy, defaultAttack.accuracy, writeDefaults);
+				SaveAim(ini, a_section, keys.accuracy, attack.accuracy, defaultAttack.accuracy, writeDefaults, false);
 				SaveAim(ini, a_section, keys.precision, attack.precision, defaultAttack.precision, writeDefaults);
 				SetOrDeleteValue(ini, a_section, keys.accuracyBlindness.c_str(), attack.accuracyBlindness, defaultAttack.accuracyBlindness, writeDefaults);
 				SetOrDeleteValue(ini, a_section, keys.precisionBlindness.c_str(), attack.precisionBlindness, defaultAttack.precisionBlindness, writeDefaults);
@@ -139,7 +152,7 @@ namespace NLA::Options
 					SetOrDeleteValue(ini, a_section, keys.retargetBlindness.c_str(), attack.retargetBlindness, defaultAttack.retargetBlindness, writeDefaults);
 				}
 
-				SaveSkillSources(ini, a_section, keys.skills, attack.skills, defaultAttack.skills, writeDefaults);
+				SaveSkillSources(ini, a_section, keys.skills, attack.skills, defaultAttack.skills, kind.concentration, defaultAttack.skillShot != Config::Scaling::kNone, writeDefaults);
 				if (kind.range) {
 					SaveScaling(ini, a_section, keys.range, attack.range, defaultAttack.range, writeDefaults);
 				}
@@ -238,7 +251,8 @@ namespace NLA::Options
 					return "skill in spell's magic school";
 				}
 			};
-			logger::info("\t{}'s aiming with {} is based on {}", actor, name, describe(sources.aiming));
+			logger::info("\t{}'s accuracy with {} is based on {}", actor, name, describe(sources.accuracy));
+			logger::info("\t{}'s precision with {} is based on {}", actor, name, describe(sources.precision));
 			logger::info("\t{}'s charge speed with {} is based on {}", actor, name, describe(sources.speed));
 			if (sources.range != SkillSource::kTotal) {
 				logger::info("\t{}'s range with {} is based on {}", actor, name, describe(sources.range));
@@ -350,7 +364,12 @@ namespace NLA::Options
 				logger::info("\t{} {} with {}", actor, enabled ? "will learn to aim" : (isNPC ? "have perfect aim" : "has perfect aim"), weapon);
 			};
 			for (const AttackKind& kind : AttackKind::kAll) {
-				aiming(Wording::For(kind).plural, (cfg.*kind.config).aiming);
+				const auto& attack = cfg.*kind.config;
+				if (!attack.enabled) {
+					logger::info("	{} {} not affected by the mod with {}", actor, isNPC ? "are" : "is", Wording::For(kind).plural);
+				} else {
+					aiming(Wording::For(kind).plural, attack.aiming);
+				}
 			}
 			if (isNPC) {
 				LogSkillShots(actor, cfg);
@@ -572,9 +591,10 @@ namespace NLA::Options
 			auto&       attack = result.*kind.config;
 			const auto& defaultAttack = defaults.*kind.config;
 
+			attack.enabled = ini.GetBoolValue(a_section, keys.enabled.c_str(), attack.enabled);
 			attack.aiming = ini.GetBoolValue(a_section, keys.aiming.c_str(), attack.aiming);
 
-			attack.accuracy = Aim::FromIni(ini, a_section, keys.accuracy, attack.accuracy, Limits::kAccuracyFactor);
+			attack.accuracy = Aim::FromIni(ini, a_section, keys.accuracy, attack.accuracy, Limits::kAccuracyFactor, false);
 			attack.precision = Aim::FromIni(ini, a_section, keys.precision, attack.precision, Limits::kFocus);
 			attack.accuracyBlindness = ReadClamped(ini, a_section, keys.accuracyBlindness, attack.accuracyBlindness, Limits::kAccuracyBlindness);
 			attack.precisionBlindness = ReadClamped(ini, a_section, keys.precisionBlindness, attack.precisionBlindness, Limits::kPrecisionBlindness);
@@ -586,7 +606,7 @@ namespace NLA::Options
 				WarnUnsupported(ini, a_section, std::array{ keys.retargetBlindness }, "only concentration spells and staves support retargeting");
 			}
 
-			attack.skills = SkillSources::FromIni(ini, a_section, keys.skills, attack.skills);
+			attack.skills = SkillSources::FromIni(ini, a_section, keys.skills, attack.skills, kind.concentration, defaultAttack.skillShot != Config::Scaling::kNone);
 
 			if (kind.range) {
 				attack.range = Scaling::FromIni(ini, a_section, keys.range, attack.range, Limits::kRangeMultiplier);
@@ -625,7 +645,7 @@ namespace NLA::Options
 		return result;
 	}
 
-	Config::SkillSources Config::SkillSources::FromIni(CSimpleIniA& ini, const char* a_section, const Keys::SkillSources& keys, const SkillSources& defaults) {
+	Config::SkillSources Config::SkillSources::FromIni(CSimpleIniA& ini, const char* a_section, const Keys::SkillSources& keys, const SkillSources& defaults, bool retarget, bool skillShot) {
 		const auto read = [&](const Key& key, SkillSource fallback) {
 			const char* value = ini.GetValue(a_section, key.c_str(), nullptr);
 			if (!value) {
@@ -641,7 +661,18 @@ namespace NLA::Options
 		};
 
 		SkillSources result = defaults;
-		result.aiming = read(keys.aiming, result.aiming);
+		result.accuracy = read(keys.accuracy, result.accuracy);
+		result.precision = read(keys.precision, result.precision);
+		if (retarget) {
+			result.retarget = read(keys.retarget, result.retarget);
+		} else {
+			WarnUnsupported(ini, a_section, std::array{ keys.retarget }, "only concentration spells and staves support retargeting");
+		}
+		if (skillShot) {
+			result.skillShot = read(keys.skillShot, result.skillShot);
+		} else {
+			WarnUnsupported(ini, a_section, std::array{ keys.skillShot }, kUnsupported);
+		}
 		result.speed = read(keys.speed, result.speed);
 		if (defaults.range != SkillSource::kTotal) {
 			result.range = read(keys.range, result.range);
@@ -651,8 +682,11 @@ namespace NLA::Options
 		return result;
 	}
 
-	Config::Aim Config::Aim::FromIni(CSimpleIniA& ini, const char* a_section, const Keys::Aim& keys, const Aim& defaults, Limit limit) {
+	Config::Aim Config::Aim::FromIni(CSimpleIniA& ini, const char* a_section, const Keys::Aim& keys, const Aim& defaults, Limit limit, bool withToggle) {
  	Aim result = defaults;
+ 	if (withToggle) {
+ 		result.enabled = ini.GetBoolValue(a_section, keys.enabled.c_str(), result.enabled);
+ 	}
  	result.skillMultiplier = ReadClamped(ini, a_section, keys.skillMultiplier, result.skillMultiplier, Limits::kSkillMultiplier);
  	result.bounds.from = ReadClamped(ini, a_section, keys.from, result.bounds.from, limit);
  	result.bounds.to = ReadClamped(ini, a_section, keys.to, result.bounds.to, Limits::ToLimit(limit, result.bounds.from));
