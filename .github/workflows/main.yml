@@ -18,3 +18,4 @@ jobs:
     uses: adya/pack-skse-mod/.github/workflows/pack.yml@ng
     with:
       MOD_NAME: "NPCs Learn to Aim"
+      GENERATE_RELEASE_NOTES: false
