@@ -288,6 +288,13 @@ namespace NLA::Options
 				return result;
 			}
 
+			/// The same sources, with Retargeting scaling with `source` instead.
+			constexpr SkillSources WithRetarget(SkillSource source) const {
+				SkillSources result = *this;
+				result.retarget = source;
+				return result;
+			}
+
 			/// `retarget` and `skillShot` say whether the kind has them.
 			static SkillSources FromIni(CSimpleIniA& ini, const char* section, const Keys::SkillSources& keys, const SkillSources& defaults, bool retarget, bool skillShot);
 		};
@@ -547,10 +554,10 @@ namespace NLA::Options
 			Config config;
 			config.bow = { .accuracy = { 1.1f, { 1.0272f, 0.0784f } }, .precision = { 1.0f, { 0.75f, 1.75f } }, .skills = Skills::Aiming(kArchery, kArchery, kTotal), .speed = Scale(0.57f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
 			config.crossbow = { .accuracy = { 1.5f, { 0.32f, 0.3f } }, .precision = { 1.0f, { 0.6f, 0.8f } }, .skills = Skills::Aiming(kArchery, kArchery, kTotal), .speed = Scale(0.87f, 1.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
-			config.spell = { .accuracy = { 1.0f, { 0.72f, 0.205f } }, .precision = { 1.0f, { 0.5f, 1.0f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kTotal), .speed = Scale(0.35f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationSpell = { .accuracy = { 1.0f, { 1.6f, 0.5f } }, .precision = { 1.0f, { 0.3f, 0.7f } }, .retarget = { 1.0f, { 1.4f, 0.4f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kSpellSkill), .speed = Scale(0.35f, 2.0f), .range = Scale(0.8f, 3.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
-			config.staff = { .accuracy = { 1.0f, { 0.88f, 0.3f } }, .precision = { 1.0f, { 1.0f, 1.5f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kTotal).WithPrecision(kEnchanting), .speed = Scale(0.74f, 1.4f, 1.3f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationStaff = { .accuracy = { 1.0f, { 1.8f, 1.0f } }, .precision = { 1.0f, { 0.7f, 0.9f } }, .retarget = { 1.0f, { 0.6f, 0.2f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kEnchanting).WithPrecision(kEnchanting), .speed = Scale(0.74f, 1.4f, 1.3f), .range = Scale(1.45f, 2.0f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
+			config.spell = { .accuracy = { 1.0f, { 0.72f, 0.205f } }, .precision = { 1.0f, { 0.5f, 1.0f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kTotal), .speed = Scale(0.35f, 1.75f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationSpell = { .accuracy = { 1.0f, { 1.6f, 0.5f } }, .precision = { 1.0f, { 0.3f, 0.7f } }, .retarget = { 1.0f, { 1.4f, 0.4f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kSpellSkill), .speed = Scale(0.35f, 1.75f), .range = Scale(0.8f, 2.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
+			config.staff = { .accuracy = { 1.0f, { 0.88f, 0.3f } }, .precision = { 1.2f, { 0.8f, 1.5f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kTotal).WithPrecision(kEnchanting), .speed = Scale(0.74f, 2.0f, 1.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationStaff = { .accuracy = { 1.0f, { 1.8f, 1.0f } }, .precision = { 1.2f, { 0.5f, 0.9f } }, .retarget = { 1.2f, { 0.8f, 0.2f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kEnchanting).WithPrecision(kEnchanting).WithRetarget(kEnchanting), .speed = Scale(0.74f, 2.0f, 1.2f), .range = Scale(1.45f, 3.0f, 1.2f), .skillShot = Config::Scaling::kNone, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
 			config.scroll = { .accuracy = { 0.01f, { 0.35f, 0.35f } }, .precision = { 0.01f, { 0.8f, 0.8f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kTotal), .speed = Scale(1.4f, 1.65f), .skillShot = Config::Scaling::kNone, .steadying = { { false }, 0.3f, 2.0f }, .fatigue = Fatigue(true, 5.0f, 1.0f, 1.0f, 3.0f) };
 			ApplyBlindnessDefaults(config);
 			return config;
@@ -563,10 +570,10 @@ namespace NLA::Options
 			Config config;
 			config.bow = { .accuracy = { 1.1f, { 1.2840254f, 0.0784f } }, .precision = { 1.0f, { 0.75f, 1.75f } }, .skills = Skills::Aiming(kArchery, kArchery, kTotal), .speed = Scale(0.57f, 2.0f), .skillShot = { true, { 0.0f, 0.4f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 1.5f, 0.5f, 2.5f, 0.5f) };
 			config.crossbow = { .accuracy = { 1.5f, { 0.4f, 0.3f } }, .precision = { 1.0f, { 0.6f, 0.8f } }, .skills = Skills::Aiming(kArchery, kArchery, kTotal), .speed = Scale(0.87f, 1.2f), .skillShot = { true, { 0.0f, 0.2f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 0.5f, 2.5f, 0.5f) };
-			config.spell = { .accuracy = { 1.0f, { 0.9f, 0.205f } }, .precision = { 1.0f, { 0.5f, 1.0f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kTotal), .speed = Scale(0.35f, 2.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationSpell = { .accuracy = { 1.0f, { 1.6f, 0.5f } }, .precision = { 1.0f, { 0.3f, 0.7f } }, .retarget = { 1.0f, { 1.4f, 0.4f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kSpellSkill), .speed = Scale(0.35f, 2.0f), .range = Scale(0.8f, 3.0f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
-			config.staff = { .accuracy = { 1.0f, { 1.1f, 0.3f } }, .precision = { 1.0f, { 1.0f, 1.5f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kTotal).WithPrecision(kEnchanting), .speed = Scale(0.74f, 1.4f, 1.6f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
-			config.concentrationStaff = { .accuracy = { 1.0f, { 2.0f, 1.0f } }, .precision = { 1.0f, { 0.7f, 0.9f } }, .retarget = { 1.0f, { 0.6f, 0.2f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kEnchanting).WithPrecision(kEnchanting), .speed = Scale(0.74f, 1.4f, 1.6f), .range = Scale(1.45f, 2.0f, 1.6f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
+			config.spell = { .accuracy = { 1.0f, { 0.9f, 0.205f } }, .precision = { 1.0f, { 0.5f, 1.0f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kTotal), .speed = Scale(0.35f, 1.75f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationSpell = { .accuracy = { 1.0f, { 1.6f, 0.5f } }, .precision = { 1.0f, { 0.3f, 0.7f } }, .retarget = { 1.0f, { 1.4f, 0.4f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kSpellSkill), .speed = Scale(0.35f, 1.75f), .range = Scale(0.8f, 2.2f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(2.0f), .fatigue = Fatigue(true, 4.0f, 1.0f, 3.0f) };
+			config.staff = { .accuracy = { 1.0f, { 1.1f, 0.3f } }, .precision = { 1.2f, { 0.8f, 1.5f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kTotal).WithPrecision(kEnchanting), .speed = Scale(0.74f, 2.0f, 1.2f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 1.5f, 1.0f, 4.0f, 0.5f) };
+			config.concentrationStaff = { .accuracy = { 1.0f, { 2.0f, 1.0f } }, .precision = { 1.2f, { 0.5f, 0.9f } }, .retarget = { 1.2f, { 0.8f, 0.2f } }, .skills = Skills::Aiming(kHighest, kEnchanting, kEnchanting).WithPrecision(kEnchanting).WithRetarget(kEnchanting), .speed = Scale(0.74f, 2.0f, 1.2f), .range = Scale(1.45f, 3.0f, 1.2f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = Steadying(3.0f), .fatigue = Fatigue(false, 4.0f, 1.0f, 3.0f) };
 			config.scroll = { .accuracy = { 0.01f, { 0.35f, 0.35f } }, .precision = { 0.01f, { 0.8f, 0.8f } }, .skills = Skills::Aiming(kHighest, kSpellSkill, kTotal), .speed = Scale(1.4f, 1.65f), .skillShot = { false, { 0.0f, 0.35f } }, .steadying = { { false }, 0.3f, 2.0f }, .fatigue = Fatigue(true, 5.0f, 1.0f, 1.0f, 3.0f) };
 			ApplyBlindnessDefaults(config);
 			return config;
