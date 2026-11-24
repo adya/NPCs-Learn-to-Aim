@@ -119,7 +119,7 @@ namespace NLA::ConcentrationSpells
 						if (auto accuracy = SkillUsage(runtimeData.spell, attacker, kAccuracy); accuracy) {
 							const auto precision = SkillUsage(runtimeData.spell, attacker, kPrecision);
 							const auto retarget = SkillUsage(runtimeData.spell, attacker, kRetarget);
-							auto offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, retarget, FatigueState(projectile, attacker, *accuracy.kind));
+							auto       offset = ApplyWanderOffset(rotation, projectile, attacker, runtimeData.castingSource, accuracy, precision, retarget, FatigueState(projectile, attacker, *accuracy.kind));
 							localContext = { projectile, offset };
 						}
 						ApplyRangeScaling(projectile, attacker);

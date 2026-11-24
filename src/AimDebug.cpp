@@ -2,11 +2,11 @@
 
 #ifndef NDEBUG
 
-#include <SKSEMCP/SKSEMenuFramework.hpp>
+#	include <SKSEMCP/SKSEMenuFramework.hpp>
 
-#include <chrono>
-#include <mutex>
-#include <unordered_map>
+#	include <chrono>
+#	include <mutex>
+#	include <unordered_map>
 
 using namespace ImGuiMCP;
 using namespace ImGuiMCP::ImVec4Manager;
@@ -24,7 +24,7 @@ namespace NLA::AimDebug
 			std::chrono::steady_clock::time_point recordedAt;
 		};
 		std::unordered_map<RE::FormID, Marker> markers;
-		std::mutex                              markersMutex;
+		std::mutex                             markersMutex;
 
 		constexpr auto kMarkerLifetime = std::chrono::milliseconds(500);
 

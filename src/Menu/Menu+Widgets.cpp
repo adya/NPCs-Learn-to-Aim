@@ -14,7 +14,7 @@ namespace NLA::Menu
 		static_assert(kSkillSourceLabels.size() == static_cast<std::size_t>(Options::SkillSource::kArchery));
 
 		// The labels that sit in the first column, on the right: it is as wide as the widest of them, with a checkbox if they have one.
-		constexpr std::array kRowLabels{ "Scale with", "Steady aim", "Tire aim", "Threshold" };
+		constexpr std::array  kRowLabels{ "Scale with", "Steady aim", "Tire aim", "Threshold" };
 		constexpr const char* kWidestSkill = "Highest Magic Skill";
 
 		constexpr int kSliderColumns = 3;

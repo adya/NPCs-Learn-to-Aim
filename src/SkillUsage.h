@@ -6,7 +6,7 @@ namespace NLA
 {
 	struct SkillUsage : Options::SkillBasedValue
 	{
-		RE::ActorValue skill{ RE::ActorValue::kNone };
+		RE::ActorValue             skill{ RE::ActorValue::kNone };
 		const Options::AttackKind* kind{ nullptr };
 
 		Options::Bounds bounds{};

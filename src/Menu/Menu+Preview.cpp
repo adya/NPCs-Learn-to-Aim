@@ -53,7 +53,7 @@ namespace NLA::Menu
 		constexpr float kMinDistance = 5.0f;
 		constexpr float kMaxDistance = 100.0f;
 		/// The most shots, or steps of a stream, the preview can show.
-		constexpr int   kMaxShots = 100;
+		constexpr int kMaxShots = 100;
 
 		/// While the target is held with Interactive on, shots fly at this rate.
 		constexpr float kShotsPerSecond = 15.0f;
@@ -250,7 +250,7 @@ namespace NLA::Menu
 			float skill = 25.0f;
 			float maxAttribute = 100.0f;
 
-			int   shape = kHumanoid;
+			int shape = kHumanoid;
 
 			/// Which tab the page last went by, to tell when another page has changed it.
 			bool seenSimulated = false;
@@ -282,9 +282,9 @@ namespace NLA::Menu
 
 			/// The beam of a concentration spell, wandering in real time.
 			ConcentrationSpells::Details::Wander wander;
-			float                       tickRemainder = 0.0f;
-			int                         tick = 0;
-			std::deque<TrailPoint>      trail;
+			float                                tickRemainder = 0.0f;
+			int                                  tick = 0;
+			std::deque<TrailPoint>               trail;
 
 			/// The shots flying while the target is held, the newest last; the serial counts them, and only the last `shots` are kept.
 			std::deque<TrailPoint> flow;
@@ -333,7 +333,7 @@ namespace NLA::Menu
 			bool simulated = false;
 
 			/// How many shots a click fires, or stay on screen with Interactive; for a concentration spell, how many steps of the stream.
-			int  shots = kShotsPerClick;
+			int shots = kShotsPerClick;
 
 			bool interactive = true;
 		};
@@ -402,12 +402,30 @@ namespace NLA::Menu
 			const float x = 1.0f - std::fabs(std::fmod(h, 2.0f) - 1.0f);
 			float       r = 0, g = 0, b = 0;
 			switch (static_cast<int>(h)) {
-			case 0: r = 1; g = x; break;
-			case 1: r = x; g = 1; break;
-			case 2: g = 1; b = x; break;
-			case 3: g = x; b = 1; break;
-			case 4: r = x; b = 1; break;
-			default: r = 1; b = x; break;
+			case 0:
+				r = 1;
+				g = x;
+				break;
+			case 1:
+				r = x;
+				g = 1;
+				break;
+			case 2:
+				g = 1;
+				b = x;
+				break;
+			case 3:
+				g = x;
+				b = 1;
+				break;
+			case 4:
+				r = x;
+				b = 1;
+				break;
+			default:
+				r = 1;
+				b = x;
+				break;
 			}
 			return IM_COL32(static_cast<int>((0.25f + 0.75f * r) * 255), static_cast<int>((0.25f + 0.75f * g) * 255), static_cast<int>((0.25f + 0.75f * b) * 255), alpha);
 		}
@@ -508,7 +526,7 @@ namespace NLA::Menu
 						if (std::fabs(dyTop) >= r && std::fabs(dyBottom) >= r)
 							continue;
 
-						const auto half = [&](float offset) { return std::fabs(offset) < r ? std::sqrt(r * r - offset * offset) : 0.0f; };
+						const auto  half = [&](float offset) { return std::fabs(offset) < r ? std::sqrt(r * r - offset * offset) : 0.0f; };
 						const float nearer = std::min(half(dyTop), half(dyBottom));
 						const float farther = std::max(half(dyTop), half(dyBottom));
 						for (const float side : { -1.0f, 1.0f }) {
@@ -532,7 +550,7 @@ namespace NLA::Menu
 		/// Draws the target with its rings around (ringX, ringY) on the target. `anchorScreen` is where the point (anchorX, anchorY) on the target is on the screen, and
 		/// `pxPerMeter` places the rest. Only rows from `top` to `bottom` need drawing.
 		void DrawFigure(ImDrawList* drawList, bool humanoid, float ringX, float ringY, float anchorX, float anchorY, const ImVec2& anchorScreen, float pxPerMeter, float top, float bottom, bool scores = false) {
-			const auto toScreen = [&](float x, float y) { return ImVec2{ anchorScreen.x + (x - anchorX) * pxPerMeter, anchorScreen.y - (y - anchorY) * pxPerMeter }; };
+			const auto   toScreen = [&](float x, float y) { return ImVec2{ anchorScreen.x + (x - anchorX) * pxPerMeter, anchorScreen.y - (y - anchorY) * pxPerMeter }; };
 			const ImVec2 aim = toScreen(ringX, ringY);
 
 			if (humanoid) {
@@ -656,8 +674,14 @@ namespace NLA::Menu
 			constexpr float pinch = 0.17f;
 			const float     k = radius * pinch;
 			const ImVec2    star[] = {
-				{ center.x, center.y - radius }, { center.x + k, center.y - k }, { center.x + radius, center.y }, { center.x + k, center.y + k },
-				{ center.x, center.y + radius }, { center.x - k, center.y + k }, { center.x - radius, center.y }, { center.x - k, center.y - k },
+				{ center.x, center.y - radius },
+				{ center.x + k, center.y - k },
+				{ center.x + radius, center.y },
+				{ center.x + k, center.y + k },
+				{ center.x, center.y + radius },
+				{ center.x - k, center.y + k },
+				{ center.x - radius, center.y },
+				{ center.x - k, center.y - k },
 			};
 			AddPolyline(drawList, star, 8, IM_COL32(0, 0, 0, 220), ImDrawFlags_Closed, 3.5f);
 			AddPolyline(drawList, star, 8, IM_COL32(214, 214, 204, 255), ImDrawFlags_Closed, 1.6f);
@@ -730,7 +754,8 @@ namespace NLA::Menu
 		// The skill is named after what it is for this kind (Archery, Destruction, Enchanting...), and tinted like it: red for the warrior's, blue for magic, violet for enchanting.
 		const std::string skillFormat = fmt::format("{} %.0f", skillName && *skillName ? skillName : "Skill");
 		const std::string attributeFormat = info.magic ? "Max Magicka %.0f" : "Max Stamina %.0f";
-		const Tint&       skillTint = skillValue == RE::ActorValue::kArchery ? kRedTint : skillValue == RE::ActorValue::kEnchanting ? kVioletTint : kBlueTint;
+		const Tint&       skillTint = skillValue == RE::ActorValue::kArchery ? kRedTint : skillValue == RE::ActorValue::kEnchanting ? kVioletTint :
+		                                                                                                                              kBlueTint;
 		const Tint&       attributeTint = info.magic ? kBlueTint : kGreenTint;
 
 		// The settings take the left, and the reference with the distance slider below it the right, up in the corner.
@@ -770,9 +795,9 @@ namespace NLA::Menu
 
 			// Another page may have switched the tab, in which case this one is made to follow. That takes a frame, and meanwhile what is open must not be taken
 			// for a choice.
-			const bool                follow = preview.seenSimulated != shared.simulated;
+			const bool follow = preview.seenSimulated != shared.simulated;
 			preview.seenSimulated = shared.simulated;
-			const bool        currentOpen = BeginTabItem(currentLabel.c_str(), nullptr, follow && !shared.simulated ? ImGuiTabItemFlags_SetSelected : 0);
+			const bool currentOpen = BeginTabItem(currentLabel.c_str(), nullptr, follow && !shared.simulated ? ImGuiTabItemFlags_SetSelected : 0);
 			ShowTooltip(attacker.selected ? "Actor selected in the Console." : "You. Tip: select an actor in the Console to preview them instead.");
 			if (currentOpen) {
 				if (!follow)
@@ -952,10 +977,10 @@ namespace NLA::Menu
 
 		// ---- Readout ----
 
-		const int total = static_cast<int>(hits.size());
-		int       onTarget = 0;
-		int       gold = 0;
-		int       score = 0;
+		const int                   total = static_cast<int>(hits.size());
+		int                         onTarget = 0;
+		int                         gold = 0;
+		int                         score = 0;
 		std::array<int, kRings + 1> scoreCounts{};  // How many shots scored each, 0 for a miss.
 		for (const auto& hit : hits) {
 			// Only what lands on the target counts. y is up on the target and down on the screen.
@@ -1001,10 +1026,13 @@ namespace NLA::Menu
 
 			// Without steadying there is no bonus to show before fatigue sets in, so the bar counts the time towards it, in white.
 			const bool  counting = !steadies && tires && !debuff;
-			const float fraction = counting ? std::clamp(preview.holdSeconds / std::max(threshold, 0.01f), 0.0f, 1.0f) : limit > 0.0f ? std::clamp(amount / limit, 0.0f, 1.0f) : 0.0f;
+			const float fraction = counting ? std::clamp(preview.holdSeconds / std::max(threshold, 0.01f), 0.0f, 1.0f) : limit > 0.0f ? std::clamp(amount / limit, 0.0f, 1.0f) :
+			                                                                                                                            0.0f;
 
 			const ImVec2 barSize{ kHoldBarWidth, GetFrameHeight() };
-			DrawBar(GetWindowDrawList(), GetCursorScreenPos(), barSize, fraction, counting ? IM_COL32(236, 236, 236, 255) : debuff ? kRedTint.grab : kGreenTint.grab, fmt::format("{:.1f}s", preview.holdSeconds).c_str());
+			DrawBar(GetWindowDrawList(), GetCursorScreenPos(), barSize, fraction, counting ? IM_COL32(236, 236, 236, 255) : debuff ? kRedTint.grab :
+			                                                                                                                         kGreenTint.grab,
+			        fmt::format("{:.1f}s", preview.holdSeconds).c_str());
 			Dummy(barSize);
 
 			std::string tip = "How long the target has been held.";
@@ -1068,7 +1096,8 @@ namespace NLA::Menu
 		const ImVec2 paneCenter{ origin.x + side * 0.5f, origin.y + side * 0.5f };
 		InvisibleButton("##Canvas", ImVec2(side, side));
 		{
-			std::string help = stream ? "Click and hold to cast" : flow ? "Click and hold to fire" : fmt::format("Click to fire {} shots", shared.shots);
+			std::string help = stream ? "Click and hold to cast" : flow ? "Click and hold to fire" :
+			                                                              fmt::format("Click to fire {} shots", shared.shots);
 			if (steadies || tires) {
 				help += steadies && tires ? "\nKeep holding to see steadying and fatigue at work." :
 				        steadies          ? "\nKeep holding to see the aim steady." :
@@ -1154,7 +1183,7 @@ namespace NLA::Menu
 			const float scale = total > 60 ? 0.8f : 1.0f;
 			for (std::size_t n = 0; n < hits.size(); ++n) {
 				// The shots of a flow fade as newer ones follow.
-				const float  fade = n < weights.size() ? weights[n] : 1.0f;
+				const float fade = n < weights.size() ? weights[n] : 1.0f;
 				DrawShot(drawList, screen(hits[n]), look, scale, fade);
 			}
 		}
@@ -1173,7 +1202,7 @@ namespace NLA::Menu
 
 				++outOfViewNow;
 				const float angle = std::atan2(at.y - paneCenter.y, at.x - paneCenter.x);
-				const int   bucket = static_cast<int>(std::fmod(angle / (2.0f * std::numbers::pi_v<float>) + 1.0f, 1.0f) * buckets);
+				const int   bucket = static_cast<int>(std::fmod(angle / (2.0f * std::numbers::pi_v<float>)+1.0f, 1.0f) * buckets);
 				// A shot of the trail counts as much as it still shows, like its line does, so the glow fades away with the trail.
 				const float weight = n < weights.size() ? weights[n] : 1.0f;
 				// The trail goes from blue (new) on to violet (old), the same way as its line is drawn.
@@ -1191,15 +1220,15 @@ namespace NLA::Menu
 				if (outside[i] < 0.02f)
 					continue;
 
-				const float  angle = (static_cast<float>(i) + 0.5f) / buckets * 2.0f * std::numbers::pi_v<float>;
-				const float  c = std::cos(angle);
-				const float  s = std::sin(angle);
-				const float  t = (side * 0.5f) / std::max(std::fabs(c), std::fabs(s));
+				const float angle = (static_cast<float>(i) + 0.5f) / buckets * 2.0f * std::numbers::pi_v<float>;
+				const float c = std::cos(angle);
+				const float s = std::sin(angle);
+				const float t = (side * 0.5f) / std::max(std::fabs(c), std::fabs(s));
 				// Where the direction meets the pane's edge, moved straight out of that edge (not along the direction, which at a slant would move it
 				// little in that edge's terms).
 				const bool   horizontal = std::fabs(c) >= std::fabs(s);
 				const ImVec2 edge{ paneCenter.x + c * t + (horizontal ? (c > 0.0f ? offset : -offset) : 0.0f),
-					paneCenter.y + s * t + (horizontal ? 0.0f : (s > 0.0f ? offset : -offset)) };
+					               paneCenter.y + s * t + (horizontal ? 0.0f : (s > 0.0f ? offset : -offset)) };
 
 				// The glow has a floor of brightness, but it goes out with the last fading shot instead of staying at the floor.
 				const float strength = 1.0f - std::exp(-outside[i] / 5.0f);

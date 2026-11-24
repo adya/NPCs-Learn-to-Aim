@@ -15,7 +15,7 @@ namespace NLA::Menu
 		constexpr const char* kBlindMultHeader = "Blind Mult";
 
 		/// What the skill picks for `part`: null for a weapon, whose skill is fixed (Archery). Only the magic kinds choose.
-		Options::SkillSource* SourceFor(const KindContext& kind, Options::SkillSource Config::SkillSources::*field) {
+		Options::SkillSource* SourceFor(const KindContext& kind, Options::SkillSource Config::SkillSources::* field) {
 			return kind.info.magic ? &(kind.cfg.skills.*field) : nullptr;
 		}
 
@@ -37,9 +37,7 @@ namespace NLA::Menu
 		HeaderRow(kAtZeroSkillHeader, kAtMaxSkillHeader);
 		const auto minTooltip = fmt::format("Chance that {} by a {} with 0 {} is a skill shot.", kind.info.concentration ? "a beam cast" : "a shot", shooter, skill);
 		const auto maxTooltip = fmt::format("Chance that {} by a {} with 100 {} is a skill shot.", kind.info.concentration ? "a beam cast" : "a shot", shooter, skill);
-		ValueRow(nullptr, nullptr,
-		         { "##MinSkillShotChance", &skillShot.bounds.from, Options::Limits::kSkillShotChance, ValueFormat::kPercent, minTooltip.c_str() },
-		         { "##MaxSkillShotChance", &skillShot.bounds.to, Options::Limits::kSkillShotChance, ValueFormat::kPercent, maxTooltip.c_str() });
+		ValueRow(nullptr, nullptr, { "##MinSkillShotChance", &skillShot.bounds.from, Options::Limits::kSkillShotChance, ValueFormat::kPercent, minTooltip.c_str() }, { "##MaxSkillShotChance", &skillShot.bounds.to, Options::Limits::kSkillShotChance, ValueFormat::kPercent, maxTooltip.c_str() });
 	}
 
 	void RangeRows::Render(const KindContext& kind, Sections& sections) const {
@@ -52,9 +50,7 @@ namespace NLA::Menu
 
 		DisabledIf off{ !range.enabled };
 		HeaderRow(kAtZeroSkillHeader, kAtMaxSkillHeader);
-		ValueRow(nullptr, nullptr,
-		         { "##MinRange", &range.bounds.from, Options::Limits::kRangeMultiplier, ValueFormat::kMultiplier, minTooltip },
-		         { "##MaxRange", &range.bounds.to, Options::Limits::kRangeMultiplier, ValueFormat::kMultiplier, maxTooltip });
+		ValueRow(nullptr, nullptr, { "##MinRange", &range.bounds.from, Options::Limits::kRangeMultiplier, ValueFormat::kMultiplier, minTooltip }, { "##MaxRange", &range.bounds.to, Options::Limits::kRangeMultiplier, ValueFormat::kMultiplier, maxTooltip });
 	}
 
 	void SpeedRows::Render(const KindContext& kind, Sections& sections) const {
@@ -67,9 +63,7 @@ namespace NLA::Menu
 
 		DisabledIf off{ !speed.enabled };
 		HeaderRow(kAtZeroSkillHeader, kAtMaxSkillHeader);
-		ValueRow(nullptr, nullptr,
-		         { "##MinSpeed", &speed.bounds.from, Options::Limits::kSpeedMultiplier, ValueFormat::kMultiplier, "Speed at 0 skill. x1.00 is normal, higher is faster." },
-		         { "##MaxSpeed", &speed.bounds.to, Options::Limits::kSpeedMultiplier, ValueFormat::kMultiplier, "Speed at 100 skill. x1.00 is normal, higher is faster." });
+		ValueRow(nullptr, nullptr, { "##MinSpeed", &speed.bounds.from, Options::Limits::kSpeedMultiplier, ValueFormat::kMultiplier, "Speed at 0 skill. x1.00 is normal, higher is faster." }, { "##MaxSpeed", &speed.bounds.to, Options::Limits::kSpeedMultiplier, ValueFormat::kMultiplier, "Speed at 100 skill. x1.00 is normal, higher is faster." });
 	}
 
 	void SpreadRows::Render(const KindContext& kind, Sections& sections) const {
@@ -81,9 +75,7 @@ namespace NLA::Menu
 		// Steadying scales the spread, so it has nothing to act on without Accuracy.
 		DisabledIf noAccuracy{ !kind.cfg.aiming };
 		HeaderRow("Spread", "Half Time");
-		ToggleRow("Steady aim", spread.enabled, tooltip,
-		          { "##MaxReduction", &spread.maxSpreadMultiplier, Options::Limits::kSteadyingReduction, ValueFormat::kPercent, maxReductionTooltip },
-		          { "##SpreadHalfDuration", &spread.halfDuration, Options::Limits::kHalfDuration, ValueFormat::kSeconds, halfDurationTooltip });
+		ToggleRow("Steady aim", spread.enabled, tooltip, { "##MaxReduction", &spread.maxSpreadMultiplier, Options::Limits::kSteadyingReduction, ValueFormat::kPercent, maxReductionTooltip }, { "##SpreadHalfDuration", &spread.halfDuration, Options::Limits::kHalfDuration, ValueFormat::kSeconds, halfDurationTooltip });
 	}
 
 	void FatigueRows::Render(const KindContext& kind, Sections& sections) const {
@@ -101,16 +93,12 @@ namespace NLA::Menu
 		// Fatigue scales the spread, so it has nothing to act on without Accuracy.
 		DisabledIf noAccuracy{ !kind.cfg.aiming };
 		HeaderRow("Spread", "Half Time");
-		ToggleRow("Tire aim", fatigue.enabled, tooltip,
-		          { "##MaxPenalty", &fatigue.maxSpreadMultiplier, Options::Limits::kFatiguePenalty, ValueFormat::kPercent, maxPenaltyTooltip },
-		          { "##FatigueHalfDuration", &fatigue.halfDuration, Options::Limits::kHalfDuration, ValueFormat::kSeconds, "Time after tiring sets in to reach half of the max fatigue. Shorter means the aim falls apart faster." });
+		ToggleRow("Tire aim", fatigue.enabled, tooltip, { "##MaxPenalty", &fatigue.maxSpreadMultiplier, Options::Limits::kFatiguePenalty, ValueFormat::kPercent, maxPenaltyTooltip }, { "##FatigueHalfDuration", &fatigue.halfDuration, Options::Limits::kHalfDuration, ValueFormat::kSeconds, "Time after tiring sets in to reach half of the max fatigue. Shorter means the aim falls apart faster." });
 		RowGap();
 
 		DisabledIf off{ !fatigue.enabled };
 		HeaderRow(HeaderLabel{ "Min", minTip.c_str() }, HeaderLabel{ "Max", maxTip.c_str() });
-		ValueRow("Threshold", thresholdTip.c_str(),
-		         { "##MinThreshold", &fatigue.threshold.from, Options::Limits::kFatigueThreshold, ValueFormat::kSeconds, minThresholdTooltip },
-		         { "##MaxThreshold", &fatigue.threshold.to, Options::Limits::kFatigueThreshold, ValueFormat::kSeconds, maxThresholdTooltip });
+		ValueRow("Threshold", thresholdTip.c_str(), { "##MinThreshold", &fatigue.threshold.from, Options::Limits::kFatigueThreshold, ValueFormat::kSeconds, minThresholdTooltip }, { "##MaxThreshold", &fatigue.threshold.to, Options::Limits::kFatigueThreshold, ValueFormat::kSeconds, maxThresholdTooltip });
 	}
 
 	void RenderAttackKindTable(const AttackKindBase& kind, const PageContext& ctx, const std::function<void(const KindContext&, Sections&)>& renderParts) {
@@ -149,43 +137,31 @@ namespace NLA::Menu
 
 				if (sections.Section("Accuracy")) {
 					// Its own switch is the aim itself: without Accuracy aim is perfect, and Precision, Retargeting, Steadying and Fatigue have nothing to act on.
-					ScaleRows("Accuracy", &attack.aiming, "Accuracy is how far a shot can miss the aim. Off, aim is perfect, and Precision, Retargeting, Steadying and Fatigue have nothing left to change.",
-					          SourceFor(context, &Config::SkillSources::accuracy), "Accuracy", attack.accuracy.skillMultiplier, kind.accuracyTooltip);
+					ScaleRows("Accuracy", &attack.aiming, "Accuracy is how far a shot can miss the aim. Off, aim is perfect, and Precision, Retargeting, Steadying and Fatigue have nothing left to change.", SourceFor(context, &Config::SkillSources::accuracy), "Accuracy", attack.accuracy.skillMultiplier, kind.accuracyTooltip);
 
 					DisabledIf off{ !attack.aiming };
 					HeaderRow(kAtZeroSkillHeader, kAtMaxSkillHeader, kBlindMultHeader);
-					ValueRow(nullptr, nullptr,
-					         { "##AccuracyMin", &attack.accuracy.bounds.from, Options::Limits::kAccuracyFactor, ValueFormat::kMultiplier, "Accuracy multiplier at 0 skill. Lower is more accurate." },
-					         { "##AccuracyMax", &attack.accuracy.bounds.to, Options::Limits::ToLimit(Options::Limits::kAccuracyFactor, attack.accuracy.bounds.from), ValueFormat::kMultiplier, "Accuracy multiplier at 100 skill. Lower is more accurate." },
-					         { "##AccuracyBlindness", &attack.accuracyBlindness, Options::Limits::kAccuracyBlindness, ValueFormat::kMultiplier, "Accuracy multiplier at full blindness. Higher is less accurate." });
+					ValueRow(nullptr, nullptr, { "##AccuracyMin", &attack.accuracy.bounds.from, Options::Limits::kAccuracyFactor, ValueFormat::kMultiplier, "Accuracy multiplier at 0 skill. Lower is more accurate." }, { "##AccuracyMax", &attack.accuracy.bounds.to, Options::Limits::ToLimit(Options::Limits::kAccuracyFactor, attack.accuracy.bounds.from), ValueFormat::kMultiplier, "Accuracy multiplier at 100 skill. Lower is more accurate." }, { "##AccuracyBlindness", &attack.accuracyBlindness, Options::Limits::kAccuracyBlindness, ValueFormat::kMultiplier, "Accuracy multiplier at full blindness. Higher is less accurate." });
 				}
 
 				if (sections.Section("Precision")) {
 					DisabledIf noAccuracy{ !attack.aiming };
-					ScaleRows("Precision", &attack.precision.enabled, beam ? "Precision shapes how the beam's wander is spread within the wander area. Off, it spreads evenly." : "Precision shapes how shots are spread within the miss area. Off, they spread evenly.",
-					          SourceFor(context, &Config::SkillSources::precision), "Precision", attack.precision.skillMultiplier, kind.precisionTooltip);
+					ScaleRows("Precision", &attack.precision.enabled, beam ? "Precision shapes how the beam's wander is spread within the wander area. Off, it spreads evenly." : "Precision shapes how shots are spread within the miss area. Off, they spread evenly.", SourceFor(context, &Config::SkillSources::precision), "Precision", attack.precision.skillMultiplier, kind.precisionTooltip);
 
 					DisabledIf        off{ !attack.precision.enabled };
 					const char* const zero = beam ? "Precision at 0 skill. 0.50 spreads the wander evenly, higher keeps the beam near the aim, lower pushes it to the edge." : "Precision at 0 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.";
 					const char* const hundred = beam ? "Precision at 100 skill. 0.50 spreads the wander evenly, higher keeps the beam near the aim, lower pushes it to the edge." : "Precision at 100 skill. 0.50 spreads shots evenly, higher bunches them near the aim, lower pushes them to the edge.";
 					HeaderRow(kAtZeroSkillHeader, kAtMaxSkillHeader, kBlindMultHeader);
-					ValueRow(nullptr, nullptr,
-					         { "##PrecisionMin", &attack.precision.bounds.from, Options::Limits::kFocus, ValueFormat::kPlain, zero },
-					         { "##PrecisionMax", &attack.precision.bounds.to, Options::Limits::ToLimit(Options::Limits::kFocus, attack.precision.bounds.from), ValueFormat::kPlain, hundred },
-					         { "##PrecisionBlindness", &attack.precisionBlindness, Options::Limits::kPrecisionBlindness, ValueFormat::kMultiplier, "Precision loss at full blindness. x1.50 is 50% less precise, x0.80 is 20% more." });
+					ValueRow(nullptr, nullptr, { "##PrecisionMin", &attack.precision.bounds.from, Options::Limits::kFocus, ValueFormat::kPlain, zero }, { "##PrecisionMax", &attack.precision.bounds.to, Options::Limits::ToLimit(Options::Limits::kFocus, attack.precision.bounds.from), ValueFormat::kPlain, hundred }, { "##PrecisionBlindness", &attack.precisionBlindness, Options::Limits::kPrecisionBlindness, ValueFormat::kMultiplier, "Precision loss at full blindness. x1.50 is 50% less precise, x0.80 is 20% more." });
 				}
 
 				if (beam && sections.Section("Retargeting")) {
 					DisabledIf noAccuracy{ !attack.aiming };
-					ScaleRows("Retarget", &attack.retarget.enabled, "Retargeting limits how far the beam can move in one step. Off, it can jump anywhere in the wander area.",
-					          SourceFor(context, &Config::SkillSources::retarget), "Retargeting", attack.retarget.skillMultiplier, "How strongly skill limits the beam's steps. Higher means smaller steps.");
+					ScaleRows("Retarget", &attack.retarget.enabled, "Retargeting limits how far the beam can move in one step. Off, it can jump anywhere in the wander area.", SourceFor(context, &Config::SkillSources::retarget), "Retargeting", attack.retarget.skillMultiplier, "How strongly skill limits the beam's steps. Higher means smaller steps.");
 
 					DisabledIf off{ !attack.retarget.enabled };
 					HeaderRow(kAtZeroSkillHeader, kAtMaxSkillHeader, kBlindMultHeader);
-					ValueRow(nullptr, nullptr,
-					         { "##RetargetMin", &attack.retarget.bounds.from, Options::Limits::kRetarget, ValueFormat::kPlain, "Step size at 0 skill, as a share of the wander area. 2.00 or more means no limit. Lower is steadier." },
-					         { "##RetargetMax", &attack.retarget.bounds.to, Options::Limits::ToLimit(Options::Limits::kRetarget, attack.retarget.bounds.from), ValueFormat::kPlain, "Step size at 100 skill, as a share of the wander area. Lower is steadier." },
-					         { "##RetargetBlindness", &attack.retargetBlindness, Options::Limits::kRetargetBlindness, ValueFormat::kMultiplier, "Step size multiplier at full blindness. Higher is less steady." });
+					ValueRow(nullptr, nullptr, { "##RetargetMin", &attack.retarget.bounds.from, Options::Limits::kRetarget, ValueFormat::kPlain, "Step size at 0 skill, as a share of the wander area. 2.00 or more means no limit. Lower is steadier." }, { "##RetargetMax", &attack.retarget.bounds.to, Options::Limits::ToLimit(Options::Limits::kRetarget, attack.retarget.bounds.from), ValueFormat::kPlain, "Step size at 100 skill, as a share of the wander area. Lower is steadier." }, { "##RetargetBlindness", &attack.retargetBlindness, Options::Limits::kRetargetBlindness, ValueFormat::kMultiplier, "Step size multiplier at full blindness. Higher is less steady." });
 				}
 
 				renderParts(context, sections);

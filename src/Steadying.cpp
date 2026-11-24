@@ -15,7 +15,7 @@ namespace NLA::Steadying
 			float seconds{ 0.0f };
 
 			static std::unordered_map<TrackingKey, Duration> current;
-			static RE::BSSpinLock                              lock;
+			static RE::BSSpinLock                            lock;
 
 			static float Peek(const TrackingKey& key) {
 				RE::BSSpinLockGuard guard{ lock };

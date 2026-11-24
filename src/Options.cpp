@@ -136,9 +136,9 @@ namespace NLA::Options
 			}
 
 			for (const AttackKind& kind : AttackKind::kAll) {
-				const Keys&            keys = Keys::For(kind);
-				const auto&            attack = custom.*kind.config;
-				const auto&            defaultAttack = defaults.*kind.config;
+				const Keys& keys = Keys::For(kind);
+				const auto& attack = custom.*kind.config;
+				const auto& defaultAttack = defaults.*kind.config;
 
 				SetOrDeleteValue(ini, a_section, keys.enabled.c_str(), attack.enabled, defaultAttack.enabled, writeDefaults);
 				SetOrDeleteValue(ini, a_section, keys.aiming.c_str(), attack.aiming, defaultAttack.aiming, writeDefaults);
@@ -683,13 +683,13 @@ namespace NLA::Options
 	}
 
 	Config::Aim Config::Aim::FromIni(CSimpleIniA& ini, const char* a_section, const Keys::Aim& keys, const Aim& defaults, Limit limit, bool withToggle) {
- 	Aim result = defaults;
- 	if (withToggle) {
- 		result.enabled = ini.GetBoolValue(a_section, keys.enabled.c_str(), result.enabled);
- 	}
- 	result.skillMultiplier = ReadClamped(ini, a_section, keys.skillMultiplier, result.skillMultiplier, Limits::kSkillMultiplier);
- 	result.bounds.from = ReadClamped(ini, a_section, keys.from, result.bounds.from, limit);
- 	result.bounds.to = ReadClamped(ini, a_section, keys.to, result.bounds.to, Limits::ToLimit(limit, result.bounds.from));
+		Aim result = defaults;
+		if (withToggle) {
+			result.enabled = ini.GetBoolValue(a_section, keys.enabled.c_str(), result.enabled);
+		}
+		result.skillMultiplier = ReadClamped(ini, a_section, keys.skillMultiplier, result.skillMultiplier, Limits::kSkillMultiplier);
+		result.bounds.from = ReadClamped(ini, a_section, keys.from, result.bounds.from, limit);
+		result.bounds.to = ReadClamped(ini, a_section, keys.to, result.bounds.to, Limits::ToLimit(limit, result.bounds.from));
 		return result;
 	}
 

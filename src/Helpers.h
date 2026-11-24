@@ -7,9 +7,9 @@ namespace NLA
 	struct TrackingKey
 	{
 		std::uint32_t formID;
-		std::uint32_t source : 4;  // spells only.
-		std::uint32_t weapon : 1;
-		std::uint32_t reserved : 27;  // named, so that aggregate initialization zeroes it and the whole key can be hashed as one integer.
+		std::uint32_t source: 4;  // spells only.
+		std::uint32_t weapon: 1;
+		std::uint32_t reserved: 27;  // named, so that aggregate initialization zeroes it and the whole key can be hashed as one integer.
 
 		bool operator==(const TrackingKey&) const = default;
 

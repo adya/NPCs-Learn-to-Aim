@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace NLA
 {
 	enum SkillUsageContext
@@ -400,12 +399,14 @@ namespace NLA::Options
 
 			inline const Aim& AimFor(SkillUsageContext context) const {
 				assert(context == kAccuracy || context == kPrecision || context == kRetarget);
-				return context == kAccuracy ? accuracy : context == kPrecision ? precision : retarget;
+				return context == kAccuracy ? accuracy : context == kPrecision ? precision :
+				                                                                 retarget;
 			}
 
 			inline float BlindnessFor(SkillUsageContext context) const {
 				assert(context == kAccuracy || context == kPrecision || context == kRetarget);
-				return context == kAccuracy ? accuracyBlindness : context == kPrecision ? precisionBlindness : retargetBlindness;
+				return context == kAccuracy ? accuracyBlindness : context == kPrecision ? precisionBlindness :
+				                                                                          retargetBlindness;
 			}
 		};
 
@@ -480,12 +481,18 @@ namespace NLA::Options
 	inline constexpr Keys Keys::kScroll = Keys::Build(AttackKind::kScroll.name);
 
 	constexpr const Keys& Keys::For(const AttackKind& kind) {
-		if (&kind == &AttackKind::kBow) return kBow;
-		if (&kind == &AttackKind::kCrossbow) return kCrossbow;
-		if (&kind == &AttackKind::kSpell) return kSpell;
-		if (&kind == &AttackKind::kConcentrationSpell) return kConcentrationSpell;
-		if (&kind == &AttackKind::kStaff) return kStaff;
-		if (&kind == &AttackKind::kConcentrationStaff) return kConcentrationStaff;
+		if (&kind == &AttackKind::kBow)
+			return kBow;
+		if (&kind == &AttackKind::kCrossbow)
+			return kCrossbow;
+		if (&kind == &AttackKind::kSpell)
+			return kSpell;
+		if (&kind == &AttackKind::kConcentrationSpell)
+			return kConcentrationSpell;
+		if (&kind == &AttackKind::kStaff)
+			return kStaff;
+		if (&kind == &AttackKind::kConcentrationStaff)
+			return kConcentrationStaff;
 		return kScroll;
 	}
 

@@ -366,8 +366,8 @@ namespace NLA
 					return func(projectile, velocity);
 				}
 
-				const auto& runtimeData = projectile->GetProjectileRuntimeData();
-				const auto  shooter = runtimeData.shooter.get();
+				const auto&                 runtimeData = projectile->GetProjectileRuntimeData();
+				const auto                  shooter = runtimeData.shooter.get();
 				std::optional<RE::NiPoint2> offset;
 				if (shooter && shooter->IsPlayerRef()) {
 					offset = PlayerShot::Pop(PlayerShot::KeyFor(shooter->As<RE::Actor>(), runtimeData.spell, runtimeData.castingSource));
