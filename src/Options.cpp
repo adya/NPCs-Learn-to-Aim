@@ -165,181 +165,197 @@ namespace NLA::Options
 			}
 		}
 
-		struct Wording
+		constexpr std::array kColumnNames{ "Bow", "Crossbow", "Spell", "Conc. Spell", "Staff", "Conc. Staff", "Scroll" };
+		static_assert(kColumnNames.size() == AttackKind::kAll.size());
+
+		constexpr int kLabelWidth = 16;
+		constexpr int kColumnWidth = 13;
+		/// Each column is padded by a space on both sides and preceded by a border.
+		constexpr int kTableWidth = kLabelWidth + static_cast<int>(kColumnNames.size()) * (kColumnWidth + 3);
+
+		/// A cell of an option that the kind doesn't have, or that has no effect with its other options.
+		constexpr const char* kNotApplicable = "-";
+
+		/// A line of the options table: what it shows for each attack kind.
+		struct Row
 		{
-			std::string_view kind;
-
-			std::string_view plural;
-
-			std::string_view speedVerb;
-
-			std::string_view held;
-
-			std::string_view fatigueGerund;
-			std::string_view fatigueInfinitive;
-
-			std::string_view attribute;
-
-			static const Wording& For(const AttackKind& kind);
+			const char* label;
+			std::string (*cell)(const AttackKind&, const Config::Attack&);
 		};
 
-		constexpr std::array kWordings{
-			Wording{ "Bow", "bows", "draw", "a bow at full draw", "Holding a bow at full draw", "hold a full draw", "Stamina" },
-			Wording{ "Crossbow", "crossbows", "reload", "a loaded crossbow", "Holding a loaded crossbow", "hold a loaded crossbow", "Stamina" },
-			Wording{ "Spell", "spells", "charge/cast", "spells charged", "Holding spells charged", "hold spells charged", "Magicka" },
-			Wording{ "ConcentrationSpell", "concentration spells", "charge/cast", "concentration spells being cast", "Casting concentration spells", "cast concentration spells", "Magicka" },
-			Wording{ "Staff", "staves", "charge/cast", "staves charged", "Holding staves charged", "hold staves charged", "Magicka" },
-			Wording{ "ConcentrationStaff", "concentration staves", "charge/cast", "concentration staves being cast", "Casting concentration staves", "cast concentration staves", "Magicka" },
-			Wording{ "Scroll", "scrolls", "charge/cast", "scrolls charged", "Holding scrolls charged", "hold scrolls charged", "Magicka" },
+		std::string OnOff(bool value) {
+			return value ? "On" : "Off";
+		}
+
+		std::string Multiplier(float value) {
+			return fmt::format("x{:.2f}", value);
+		}
+
+		std::string Percent(float value) {
+			return fmt::format("{:.0f}%", value * 100);
+		}
+
+		std::string Seconds(float value) {
+			return fmt::format("{:.2f}s", value);
+		}
+
+		/// The values at 0 and at 100 skill.
+		std::string FromTo(const Bounds& bounds) {
+			return fmt::format("{:.2f} -> {:.2f}", bounds.from, bounds.to);
+		}
+
+		std::string SourceName(const AttackKind& kind, SkillSource source) {
+			switch (source) {
+			case SkillSource::kSpellSkill:
+				// Weapons have no magic school, see `SkillForSource`.
+				return kind.magic ? "School" : "Archery";
+			case SkillSource::kHighest:
+				return "Highest";
+			case SkillSource::kEnchanting:
+				return "Enchanting";
+			case SkillSource::kArchery:
+				return "Archery";
+			default:
+				return kNotApplicable;
+			}
+		}
+
+		bool Precise(const Config::Attack& attack) {
+			return attack.Aims() && attack.precision.enabled;
+		}
+
+		/// Retargeting only exists for concentration kinds.
+		bool Retargets(const AttackKind& kind, const Config::Attack& attack) {
+			return kind.concentration && attack.Aims() && attack.retarget.enabled;
+		}
+
+		bool Ranged(const AttackKind& kind, const Config::Attack& attack) {
+			return kind.range && attack.enabled && attack.range.enabled;
+		}
+
+		constexpr std::array kGeneralRows{
+			Row{ "Enabled", [](const AttackKind&, const Config::Attack& a) -> std::string { return OnOff(a.enabled); } },
+			Row{ "Aiming", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.enabled ? OnOff(a.aiming) : kNotApplicable; } },
 		};
-		static_assert(kWordings.size() == AttackKind::kAll.size());
 
-		const Wording& Wording::For(const AttackKind& kind) {
-			for (const auto& wording : kWordings) {
-				if (wording.kind == kind.name) {
-					return wording;
+		constexpr std::array kAccuracyRows{
+			Row{ "Accuracy", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.Aims() ? FromTo(a.accuracy.bounds) : kNotApplicable; } },
+			Row{ "  Skill", [](const AttackKind& k, const Config::Attack& a) -> std::string { return a.Aims() ? SourceName(k, a.skills.accuracy) : kNotApplicable; } },
+			Row{ "  Skill Mult", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.Aims() ? Multiplier(a.accuracy.skillMultiplier) : kNotApplicable; } },
+			Row{ "  Blindness", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.Aims() ? Multiplier(a.accuracyBlindness) : kNotApplicable; } },
+		};
+
+		constexpr std::array kPrecisionRows{
+			Row{ "Precision", [](const AttackKind&, const Config::Attack& a) -> std::string { return !a.Aims() ? kNotApplicable : a.precision.enabled ? FromTo(a.precision.bounds) :
+			                                                                                                                                            "Even"; } },
+			Row{ "  Skill", [](const AttackKind& k, const Config::Attack& a) -> std::string { return Precise(a) ? SourceName(k, a.skills.precision) : kNotApplicable; } },
+			Row{ "  Skill Mult", [](const AttackKind&, const Config::Attack& a) -> std::string { return Precise(a) ? Multiplier(a.precision.skillMultiplier) : kNotApplicable; } },
+			Row{ "  Blindness", [](const AttackKind&, const Config::Attack& a) -> std::string { return Precise(a) ? Multiplier(a.precisionBlindness) : kNotApplicable; } },
+		};
+
+		constexpr std::array kRetargetRows{
+			Row{ "Retargeting", [](const AttackKind& k, const Config::Attack& a) -> std::string { return !k.concentration || !a.Aims() ? kNotApplicable : a.retarget.enabled ? FromTo(a.retarget.bounds) :
+			                                                                                                                                                                   "No limit"; } },
+			Row{ "  Skill", [](const AttackKind& k, const Config::Attack& a) -> std::string { return Retargets(k, a) ? SourceName(k, a.skills.retarget) : kNotApplicable; } },
+			Row{ "  Skill Mult", [](const AttackKind& k, const Config::Attack& a) -> std::string { return Retargets(k, a) ? Multiplier(a.retarget.skillMultiplier) : kNotApplicable; } },
+			Row{ "  Blindness", [](const AttackKind& k, const Config::Attack& a) -> std::string { return Retargets(k, a) ? Multiplier(a.retargetBlindness) : kNotApplicable; } },
+		};
+
+		constexpr std::array kSpeedRows{
+			Row{ "Charge Speed", [](const AttackKind&, const Config::Attack& a) -> std::string { return !a.enabled ? kNotApplicable : a.speed.enabled ? FromTo(a.speed.bounds) :
+			                                                                                                                                            "Vanilla"; } },
+			Row{ "  Skill", [](const AttackKind& k, const Config::Attack& a) -> std::string { return a.enabled && a.speed.enabled ? SourceName(k, a.skills.speed) : kNotApplicable; } },
+			Row{ "  Skill Mult", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.enabled && a.speed.enabled ? Multiplier(a.speed.skillMultiplier) : kNotApplicable; } },
+		};
+
+		constexpr std::array kRangeRows{
+			Row{ "Range", [](const AttackKind& k, const Config::Attack& a) -> std::string { return !k.range || !a.enabled ? kNotApplicable : a.range.enabled ? FromTo(a.range.bounds) :
+			                                                                                                                                                   "Vanilla"; } },
+			Row{ "  Skill", [](const AttackKind& k, const Config::Attack& a) -> std::string { return Ranged(k, a) ? SourceName(k, a.skills.range) : kNotApplicable; } },
+			Row{ "  Skill Mult", [](const AttackKind& k, const Config::Attack& a) -> std::string { return Ranged(k, a) ? Multiplier(a.range.skillMultiplier) : kNotApplicable; } },
+		};
+
+		constexpr std::array kSkillShotRows{
+			Row{ "Skill Shots", [](const AttackKind&, const Config::Attack& a) -> std::string { return !a.enabled ? kNotApplicable : a.skillShot.enabled ? fmt::format("{} -> {}", Percent(a.skillShot.bounds.from), Percent(a.skillShot.bounds.to)) :
+			                                                                                                                                               "Off"; } },
+			Row{ "  Skill", [](const AttackKind& k, const Config::Attack& a) -> std::string { return a.enabled && a.skillShot.enabled ? SourceName(k, a.skills.skillShot) : kNotApplicable; } },
+			Row{ "  Skill Mult", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.enabled && a.skillShot.enabled ? Multiplier(a.skillShot.skillMultiplier) : kNotApplicable; } },
+		};
+
+		constexpr std::array kSteadyingRows{
+			Row{ "Steadying", [](const AttackKind&, const Config::Attack& a) -> std::string { return !a.Aims() ? kNotApplicable : a.steadying.enabled ? "-" + Percent(a.steadying.maxSpreadMultiplier) :
+			                                                                                                                                            "Off"; } },
+			Row{ "  Half Time", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.Aims() && a.steadying.enabled ? Seconds(a.steadying.halfDuration) : kNotApplicable; } },
+		};
+
+		constexpr std::array kFatigueRows{
+			Row{ "Fatigue After", [](const AttackKind&, const Config::Attack& a) -> std::string { return !a.Aims() ? kNotApplicable : a.fatigue.enabled ? fmt::format("{:.1f}s -> {:.1f}s", a.fatigue.threshold.from, a.fatigue.threshold.to) :
+			                                                                                                                                              "Off"; } },
+			Row{ "  Penalty", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.Aims() && a.fatigue.enabled ? "+" + Percent(a.fatigue.maxSpreadMultiplier) : kNotApplicable; } },
+			Row{ "  Half Time", [](const AttackKind&, const Config::Attack& a) -> std::string { return a.Aims() && a.fatigue.enabled ? Seconds(a.fatigue.halfDuration) : kNotApplicable; } },
+		};
+
+		void LogSeparator() {
+			std::string line = fmt::format("{:-<{}}", "", kLabelWidth);
+			for (std::size_t i = 0; i < kColumnNames.size(); ++i) {
+				line += fmt::format("+{:-<{}}", "", kColumnWidth + 2);
+			}
+			logger::info("{}", line);
+		}
+
+		/// Logs a group of rows below a separator, with a column per attack kind.
+		void LogRows(const Config& cfg, std::span<const Row> rows) {
+			LogSeparator();
+			for (const auto& row : rows) {
+				std::string line = fmt::format("{:<{}}", row.label, kLabelWidth);
+				for (const AttackKind& kind : AttackKind::kAll) {
+					line += fmt::format("| {:^{}} ", row.cell(kind, cfg.*kind.config), kColumnWidth);
 				}
-			}
-			assert(false && "No wording for the kind");
-			return kWordings.front();
-		}
-
-		void LogSkillMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
-			if (mult > 1) {
-				auto percent = (mult - 1) * 100;
-				logger::info("\t{} with {} is {:.2f}% easier for {}", stage, weaponName, percent, actor);
-			} else if (mult < 1) {
-				auto percent = (1 - mult) * 100;
-				logger::info("\t{} with {} is {:.2f}% harder for {}", stage, weaponName, percent, actor);
-			} else {
-				logger::info("\t{} with {} is at standard difficulty for {}", stage, weaponName, actor);
+				logger::info("{}", line);
 			}
 		}
 
-		/// `mult` is what a fully blind shooter's `stage` is multiplied by: above x1.00 it gets worse, below it better.
-		void LogBlindnessMultiplier(std::string_view actor, std::string_view weaponName, std::string_view stage, float mult) {
-			if (mult > 1) {
-				logger::info("\tBlind {} have {:.2f}% worse {} with {}", actor, (mult - 1) * 100, stage, weaponName);
-			} else if (mult < 1) {
-				logger::info("\tBlind {} have {:.2f}% better {} with {}", actor, (1 - mult) * 100, stage, weaponName);
-			} else {
-				logger::info("\tBlindness doesn't affect {}'s {} with {}", actor, stage, weaponName);
-			}
-		}
-
-		/// Logs how every weapon type's multiplier changes the difficulty of `stage` (Accuracy/Precision).
-		void LogSkillMultipliers(std::string_view actor, std::string_view stage, const Config& cfg, SkillUsageContext context) {
-			for (const AttackKind& kind : AttackKind::kAll) {
-				LogSkillMultiplier(actor, Wording::For(kind).plural, stage, (cfg.*kind.config).AimFor(context).skillMultiplier);
-			}
-			const char* noun = context == kAccuracy ? "accuracy" : "precision";
-			for (const AttackKind& kind : AttackKind::kAll) {
-				LogBlindnessMultiplier(actor, Wording::For(kind).plural, noun, (cfg.*kind.config).BlindnessFor(context));
-			}
-		}
-
-		void LogSkillSources(std::string_view actor, std::string_view name, const Config::SkillSources& sources) {
-			const auto describe = [&](SkillSource source) -> std::string {
-				switch (source) {
-				case SkillSource::kEnchanting:
-					return "Enchanting skill";
-				case SkillSource::kArchery:
-					return "Archery skill";
-				case SkillSource::kHighest:
-					return fmt::format("the highest {}'s magic skill regardless of spell", actor);
-				default:
-					return "skill in spell's magic school";
-				}
-			};
-			logger::info("\t{}'s accuracy with {} is based on {}", actor, name, describe(sources.accuracy));
-			logger::info("\t{}'s precision with {} is based on {}", actor, name, describe(sources.precision));
-			logger::info("\t{}'s charge speed with {} is based on {}", actor, name, describe(sources.speed));
-			if (sources.range != SkillSource::kTotal) {
-				logger::info("\t{}'s range with {} is based on {}", actor, name, describe(sources.range));
-			}
-		}
-
-		void LogRange(std::string_view actor, std::string_view kindName, const Config::RangeScaling& range) {
-			if (!range.enabled) {
-				logger::info("\t{} always have vanilla reach with {}", actor, kindName);
-			} else {
-				logger::info("\t{} reach {} at {:.2f}x to {:.2f}x vanilla range, scaling with skill", actor, kindName, range.bounds.from, range.bounds.to);
-			}
-		}
-
-		std::string SpeedPercentPhrase(float mult) {
-			if (mult > 1) {
-				return fmt::format("{:.2f}% faster", (mult - 1) * 100);
-			} else if (mult < 1) {
-				return fmt::format("{:.2f}% slower", (1 - mult) * 100);
-			} else {
-				return "at vanilla speed";
-			}
-		}
-
-		/// `verb` is what the actor does with the kind, e.g. "draw" or "charge/cast".
-		void LogSpeed(std::string_view actor, std::string_view verb, std::string_view kindName, const Config::Speed& speed) {
-			const auto [enabled, minMult, maxMult] = std::tie(speed.enabled, speed.bounds.from, speed.bounds.to);
-			if (!enabled) {
-				logger::info("\t{} always {} {} at vanilla speed", actor, verb, kindName);
-			} else if (minMult == maxMult) {
-				logger::info("\t{} {} {} {}, regardless of skill", actor, verb, kindName, SpeedPercentPhrase(minMult));
-			} else if (minMult == 1.0f) {
-				logger::info("\t{} {} {} up to {}, scaling with skill", actor, verb, kindName, SpeedPercentPhrase(maxMult));
-			} else {
-				logger::info("\t{} {} {} {} at 0 skill, {} at 100 skill", actor, verb, kindName, SpeedPercentPhrase(minMult), SpeedPercentPhrase(maxMult));
-			}
-		}
-
-		/// `held` is what is being held, e.g. "a bow at full draw" or "spells charged".
-		void LogSteadying(std::string_view actor, std::string_view held, const Config::Steadying& steadying) {
-			if (!steadying.enabled) {
-				logger::info("\tHolding {} doesn't affect {}'s precision", held, actor);
-			} else {
-				logger::info("\tHolding {} reduces {}'s spread by up to {:.0f}% (half of it after {:.2f}s)", held, actor, steadying.maxSpreadMultiplier * 100, steadying.halfDuration);
-			}
-		}
-
-		/// `gerund` and `infinitive` describe the fatigued activity, e.g. "Holding a bow at full draw" and "hold a full draw".
-		void LogFatigue(std::string_view actor, std::string_view gerund, std::string_view infinitive, std::string_view attribute, const Config::Fatigue& fatigue) {
-			if (!fatigue.enabled) {
-				logger::info("\t{} for too long doesn't fatigue {}'s aim", gerund, actor);
-			} else {
-				logger::info(
-					"\t{} can {} for {:.2f}s at 0 max {} to {:.2f}s at 100 max {} before fatigue sets in, "
-					"adding up to {:.0f}% spread (half of that after another {:.2f}s)",
-					actor,
-					infinitive,
-					fatigue.threshold.from,
-					attribute,
-					fatigue.threshold.to,
-					attribute,
-					fatigue.maxSpreadMultiplier * 100,
-					fatigue.halfDuration);
-			}
-		}
-
-		void LogSkillShots(std::string_view actor, const Config& cfg) {
+		void LogSkillShotTargets(const Config& cfg) {
 			std::vector<std::string_view> parts;
 			if (cfg.headshots) {
-				parts.emplace_back("the head");
+				parts.emplace_back("head");
 			}
 			if (cfg.armshots) {
-				parts.emplace_back("the hands");
+				parts.emplace_back("hands");
 			}
 			if (cfg.legshots) {
-				parts.emplace_back("the legs");
+				parts.emplace_back("legs");
 			}
+			if (parts.empty()) {
+				logger::info("Skill shot targets: none, NPCs always aim for the chest");
+			} else {
+				logger::info("Skill shot targets: {}", fmt::join(parts, ", "));
+			}
+		}
 
-			bool any = false;
-			for (const AttackKind& kind : AttackKind::kAll) {
-				if (const auto& skillShot = (cfg.*kind.config).skillShot; skillShot.enabled && !parts.empty()) {
-					any = true;
-					logger::info("	Skilled {} with {} take skill shots at {} ({:.0f}%-{:.0f}% of shots)", actor, Wording::For(kind).plural, fmt::join(parts, ", "), skillShot.bounds.from * 100, skillShot.bounds.to * 100);
-				}
+		/// Logs every option of every attack kind as a table. Skill shots are NPC-only: the Player aims by hand.
+		void LogConfig(std::string_view actor, const Config& cfg, bool isNPC) {
+			std::string header = fmt::format("{:<{}}", actor, kLabelWidth);
+			for (const auto* name : kColumnNames) {
+				header += fmt::format("| {:^{}} ", name, kColumnWidth);
 			}
-			if (!any) {
-				logger::info("	{} always aim for the chest", actor);
+			logger::info("{}", header);
+
+			LogRows(cfg, kGeneralRows);
+			LogRows(cfg, kAccuracyRows);
+			LogRows(cfg, kPrecisionRows);
+			LogRows(cfg, kRetargetRows);
+			LogRows(cfg, kSpeedRows);
+			LogRows(cfg, kRangeRows);
+			if (isNPC) {
+				LogRows(cfg, kSkillShotRows);
+			}
+			LogRows(cfg, kSteadyingRows);
+			LogRows(cfg, kFatigueRows);
+			LogSeparator();
+
+			if (isNPC) {
+				LogSkillShotTargets(cfg);
 			}
 		}
 
@@ -348,61 +364,13 @@ namespace NLA::Options
 			const bool exclude = !npc.excludeKeywords.empty();
 
 			if (include && exclude) {
-				logger::info("\tOnly NPCs that have at least one of these keywords: [{}] and none of these: [{}] will learn to aim", fmt::join(npc.includeKeywords, ", "), fmt::join(npc.excludeKeywords, ", "));
+				logger::info("Only NPCs that have at least one of these keywords: [{}] and none of these: [{}] will learn to aim", fmt::join(npc.includeKeywords, ", "), fmt::join(npc.excludeKeywords, ", "));
 			} else if (include) {
-				logger::info("\tOnly NPCs that have at least one of these keywords: [{}] will learn to aim", fmt::join(npc.includeKeywords, ", "));
+				logger::info("Only NPCs that have at least one of these keywords: [{}] will learn to aim", fmt::join(npc.includeKeywords, ", "));
 			} else if (exclude) {
-				logger::info("\tOnly NPCs that have none of these keywords: [{}] will learn to aim", fmt::join(npc.excludeKeywords, ", "));
+				logger::info("Only NPCs that have none of these keywords: [{}] will learn to aim", fmt::join(npc.excludeKeywords, ", "));
 			} else {
-				logger::info("\tAll NPCs will learn to aim");
-			}
-		}
-
-		/// Logs everything the config changes. Skill shots are NPC-only: the Player aims by hand.
-		void LogConfig(std::string_view actor, const Config& cfg, bool isNPC) {
-			const auto aiming = [&](std::string_view weapon, bool enabled) {
-				logger::info("\t{} {} with {}", actor, enabled ? "will learn to aim" : (isNPC ? "have perfect aim" : "has perfect aim"), weapon);
-			};
-			for (const AttackKind& kind : AttackKind::kAll) {
-				const auto& attack = cfg.*kind.config;
-				if (!attack.enabled) {
-					logger::info("	{} {} not affected by the mod with {}", actor, isNPC ? "are" : "is", Wording::For(kind).plural);
-				} else {
-					aiming(Wording::For(kind).plural, attack.aiming);
-				}
-			}
-			if (isNPC) {
-				LogSkillShots(actor, cfg);
-			}
-
-			logger::info("");
-			LogSkillMultipliers(actor, "Accuracy", cfg, kAccuracy);
-			logger::info("");
-			LogSkillMultipliers(actor, "Precision", cfg, kPrecision);
-
-			logger::info("");
-			for (const AttackKind& kind : AttackKind::kAll) {
-				LogSkillSources(actor, Wording::For(kind).plural, (cfg.*kind.config).skills);
-			}
-			for (const AttackKind& kind : AttackKind::kAll) {
-				if (kind.range) {
-					LogRange(actor, Wording::For(kind).plural, (cfg.*kind.config).range);
-				}
-			}
-
-			logger::info("");
-			for (const AttackKind& kind : AttackKind::kAll) {
-				const auto& wording = Wording::For(kind);
-				LogSpeed(actor, wording.speedVerb, wording.plural, (cfg.*kind.config).speed);
-			}
-
-			for (const AttackKind& kind : AttackKind::kAll) {
-				LogSteadying(actor, Wording::For(kind).held, (cfg.*kind.config).steadying);
-			}
-
-			for (const AttackKind& kind : AttackKind::kAll) {
-				const auto& wording = Wording::For(kind);
-				LogFatigue(actor, wording.fatigueGerund, wording.fatigueInfinitive, wording.attribute, (cfg.*kind.config).fatigue);
+				logger::info("All NPCs will learn to aim");
 			}
 		}
 
@@ -487,7 +455,7 @@ namespace NLA::Options
 		++currentID;
 		InvalidateActorCache();
 
-		logger::info("{:*^40}", "OPTIONS");
+		logger::info("{:*^{}}", "OPTIONS", kTableWidth);
 		CSimpleIniA ini{};
 		ini.SetUnicode();
 		if (ini.LoadFile(kIniPath.string().c_str()) >= 0) {
@@ -498,24 +466,21 @@ namespace NLA::Options
 			logger::info("");
 		}
 
-		logger::info("NPC:");
 		if (NPC.enabled) {
-			LogConfig("NPCs", NPC, true);
-			logger::info("");
+			LogConfig("NPC", NPC, true);
 			LogKeywordFilters(NPC);
 		} else {
-			logger::info("\tMod is disabled for NPCs");
+			logger::info("Mod is disabled for NPCs");
 		}
 
 		logger::info("");
-		logger::info("Player:");
 		if (Player.enabled) {
 			LogConfig("Player", Player, false);
 		} else {
-			logger::info("\tMod is disabled for Player");
+			logger::info("Mod is disabled for Player");
 		}
 
-		logger::info("{:*^40}", "");
+		logger::info("{:*^{}}", "", kTableWidth);
 	}
 
 	void Save() {
@@ -560,7 +525,7 @@ namespace NLA::Options
 
 		const auto* race = a_actor->GetRace();
 		const auto  hasAny = [&](const std::vector<std::string>& keywords) {
-			return a_actor->HasAnyKeywordByEditorID(keywords) || (race && race->HasAnyKeywordByEditorID(keywords));
+            return a_actor->HasAnyKeywordByEditorID(keywords) || (race && race->HasAnyKeywordByEditorID(keywords));
 		};
 
 		// An empty include list means no filtering: HasAnyKeywordByEditorID would never match it.
