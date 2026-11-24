@@ -208,8 +208,7 @@ namespace NLA
 		/// This also means that if a particular aiming is disabled, NPCs will always shoot right where they aim at.
 		struct WeapFireAmmoRandomizeArrowDirection
 		{
-			static inline constexpr REL::RelocationID  relocation{ 17693, 18102 };
-			static inline constexpr REL::VariantOffset offset{ 0xCB0, 0xCD5, 0xFFF };
+			static inline constexpr REL::RelocationID relocation{ 17693, 18102 };
 
 			static inline constexpr VariantSignature<"E8 ?? ?? ?? ?? F3 0F 59 3D ?? ?? ?? ?? F3 0F 59",
 			                                         "E8 ?? ?? ?? ?? 0F 28 F0 41 0F 28 CF 41 0F 28 C2",
@@ -224,6 +223,19 @@ namespace NLA
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
+		// 1.7.99+ moved both calls within WeaponFire, so the offsets are split by game version.
+		struct WeapFireAmmoRandomizeArrowDirectionPre1799 : WeapFireAmmoRandomizeArrowDirection
+		{
+			static inline constexpr REL::VariantOffset offset{ 0xCB0, 0xCD5, 0xFFF };
+			static inline constexpr REL::Version       max_version{ SKSE::RUNTIME_SSE_1_6_1179 };
+		};
+
+		struct WeapFireAmmoRandomizeArrowDirection1799 : WeapFireAmmoRandomizeArrowDirection
+		{
+			static inline constexpr REL::VariantOffset offset{ 0xCB0, 0xCE5, 0xFFF };
+			static inline constexpr REL::Version       min_version{ SKSE::RUNTIME_SSE_1_7_99 };
 		};
 
 		struct LaunchSpellProjectile
@@ -260,8 +272,7 @@ namespace NLA
 
 		struct WeaponFireProjectile
 		{
-			static inline constexpr REL::RelocationID  relocation{ 17693, 18102 };
-			static inline constexpr REL::VariantOffset offset{ 0xE82, 0xE60, 0x11ED };
+			static inline constexpr REL::RelocationID relocation{ 17693, 18102 };
 
 			static inline constexpr VariantSignature<"E8 ?? ?? ?? ?? 48 8D 55 ?? 48 8D 4D ?? E8",
 			                                         "E8 ?? ?? ?? ?? 8B 75 88 85 F6 0F 84",
@@ -287,6 +298,18 @@ namespace NLA
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
+		struct WeaponFireProjectilePre1799 : WeaponFireProjectile
+		{
+			static inline constexpr REL::VariantOffset offset{ 0xE82, 0xE60, 0x11ED };
+			static inline constexpr REL::Version       max_version{ SKSE::RUNTIME_SSE_1_6_1179 };
+		};
+
+		struct WeaponFireProjectile1799 : WeaponFireProjectile
+		{
+			static inline constexpr REL::VariantOffset offset{ 0xE82, 0xE70, 0x11ED };
+			static inline constexpr REL::Version       min_version{ SKSE::RUNTIME_SSE_1_7_99 };
 		};
 
 		struct PlayerAutoAim
@@ -399,9 +422,11 @@ namespace NLA
 		};
 
 		void Install() {
-			stl::install_hook<WeapFireAmmoRandomizeArrowDirection>();
+			stl::install_hook<WeapFireAmmoRandomizeArrowDirectionPre1799>();
+			stl::install_hook<WeapFireAmmoRandomizeArrowDirection1799>();
 			stl::install_hook<LaunchSpellProjectile>();
-			stl::install_hook<WeaponFireProjectile>();
+			stl::install_hook<WeaponFireProjectilePre1799>();
+			stl::install_hook<WeaponFireProjectile1799>();
 			stl::install_hook<PlayerAutoAim>();
 
 			if (GetModuleHandleW(L"TrueDirectionalMovement.dll")) {
