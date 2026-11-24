@@ -1,162 +1,206 @@
 [size=5][b]Intro[/b][/size]
 
-While working on a major update of [url=https://www.nexusmods.com/skyrimspecialedition/mods/77342]NPCs Learn Skills and Spells[/url] I've tried to figure out how to make Eagle Eye and Steady Hands useful for NPCs, one thing led to another and here it is - [b]NPCs Learn to Aim[/b] :)
+While working on a major update of [url=https://www.nexusmods.com/skyrimspecialedition/mods/77342]NPCs Learn Skills and Spells[/url] I've tried to figure out how to make Eagle Eye and Steady Hands useful for NPCs, one thing led to another and here it is - [b]NPCs Learn to Aim 🙂[/b]
 
-[quote][center][color=#e69138][size=2][b]DISCLAIMER[/b][/size][/color]
-[color=#e69138][b]This mod also can work on Player[/b][/color]. I feel like name might be a bit deceptive in this regard :)
-I created this mod as part of [b]NPCs Learn[/b] series, so I really wanted to preserve the name, but at the same time the emerged opportunity to support Player's aim was too tempting and I couldn't discard it.[/center]
+[quote][center][color=#e69138][size=2][b]IMPORTANT[/b][/size][/color]
+[color=#e69138][b]This mod also works for the Player[/b][/color][/center]
+[center][i]I feel like the name might be a bit deceptive in this regard :)
+I created this mod as part of [b]NPCs Learn[/b] series, so I really wanted to preserve the name, but at the same time the emerged opportunity to support Player's aim was too tempting and I couldn't discard it.[/i][/center]
 [/quote]
 
 
 [size=5][b]Overview[/b][/size]
 
-[b]NPCs Learn to Aim[/b] is an SKSE mod that refines existing Vanilla mechanic for NPC archers while also expanding it to mages and the Player. Each NPC will have a notable difference in shooting quality depending on their level in corresponding skill. This enables a few new tactics where you could debuff NPC's aiming skill (like Archery) and decreasing their threat, by making them miss most of the shots.
+[b]NPCs Learn to Aim[/b] (NLA) is an SKSE mod that refines existing Vanilla mechanic for NPC archers, even letting skillful ones attempt skill shots, while also expanding it to mages and the Player. NPCs will have notable differences in their ranged combat depending on their level in corresponding skills. This enables a few new tactics where you could debuff NPC's aiming skill (like [i]Archery[/i]) and decreasing their threat, by making their aim worse and ranged combat less effective.
 
-It also makes each ranged specialization ([color=#e06666]bows[/color], [color=#ffe599]crossbows[/color], [color=#a4c2f4]spells[/color], [color=#93c47d]staves[/color]) mechanic feel more unique. [color=#e06666]Bows [/color]are easy to use, but harder to master, [color=#ffe599]Crossbows [/color]simplify shooting, but harder to use compared to bows, [color=#93c47d]staves [/color]are a bit more difficult to aim than spells with your barehand.
-
-The mod comes with a very detailed INI configuration where you can disable or enable aiming for individual ranged specializations as well as tweak how much skill affects shooting quality. See [b]Customization [/b]section for details.
-
-In [b]NPCs Learn to Aim[/b] NPC's shooting quality is determined by two factors:
-
-[list=1]
-[*][color=#6d9eeb][b]Accuracy[/b] [/color]- ability to accurately point the weapon at the target[/*]
-[*][color=#ffd966][b]Precision[/b] [/color]- ability to fire a projectile at the desired aim point [color=#b6b6b6][size=1][i](this is what Vanilla game has for archers)[/i][/size][/color][/*]
+It also makes each ranged specialization mechanic feel more unique:
+[list]
+[*][color=#cc4125][b]Bows[/b][/color] are demanding. Aiming is hard and keeping fully drawn bow will fatigue the archer, potentially ruining the shot. However mastering [i]Archery[/i] will unlock the wildest shots at the longest distances.[/*]
+[*][color=#dd7e6b][b]Crossbows[/b][/color] remove the demanding part and provide a reliable close and mid-range accuracy. The catch is that there is little to master with crossbows, besides the reload speed, so in short, you get average consistency.[/*]
+[*]Hand-casted [color=#6d9eeb][b]Spells[/b][/color] require a lot of spellcrafting practice, so [i]Novice[/i] mages would spend more time charging spells. Aiming has a learning curve. At longer distances spells are less reliable even at high skill levels. Bows are the kings of the long range.[/*]
+[*]Hand-casted [color=#a4c2f4][b]Concentration Spells[/b][/color], in addition to general spellcrafting, require continuous focus to keep the beam on a target. Prolonged concentration fatigues caster's mind, destabilizing the beam even further. Powerful mages can concentrate their beam much farther.[/*]
+[*][color=#8e7cc3][b]Staves[/b][/color] come with embedded potency. Similarly to crossbows they help [i]Novices[/i] perform better (charging spells much faster), at the expense of limited potential. Staves boost the aiming, but it converges closer to [i]Adept[/i] levels. Mages with higher [i]Enchanting[/i] skill push staves' performance beyond what pure mages can do.[/*]
+[*][color=#b4a7d6][b]Concentration Staves[/b][/color] follow the same idea; they provide notably better range and a steadier beam, without fatiguing the mage.[/*]
+[*][color=#6fa8dc][b]Scrolls[/b][/color] are essentially premade spells without all the downsides of poor spellcrafting and with arcane self-correcting projectiles, so that caster's skill is not required for accurate aim. The downside of removing any input of the caster is that you can't really improve scrolls performance much.[/*]
 [/list]
 
-To make each ranged specialization feel more unique, each type has different difficulty for [b][color=#6d9eeb]Accuracy [/color][/b]and [b][color=#ffd966]Precision[/color][/b]. So, for example, an NPC with Archery level 30 would shoot fairly poorly with a [color=#e06666]Bow [/color]but would shoot much better if given a [color=#ffe599]crossbow[/color].
+The mod comes with a very detailed Menu (powered by [url=https://www.nexusmods.com/skyrimspecialedition/mods/120352]SKSE Menu Framework[/url]) configuration where you can disable or enable aiming for individual ranged specializations as well as tweak how much skill affects the accuracy and other aspects of the mod. See [b]Customization[/b] section for details.
+
+[b]NPCs Learn to Aim[/b] defines the following properties of a range attack:
+[list=1]
+[*][color=#ffd966][b]Accuracy[/b][/color] - ability to accurately point a weapon at the target. The more accurate you are the less spread you have.[/*]
+[*][color=#ffd966][b]Precision[/b][/color] - ability to fire a shot at the desired aim point. The more precise you are the more shots hit closer to the aim point.[/*]
+[*][color=#93c47d][b]Draw Speed[/b][/color] - speed at which you can fully draw a bowstring.[/*]
+[*][color=#93c47d][b]Reload Speed[/b][/color] - speed at which you can reload a crossbow.[/*]
+[*][color=#93c47d][b]Charge Speed[/b][/color] - speed at which you can charge spells to be able to cast them.[/*]
+[*][color=#c27ba0][b]Concentration Range[/b][/color] - reach of the spells like Flames.[/*]
+[*][color=#d5a6bd][b]Retargeting[/b][/color] - a property of a concentrated beam to spontaneously wander around aim point.[/*]
+[*][color=#f6b26b][b]Steadying[/b][/color] - ability to steady your aim shortly after fully drawing a bow, charging a spell, concentrating a beam.[/*]
+[*][color=#76a5af][b]Fatigue[/b][/color] - holding fully drawn bow or concentrated spell for too long fatigues your muscles or mind, destabilizing your aim. Your [i]Stamina[/i] and [i]Magicka[/i] pools determine how long you can last before fatigue kicks in.[/*]
+[*][color=#ffffff][b]Blindness[/b][/color] - a cool feature initially suggested by [url=https://www.nexusmods.com/skyrimspecialedition/users/2148728]po3[/url] 🙂 NPCs that are blind will have a severe debuff on aiming, so they'll need to have much higher skill to compensate. Albeit there are not many blind NPCs, especially archers (hopefully some other mods make use of blindness effect). Weapons and spells affected by blindness differently, for example scrolls are indifferent to caster's blindness, because of their self-correction.[/*]
+[/list]
+
+So, without further ado, let's see how the above tools are combined to make each ranged attack unique.
 
 
-[b][size=5]NPCs Learn[/size][/b]
+[size=5][color=#cc4125][b]Bows[/b][/color][/size]
 
-[color=#e06666][size=4][b]Bows[/b][/size][/color]
+Bows are the most common ranged weapon in Skyrim. But despite their simple look there is a lot of depth in them.
 
-Bows are the most common ranged weapon in Skyrim. They are quite straightforward when it comes to [b][color=#6d9eeb]Accuracy[/color][/b], but require more skill for good [b][color=#ffd966]Precision [/color][/b]when releasing the arrow to hit the desired target.
+Before an archer can even begin to [color=#ffd966][b]aim[/b][/color], they need to be able to fully draw the bowstring. Most [i]Novice[/i] archers struggle with that, so it will take [color=#93c47d][b]more time[/b][/color]. A fully drawn bow gives a short window of opportunity to [color=#f6b26b][b]steady[/b][/color] the [color=#ffd966][b]aim[/b][/color], but holding it takes strength: archers with a low [i]Stamina[/i] pool [color=#999999][size=1](max [i]Stamina[/i])[/size][/color] will [color=#76a5af][b]fatigue[/b][/color] shortly after, making their [color=#ffd966][b]aim[/b][/color] much less stable. So a skillful archer trains their [i]Stamina[/i] or learns to aim quickly, before the arms give out.
 
-[img]https://i.imgur.com/a12MOrz.gif[/img]
+But once you master the [i]Archery[/i] skill, a bow will do wonders for you: [color=#93c47d][b]drawing the string is natural[/b][/color] and [color=#ffd966][b]aiming[/b][/color] is unparalleled, delivering snipe shots at distances over [b]100 meters[/b]. True masters of a bow are a menace.
 
-[color=#ffe599][size=4][b]Crossbows[/b][/size][/color]
-
-Crossbows are meant to eliminate the problem of poor [b][color=#ffd966]Precision [/color][/b]and drastically reduce the entry skill level required to decently shoot at targets. However, they are a bit bulkier than bows and [b][color=#6d9eeb]Accuracy [/color][/b]requires some practice.
-
-[img]https://i.imgur.com/4v4irjc.gif[/img]
-
-[color=#a4c2f4][size=4][b]Spells[/b][/size][/color]
-
-Spells, being casted with your hands, make [b][color=#6d9eeb]Accuracy [/color][/b]feel very natural, thus easy. However, controlling magic projectiles for good [b][color=#ffd966]Precision [/color][/b]takes some skill.
-
-[img]https://i.imgur.com/fsisD4K.gif[/img]
-
-[color=#93c47d][size=4][b]Staves[/b][/size][/color]
-
-Staves, being great ready-to-use pre-charged spells, come in handy as they don't require any magicka from a mage. [b][color=#6d9eeb]Accuracy[/color][/b] with them might feel a bit weird and requires getting used to. But [b][color=#ffd966]Precision[/color][/b] is notably easier than hand-casted spells, since staff handles the projectile consistently.
-
-[img]https://i.imgur.com/xNS1ASQ.gif[/img]
+Heatmap for Bows
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384787-893957377.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
 
 
-[size=5][b]Player Learns[/b][/size]
+[size=5][color=#dd7e6b][b]Crossbows[/b][/color][/size]
 
-While main focus of the mod is to add some depth to NPCs, the way it's implemented automatically makes it work for Player. So, if you want to experience what NPCs have to deal with you can enable this feature (you can pick a preset during FOMOD installation or manually enable/disable this feature in INI file).
+Crossbows were invented to remove the barriers of bows for people who wanted to shoot.
 
-Only [color=#ffd966][b]Precision[/b] [/color]factor is dependent on Player's character skill. While [color=#6d9eeb][b]Accuracy [/b][/color]is a pure Player's skill. To make it a bit more challenging you can disable crosshair and learn to aim the hard way :)
+They do their job nicely: the entry level is greatly reduced, and even a farmer can pick one up and land consistent shots. [color=#ffd966][b]Aiming[/b][/color] with a crossbow is simple, as you just point and press the trigger. Since the mechanical lock holds the string, a crossbow [color=#76a5af][b]doesn't require any [i]Stamina[/i] from its wielder[/b][/color], so there is all the time to [color=#f6b26b][b]steady[/b][/color] the [color=#ffd966][b]aim[/b][/color]. And all the free training time saved with a crossbow can go into learning its mechanism, thus slightly improving the [color=#ffd966][b]aim[/b][/color] and learning to [color=#93c47d][b]reload much faster[/b][/color].
 
-[quote][center][color=#6fa8dc][size=2][b]NOTE[/b][/size][/color]
-[i]For Player's sake the mod's effect is tuned down for Player, compared to what NPCs go through, so that stray shots are less annoying.
-[/i][i]
-You can increase or decrease it further in the INI file.[/i][/center]
-[/quote]
+But of course, there is a catch. Industrialized archery solved the problem of the bow's barriers at the expense of its potential, so crossbows deliver an average "good enough" consistency: most shots land at close and mid ranges, but anything past [b]30 meters[/b] becomes an unlikely hit. A masterful archer will always outperform a crossbowman by a long shot. But a masterful crossbowman would be able to get the job done in most common cases.
 
-[color=#e06666][size=4][b]Bows
-[/b][/size][/color]
-While [color=#6d9eeb][b]Accuracy [/b][/color]purely depends on Player, [color=#ffd966][b]Precision [/b][/color]with arrows will take practice (e.g. progressing Archery), so that unless you invest in Archery you won't be able to become a sniper right at the beginning of the game.
- 
-[img]https://i.imgur.com/T2rey3d.gif[/img]
+Heatmap for Crossbows
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384839-675408999.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
 
 
-[color=#ffe599][size=4][b]Crossbows[/b][/size][/color]
+[size=5][color=#6d9eeb][b]Spells[/b][/color][/size]
 
-Given that crossbows provide near perfect [b][color=#ffd966]Precision[/color][/b] (by default), once you figure out [b][color=#6d9eeb]Accuracy [/color][/b]with crossbows, they become a perfect way of leveling up Archery with much less random shots :) however, since they are less common to come across, it might be harder to have enough bolts supplies.
+Spells require that a mage learn the art of sorcery. Similarly to bows, hand-casted spells are a simple yet quite deep concept.
 
-[img]https://i.imgur.com/zakMi93.gif[/img]
-[center][color=#b6b6b6][size=2](effects on a gif is exaggerated for demonstration purposes)[/size][/color][/center]
+[color=#ffd966][b]Properly guiding a spell[/b][/color] at the target will take practice. The good news is that all spells are controlled the same way, so a masterful [i]Destruction[/i] mage would be able to land [i]Conjuration[/i] or any other spells just as [color=#ffd966][b]accurately[/b][/color].
 
-[color=#a4c2f4][size=4][b]Spells[/b][/size][/color]
+[color=#93c47d][b]Charging[/b][/color], however, is a different story. It is [color=#93c47d][b]hard and slow[/b][/color] at first, and unique to each magic school, so that same mage would have to learn it all over again for [i]Conjuration[/i]. But once a spell is charged, it can be held as long as needed [color=#76a5af][b]without wearing the mage down[/b][/color], so there is plenty of time to [color=#f6b26b][b]steady[/b][/color] the [color=#ffd966][b]aim[/b][/color].
 
-Pretty much the same as bows. You figure out [b][color=#6d9eeb]Accuracy [/color][/b]with hands and practice your [b][color=#ffd966]Precision [/color][/b](skill) until it becomes second nature to your character.
-[quote][center][color=#6fa8dc][size=2][b]NOTE[/b][/size][/color]
-[i]By default, shooting quality is calculated based on the magic skill associated with the spell being casted.
-So that while mastering Destruction skill will give you near perfect [b][color=#ffd966]Precision[/color][/b] with Destruction spells,
-you'd struggle with [b][color=#ffd966]Precision[/color][/b] for Restoration spells, unless you level up Restoration skill too.
+With more practice, mages would be able to achieve [color=#93c47d][b]fast charging[/b][/color] and a [b][color=#ffd966]decent aim[/color][/b]. Magic is too unstable to control over longer distances, though, so it's most reliable at close and mid ranges. Still, masterful mages would be able to extend that up to [b]50 meters[/b], landing a Firebolt on a distant target.
 
-This can also be customized in INI.[/i][/center]
-[/quote]
+Heatmap for Spells
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384903-537394222.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
 
-[img]https://i.imgur.com/80Yutny.gif[/img]
-[center][/center]
-[b][color=#93c47d][size=4]Staves[/size][/color][/b]
 
-Staves have a slightly better [b][color=#ffd966]Precision[/color][/b] than spells for the Player.
+[size=5][color=#a4c2f4][b]Concentration Spells[/b][/color][/size]
 
-[img]https://i.imgur.com/lpmRIgF.gif[/img]
-[center][color=#b6b6b6][size=2]Effect on this gif is a bit exaggerated as I recorded it before adjusting Precision for staves :)[/size][/color][/center]
+Unlike typical fire-and-forget spells, concentration spells are a continuous beam, and it takes uninterrupted concentration to keep it on a target for the entire duration.
+
+Without the required skill, a mage won't be able to keep their Flames on a target, as the beam will [color=#d5a6bd][b]slide all over the place[/b][/color]. And of course, concentrating is quite [color=#76a5af][b]fatiguing[/b][/color], so mages with a low [i]Magicka[/i] pool [color=#999999][size=1](max [i]Magicka[/i])[/size][/color] will [color=#76a5af][b]lose control of the beam[/b][/color] after prolonged casting. Wise mages improve their [i]Magicka[/i], take breaks between bursts, or simply give up and throw Firebolts.
+
+On the bright side, masterful sorcerers are able to sustain a stronger beam that reaches [color=#c27ba0][b]much farther[/b][/color] and holds [color=#d5a6bd][b]steadier[/b][/color]. This gives a safer distance to attack from, but don't expect the Flames to burn everything in a [b]50-meter[/b] radius, after all this is a close-range option.
+
+Heatmap for Concentration Spells
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384932-896414467.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
+
+
+[size=5][color=#8e7cc3][b]Staves[/b][/color][/size]
+
+Staves are the crossbows for mages; created by powerful enchanters, they possess innate power that wielders can tap into.
+
+For an outsider, a staff might look like a glorified stick with a spell, and they would be partially right: [color=#ffd966][b]aiming[/b][/color] with a staff is much like with hand-casted spells, and its effective range drops out at around [b]35 meters[/b]. However, the built-in enchantment delivers consistently [b][color=#ffd966]high precision[/color][/b], which makes staves the uncontested winner among [i]Novice[/i] mages. [b][color=#93c47d]Charging is faster[/color][/b] too, and unlike with spells, once a mage knows how to use a staff, every staff of any magic school is as effective as the next one. Eventually, as the mage's own magic grows, it catches up and leaves the staff behind.
+
+But if a mage is something of an enchanter themselves, they can unlock the true potential of a staff. [b][color=#93c47d]Charging gets faster[/color][/b], the [b][color=#ffd966]precision gets sharper[/color][/b], and the effective range stretches up to [b]50 meters[/b]. A masterful mage with deep [i]Enchanting[/i] knowledge wielding a staff is unmatched.
+
+At the end of the day, most mages don't master [i]Enchanting[/i], and for them staves will always remain a utility for those who don't have time to learn proper magic.
+
+Here is an image that sums up the Staves 🙂
+[spoiler][img]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795556868-239046113.jpg[/img][/spoiler]
+
+
+Heatmap for Staves
+[spoiler][center][size=4][b]With [i]Enchanting[/i] level 20[/b][/size]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555809-2074284522.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color]
+
+[size=4][b]With [i]Enchanting[/i] level 100[/b][/size]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555810-455161807.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
+
+
+[size=5][color=#b4a7d6][b]Concentration Staves[/b][/color][/size]
+
+Put a concentration spell into a staff and the demanding part of keeping a beam alive is no longer on the mage.
+
+The staff does the concentrating, so the beam can be sustained for as long as wanted [color=#76a5af][b]without fatiguing[/b][/color] the wielder. In the hands of a [i]Novice[/i] with a little bit of [i]Enchanting[/i] knowledge, the beam will reach [color=#c27ba0][b]much farther[/b][/color] and feel [color=#d5a6bd][b]much steadier[/b][/color] than their own spellcasting allows.
+
+As with any staff, the mage's own magic eventually overtakes it. But a master of [i]Enchanting[/i] wielding one gets a beam that is unmatched: it reaches [color=#c27ba0][b]farther[/b][/color] and is [color=#d5a6bd][b]more stable[/b][/color] than any hand-casted one.
+
+Heatmap for Concentration Staves
+[spoiler][center][size=4][b]With [i]Enchanting[/i] level 20[/b][/size]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555884-1478728937.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color]
+
+[size=4][b]With [i]Enchanting[/i] level 100[/b][/size]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555884-193269896.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
+
+
+[size=5][color=#6fa8dc][b]Scrolls[/b][/color][/size]
+
+In pursuit of even more accessible magic, enchanters created one-time use spells, carefully imbued into enchanted scrolls, ready to be used at any moment with no extra skill required.
+
+Scrolls hold a powerful pre-made and pre-charged spell that comes with a very handy enchantment woven into it, which makes every spell [color=#ffd966][b]self-correct[/b][/color] its trajectory. This lets mages of any skill quickly deploy versatile magic. Mages who have mastered the spell's magic school could push the limits further, making the embedded spell [b][color=#93c47d]charge slightly faster[/color][/b] than its makers intended.
+
+Unfortunately, this self-correcting enchantment was never extensively tested, and it wasn't until much later that enchanters found out that it rapidly [color=#76a5af][b]exhausts itself[/b][/color], making the spell fly in an unpredictable direction. The best advice they could offer is [color=#76a5af][b]not to hold a scroll's spell charged[/b][/color]: once it's ready to fire, do so promptly or risk wasting the scroll.
+
+In the end, scrolls deliver an almost master-level performance to any mage who needs it right now, and their convenience is unmatched.
+
+Heatmap for Scrolls
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795385011-719888575.png[/img]
+[color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
+[/spoiler]
+
+
+[size=5][b]Skill Shots[/b][/size]
+
+Skillful NPC archers will occasionally try to land a skill shot on their target. By default, only Headshots are enabled. But if you have mods that handle hits to the arms or the legs, you can also enable Arm Shots or Leg Shots in the menu. NPCs will still favor Headshots, since they are easier to pull off. 
+
+Your chances of getting an arrow into a knee are low, but never zero.
+
 
 [size=5][b]Customization[/b][/size]
 
-You can customize just about any aspect of the mod. INI configuration with detailed comments is included with the mod, so you can explore and experiment with it :) Note, that mod does not reload the settings so you'll have to restart the game after you change them.
-
-First of all, [b]NPCs Learn to Aim[/b] is built (and balanced) around Vanilla game settings, so by changing them you can globally control mod's effect on both NPCs and the Player:
-
+First of all, [b]NPCs Learn to Aim[/b] is built (and balanced) around Vanilla game settings, so by changing them you can globally control the mod's effect on both NPCs and the Player:
 [list]
-[*][b][color=#6d9eeb]fCombatRangedAimVariance[/color][/b][size=1][i] [color=#b6b6b6](default: 0.9)[/color][/i][/size] - a maximum multiplier for aiming offsets. Changing it only affects NPCs. Decrease it to make [b][color=#6d9eeb]Accuracy [/color][/b]less disperse, 0 value will effectively disable the [color=#6d9eeb][b]Accuracy[/b] [/color]factor on NPCs. In the mod this is multiplier is further affected by skill factor, but generally value of this setting corresponds an Accuracy multiplier at skill level 40. The multiplier is twice of that value at skill level 10.[/*]
+[*][b]fBowNPCSpreadAngle[/b] [i][size=1][color=#b6b6b6](default: [b]4[/b])[/color][/size][/i] - the maximum angle (in degrees) of projectiles deflection upon firing. The aiming model produces a multiplier for this setting to determine where a projectile will go. Decreasing it will reduce projectiles spread. A value of [b]0[/b] guarantees perfect shots at aiming point.[/*]
 [/list]
 
+You can customize just about any aspect of the mod in the menu or the old-fashioned way - by editing the INI file.
+
+[img width=1221]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795383536-1705222639.png[/img]
+
+A couple of tips:
 [list]
-[*][b][color=#6d9eeb]fCombatAimProjectileRandomOffset[/color][/b][i][size=1] [color=#b6b6b6](default: 16)[/color][/size][/i] - a flat aiming offset that will be further multiplied by a random multiplier based on skill and [b][color=#6d9eeb]fCombatRangedAimVariance[/color][/b]. Changing it only affects NPCs. Increasing this value will affect by how much NPC's Accuracy will be offset from the perfect aim point.[/*]
+[*]Most menu elements have tooltips with explanations and details.[/*]
+[*]Use Actions in the General section to export all settings to the INI, for sharing or to see all the values.[/*]
+[*]The same Actions can load settings from the INI at any time. [/*]
 [/list]
 
+
+[size=5][color=#76a5af][b]Compatibility[/b][/color][/size]
+
+[b]NPCs Learn to Aim[/b] should be compatible with pretty much everything.
+
+It also comes with a handy way to include or exclude certain NPCs using keywords. By default, the mod is enabled for all NPCs with [b]ActorTypeNPC[/b] (which covers all playable races) and [b]UpdateDuringArchery[/b] (which covers Falmers, Draugr, Skeletons and a few other creatures that might shoot at you). To enable or disable individual NPCs, provide custom keywords in [b]sIncludeKeywords[/b] or [b]sExcludeKeywords[/b] in the INI. Use the power of [url=https://www.nexusmods.com/skyrimspecialedition/mods/36869][b]SPID[/b][/url] to provide any logic you'd like.
+
+[url=https://www.nexusmods.com/skyrimspecialedition/mods/51614][b]True Directional Movement[/b][/url]'s Target Lock feature is fully supported:
 [list]
-[*][b][color=#ffd966]fBowNPCSpreadAngle[/color][/b][i][size=1] [color=#b6b6b6](default: 4)[/color][/size][/i] - a maximum angle (in degrees) of projectile's deflection upon [b][color=#ffd966]Precision[/color][/b]. Changing this setting will affect both NPCs and the Player. This has a similar effect as aiming offset, but controls specifically the [b][color=#ffd966]Precision [/color][/b]factor. Decreasing it will reduce projectile's spread. 0 value will guarantee perfect shots at aiming point.[/*]
+[*][b]Predictive aim[/b]: NLA will apply the random spread after [url=https://www.nexusmods.com/skyrimspecialedition/mods/51614][b]TDM[/b][/url] has calculated the projectile's trajectory.[/*]
+[*][b]Homing aim[/b]: NLA will skip the random spread, as it wouldn't make sense for a projectile designed to always hit its target.[/*]
 [/list]
 
 
-[quote][center][color=#6fa8dc][size=2][b]NOTE[/b][/size][/color]
-[i]All INI settings can be set separately for Player and NPCs[/i][/center]
-[/quote]
+[size=5][color=#3c78d8][b]Support[/b][/color][/size]
 
-
-[color=#a4c2f4][size=4][b]Use highest magic skill[/b][/size][/color]
-
-[b][color=#a4c2f4]Spells[/color][/b] and [b][color=#93c47d]staves [/color][/b]can use the highest magic skill for all spells, rather than requiring to level up magic skill associated with the spell. For example, once you're master of Destruction you can just as accurately cast Restoration, Illusion or other spells.
-
-This option is disabled by default.
-
-
-[color=#b6d7a8][size=4][b]Staves use Enchanting skill
-
-[/b][/size][/color]Makes [b][color=#93c47d]staves[/color][/b]' shooting quality depend on wielder's Enchanting skill, rather than magic skill associated with the spell (or highest magic skill). This option makes less sense for NPCs since there aren't many NPCs that invest in Enchanting skill. However, for the Player this might be an interesting flavor.
-
-This option is disabled by default.
-
-
-[b][size=4]Skill multipliers[/size]
-
-[/b]If global settings are too broad or sensitive for your needs, you can further customize how much skill affects shooting quality of each individual ranged specialization, both for NPCs and the Player.
-
-
-[b][color=#8e7cc3][size=4]Blindness[/size][/color][/b]
-
-Cool feature that [url=https://www.nexusmods.com/skyrimspecialedition/users/2148728]po3 [/url]suggested :) NPCs that are blind will have a severe debuff on [b][color=#6d9eeb]Accuracy[/color][/b], requiring them to have much higher skill to be able to aim properly. However, their [color=#ffd966][b]Precision[/b][/color] is slightly buffed to depict improved other senses. Albeit, there are not many blind NPCs, especially archers (hopefully some other mods make use of blindness effect). You can still customize the impact of [b]Blindness[/b] on NPC's shooting quality.
-
-
-[b][color=#76a5af][size=5]Compatibility[/size][/color][/b]
-
-NPCs Learn to Aim should be compatible with pretty much everything.
-
-It also comes with a handy way to include/exclude certain NPCs using keywords. By default, mod is enabled for all NPCs with [b]ActorTypeNPC [/b](which should be all playable races). Providing custom keywords in [b]sIncludeKeywords [/b]or [b]sExcludeKeywords [/b]in the INI to enable or disable individual NPCs. Use power of SPID to provide any logic you'd like.
-
-[url=https://www.nexusmods.com/skyrimspecialedition/mods/51614]True Directional Movement'[/url]s Target Lock feature is incompatible with [b]Player Learns[/b] module :) once you've locked a target [b]TDM[/b] takes over projectile trajectory calculations and makes it always a perfect hit.
-
-
-[color=#3c78d8][size=5][b]Support[/b][/size][/color]
-Thank you for using my mods! If you enjoy them and would like to support me, you can use the links below. [url=https://www.flaticon.com/search?author_id=353&style_id=&type=standard&word=cat][img]https://i.imgur.com/1roacCR.png[/img]
-[/url]
-[i][b][b][size=6][color=#ffff00][url=https://patreon.com/Arkhlus?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_cjavascript-event-strippedjoin_link][img]https://i.imgur.com/tkWIT9M.gif[/img][/url][/color][/size][/b][/b][/i]
+Thank you for using my mods! If you enjoy them and would like to support me, you can use the links below. [url=https://www.flaticon.com/search?author_id=353&style_id=&type=standard&word=cat][img]https://i.imgur.com/1roacCR.png[/img][/url]
+[i][b][size=6][color=#ffff00][url=https://patreon.com/Arkhlus?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_cjavascript-event-strippedjoin_link][img]https://i.imgur.com/tkWIT9M.gif[/img][/url][/color][/size][/b][/i]
