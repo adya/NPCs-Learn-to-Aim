@@ -52,7 +52,7 @@ Before an archer can even begin to [color=#ffd966][b]aim[/b][/color], they need 
 But once you master the [i]Archery[/i] skill, a bow will do wonders for you: [color=#93c47d][b]drawing the string is natural[/b][/color] and [color=#ffd966][b]aiming[/b][/color] is unparalleled, delivering snipe shots at distances over [b]100 meters[/b]. True masters of a bow are a menace.
 
 Heatmap for Bows
-[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384787-893957377.png[/img]
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636331-1987366186.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -66,7 +66,7 @@ They do their job nicely: the entry level is greatly reduced, and even a farmer 
 But of course, there is a catch. Industrialized archery solved the problem of the bow's barriers at the expense of its potential, so crossbows deliver an average "good enough" consistency: most shots land at close and mid ranges, but anything past [b]30 meters[/b] becomes an unlikely hit. A masterful archer will always outperform a crossbowman by a long shot. But a masterful crossbowman would be able to get the job done in most common cases.
 
 Heatmap for Crossbows
-[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384839-675408999.png[/img]
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636332-900786408.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -82,7 +82,7 @@ Spells require that a mage learn the art of sorcery. Similarly to bows, hand-cas
 With more practice, mages would be able to achieve [color=#93c47d][b]fast charging[/b][/color] and a [b][color=#ffd966]decent aim[/color][/b]. Magic is too unstable to control over longer distances, though, so it's most reliable at close and mid ranges. Still, masterful mages would be able to extend that up to [b]50 meters[/b], landing a Firebolt on a distant target.
 
 Heatmap for Spells
-[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384903-537394222.png[/img]
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636333-2053582501.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -96,7 +96,7 @@ Without the required skill, a mage won't be able to keep their Flames on a targe
 On the bright side, masterful sorcerers are able to sustain a stronger beam that reaches [color=#c27ba0][b]much farther[/b][/color] and holds [color=#d5a6bd][b]steadier[/b][/color]. This gives a safer distance to attack from, but don't expect the Flames to burn everything in a [b]50-meter[/b] radius, after all this is a close-range option.
 
 Heatmap for Concentration Spells
-[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795384932-896414467.png[/img]
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636331-668065321.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -112,16 +112,16 @@ But if a mage is something of an enchanter themselves, they can unlock the true 
 At the end of the day, most mages don't master [i]Enchanting[/i], and for them staves will always remain a utility for those who don't have time to learn proper magic.
 
 Here is an image that sums up the Staves 🙂
-[spoiler][img]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795556868-239046113.jpg[/img][/spoiler]
+[spoiler][img]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795638210-306251717.jpg[/img][/spoiler]
 
 
 Heatmap for Staves
 [spoiler][center][size=4][b]With [i]Enchanting[/i] level 20[/b][/size]
-[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555809-2074284522.png[/img]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636361-1941424704.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color]
 
 [size=4][b]With [i]Enchanting[/i] level 100[/b][/size]
-[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555810-455161807.png[/img]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636361-1276204847.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -136,11 +136,11 @@ As with any staff, the mage's own magic eventually overtakes it. But a master of
 
 Heatmap for Concentration Staves
 [spoiler][center][size=4][b]With [i]Enchanting[/i] level 20[/b][/size]
-[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555884-1478728937.png[/img]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636360-215402640.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color]
 
 [size=4][b]With [i]Enchanting[/i] level 100[/b][/size]
-[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795555884-193269896.png[/img]
+[img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636360-1772303892.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -156,7 +156,7 @@ Unfortunately, this self-correcting enchantment was never extensively tested, an
 In the end, scrolls deliver an almost master-level performance to any mage who needs it right now, and their convenience is unmatched.
 
 Heatmap for Scrolls
-[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795385011-719888575.png[/img]
+[spoiler][center][img width=800]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636332-1985852451.png[/img]
 [color=#999999][size=2][i]The chart shows the chance to hit a target at a given skill level and distance.[/i][/size][/color][/center]
 [/spoiler]
 
@@ -177,7 +177,7 @@ First of all, [b]NPCs Learn to Aim[/b] is built (and balanced) around Vanilla ga
 
 You can customize just about any aspect of the mod in the menu or the old-fashioned way - by editing the INI file.
 
-[img width=1221]https://staticdelivery.nexusmods.com/mods/1704/images/121124/121124-1795383536-1705222639.png[/img]
+[img width=1221]https://staticdelivery.nexusmods.com/mods/1704/images/117908/117908-1795636446-957652675.png[/img]
 
 A couple of tips:
 [list]
